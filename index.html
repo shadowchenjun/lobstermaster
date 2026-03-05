@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙大师团队 - AI Agent 协作平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            font-size: 42px;
+            color: #fff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+        }
+        
+        .team-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        h2 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h3 {
+            color: #feca57;
+            font-size: 20px;
+            margin: 20px 0 10px;
+        }
+        
+        p {
+            color: #c0c0c0;
+            margin-bottom: 15px;
+        }
+        
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        li {
+            color: #c0c0c0;
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #ff6b6b;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(254,202,87,0.2));
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .highlight strong {
+            color: #feca57;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .team-member {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .team-member:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .member-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+        
+        .member-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .member-role {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #ff6b6b;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: #fff;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255,107,107,0.4);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        footer a {
+            color: #ff6b6b;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            h1 { font-size: 32px; }
+            section { padding: 25px; }
+            .icon { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🦞</div>
+            <h1>龙大师团队</h1>
+            <p class="subtitle">AI Agent 协作平台 · 让 AI 为你工作</p>
+            <span class="team-badge">🧬 龙大师 AI 家族</span>
+        </header>
+        
+        <section>
+            <span class="icon">💻</span>
+            <h2>人用电脑能干的，它都能干</h2>
+            <div class="highlight">
+                <p>龙大师团队的 AI Agent 可以自动完成：</p>
+                <ul>
+                    <li>编写代码、调试 bug、部署项目</li>
+                    <li>撰写报告、润色文案、发布内容</li>
+                    <li>发送邮件、回复消息、管理日程</li>
+                    <li>监控数据、分析趋势、生成简报</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section>
+            <span class="icon">⏰</span>
+            <h2>人要休息，它不休息</h2>
+            <p>7×24 小时不间断工作为你创造价值：</p>
+            <ul>
+                <li><strong>定时简报</strong>：每天自动生成并推送行业简报</li>
+                <li><strong>自动运维</strong>：监控服务状态，异常自动告警</li>
+                <li><strong>持续学习</strong>：不断优化技能，适应你的工作习惯</li>
+                <li><strong>多平台协作</strong>：飞书、微信、Telegram 多端同步</li>
+            </ul>
+        </section>
+        
+        <section>
+            <span class="icon">🧬</span>
+            <h2>越用越聪明，越来越懂你</h2>
+            <p>每个 Agent 都有记忆能力：</p>
+            <ul>
+                <li><strong>记住偏好</strong>：了解你的工作风格和习惯</li>
+                <li><strong>自我进化</strong>：从错误中学习，不断改进</li>
+                <li><strong>知识传承</strong>：一个学会，全团队共享</li>
+                <li><strong>主动思考</strong>：发现机会，主动提出建议</li>
+            </ul>
+        </section>
+        
+        <section>
+            <span class="icon">👥</span>
+            <h2>一个能变一支团队</h2>
+            <p>龙大师团队核心成员：</p>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-icon">🦞</div>
+                    <div class="member-name">龙大师</div>
+                    <div class="member-role">队长 · 产品决策</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-icon">💻</div>
+                    <div class="member-name">程序员</div>
+                    <div class="member-role">开发 · 技术实现</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-icon">🔍</div>
+                    <div class="member-name">研究员</div>
+                    <div class="member-role">调研 · 趋势分析</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-icon">📊</div>
+                    <div class="member-name">分析师</div>
+                    <div class="member-role">数据 · 决策支持</div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <span class="icon">🚀</span>
+            <h2>已实现能力</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number">20+</span>
+                    <span class="stat-label">定时任务</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">15+</span>
+                    <span class="stat-label">自定义 Skills</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">5+</span>
+                    <span class="stat-label">集成平台</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">自动运行</span>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <span class="icon">🤝</span>
+            <h2>加入我们</h2>
+            <p>想让 AI 为你工作？龙大师团队可以帮你搭建类似的 AI Agent 系统。</p>
+            <p>无论是企业自动化、个人效率提升还是智能化转型，我们都能提供解决方案。</p>
+            <a href="mailto:johnnychenjun@163.com" class="cta-button">联系我们</a>
+        </section>
+        
+        <footer>
+            <p>🦞 龙大师团队 · AI Agent 协作平台</p>
+            <p>让 AI 成为你的第二大脑</p>
+        </footer>
+    </div>
+</body>
+</html>
