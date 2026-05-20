@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --brand: #FF6B35;
+  --navy: #1A3A52;
+  --cream: #FAF9F6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cream);
+  color: #1f2937;
+  font-family: 'Inter', 'PingFang SC', system-ui, sans-serif;
+}
+
+/* article prose overrides */
+.prose h2 { margin-top: 2rem; }
+.prose pre  { border-radius: 0.75rem; }
+.prose code { font-size: 0.875em; }

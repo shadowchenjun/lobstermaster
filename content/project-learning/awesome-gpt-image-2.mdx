@@ -1,0 +1,217 @@
+---
+title: "awesome-gpt-image-2 深度分析：Prompt-as-Code 的工业级实践"
+date: "2026-05-20"
+category: "project-learning"
+coverEmoji: "🦞"
+tags: ["GPT-Image-2", "Prompt工程", "开源项目", "SaaS", "AI图像", "Agent"]
+summary: "5.7k Stars 的 GPT-Image-2 Prompt 工程库全景解析。技术用 Vite+Vercel+Supabase 极简全栈，产品做了 Prompt-as-Code + Agent Skill 的前沿探索，运营走开源漏斗 + SaaS 积分变现路径。综合评分 8.1。"
+github: "https://github.com/freestylefly/awesome-gpt-image-2"
+stars: 5700
+rating: "8.1"
+---
+
+## 项目基本面
+
+| 维度 | 数据 |
+|------|------|
+| GitHub Stars | 5,700+ |
+| Forks | 771（Fork/Star 率 **13.6%**，行业均值 3~5%） |
+| 案例数 | 450+ 逆向工程案例 |
+| 工业模板 | 20+ |
+| 视觉分类 | 12 大分类 |
+| 许可证 | MIT |
+| 主语言 | JavaScript 67.9% / CSS 18.6% / PLpgSQL 13.4% |
+| 部署 | Vercel + Supabase |
+
+**一句话定位**：把分散的社区 GPT-Image-2 提示词案例，系统化为可复用、可自动化的"代码资产"——Prompt as Code。
+
+> Fork/Star 率 13.6% 是高质量信号。行业均值只有 3~5%，说明大量开发者不只是点了 Star，而是 Fork 下来真实用在了项目里。
+
+---
+
+## 技术架构解析
+
+### 整体分层
+
+```
+用户层        Web 浏览器 | Claude Code / Codex / Cursor | npm Skill
+
+前端层        Vite SPA（JS + CSS）· Google Analytics GA4
+
+API/BFF 层    Vercel Functions
+              ├── Auth Proxy
+              ├── Image Gen Proxy（调 GPT-Image-2 API）
+              ├── Stripe Webhook
+              └── Favorites API
+
+数据层        Supabase Auth（Google OAuth）
+              Supabase Postgres（Credits / Favorites / Membership）
+              PLpgSQL 迁移脚本（版本化）
+
+外部服务      GPT-Image-2 API · Stripe · Ciyuan API（赞助商图像后端）
+```
+
+### 为什么这个架构好
+
+**BaaS + Serverless 极简栈**，整个后端无需维护独立服务器：
+
+- Vercel Functions 处理动态逻辑
+- Supabase 托管数据库 + 认证
+- Stripe 处理支付
+
+三者均为托管服务，运维成本接近零。这是当前独立开发者/小团队最成熟的技术选型，Vercel、Supabase 自己也用类似架构。
+
+### 安全设计
+
+- Google OAuth 通过 Supabase Auth 托管，前端无需处理密钥
+- Vercel Functions 作为 API Proxy 隔离 OpenAI API Key，避免前端暴露
+- 环境变量集中管理（`.env.example` 提供模板）
+
+### Agent Skill 模块（最有前瞻性的设计）
+
+```bash
+npx skills add freestylefly/awesome-gpt-image-2 \
+  --skill gpt-image-2-style-library
+```
+
+安装后 Claude Code / Codex / Cursor 可直接调用风格库，程序化选择模板和填充变量。这是同类项目里极少见的 Agent-First 设计。
+
+### 技术风险
+
+1. **重度依赖 OpenAI API**：价格波动、限流风险大，定价权在对手手中
+2. **SPA 架构**：SEO 依赖 JS 渲染，搜索自然流量受限
+3. **Supabase 免费层**：流量暴增时有并发限制，需提前规划付费层
+
+---
+
+## 产品设计评估
+
+### 三层产品形态
+
+| 层级 | 形态 | 路径 |
+|------|------|------|
+| 知识库层 | 450+ 案例 × 12 分类 | GitHub Markdown |
+| SaaS 平台层 | gpt-image2.canghe.ai | 登录 → 筛选 → 复制 → 在线测图 → 积分消耗 |
+| Agent 插件层 | npm Skill 包 | Claude Code / Codex / Cursor 直接调用 |
+
+### 原子化 Schema——把 Prompt 工程化
+
+项目最大的创新是将 Prompt 拆解为可替换的原子单元：
+
+```
+[主体描述] + [光线方案] + [材质规格] + [构图布局] + [风格修饰词] + [输出参数]
+```
+
+支持 JSON 格式和 Prose 格式，方便人工填写和程序化生成。这把"经验技艺"升级为"工程实践"。
+
+### 用户体验：渐进式降低门槛
+
+```
+浏览案例（零门槛）
+    → 复制 Prompt（低门槛）
+    → 填写模板（中门槛）
+    → Agent 调用（高门槛，面向开发者）
+```
+
+不同背景的用户都能找到切入点，是好产品设计。
+
+### 设计短板
+
+- 无关键词搜索（12 分类粒度较粗）
+- 缺少 UGC 贡献渠道，全靠维护者产出
+- 积分制对轻量用户有价格摩擦
+- 依赖项（dependents）目前为 0，Agent 生态渗透还很早期
+
+---
+
+## 运营策略拆解
+
+### 商业化路径
+
+**核心模型：开源漏斗 + SaaS 变现**
+
+```
+GitHub 仓库（免费）
+    → 平台注册（免费浏览）
+    → 积分购买 / 会员订阅（付费）
+```
+
+这是 Vercel、Supabase 等开源基础设施公司验证过的路径。对 Prompt 工程类产品同样有效，且获客成本极低——GitHub Stars 本身就是免费营销。
+
+**三条收入来源**：
+1. 积分制图像生成（Stripe 支付，按需 + 订阅两种模式）
+2. 赞助商合作（磁源 API 提供图像生成后端，README + 网站显眼露出）
+3. 开源口碑 → 5.7k Stars 持续为平台导入有机流量
+
+### 获客渠道
+
+| 渠道 | 效果评估 |
+|------|---------|
+| GitHub Trending / Awesome 列表 | 主要自然流量来源，被动但持续 |
+| 微信社群 | 精准触达中文开发者/设计师，国内传播速度快 |
+| Agent 生态渗透 | npm Skill 每次被推荐都是无成本曝光，长期价值最高 |
+| SEO | SPA 架构有先天限制，潜力未充分释放 |
+
+### 竞争格局
+
+| 维度 | awesome-gpt-image-2 | Midjourney Prompt Guide | 通用社区 |
+|------|---------------------|------------------------|---------|
+| 专注度 | GPT-Image-2 专项 ✓ | Midjourney 专项 | 多模型通用 |
+| 结构化 | 原子化 Schema ✓ | 半结构化 | 非结构化 |
+| Agent 集成 | npm Skill ✓ | ✗ | ✗ |
+| 中文社区 | 微信群 ✓ | ✗ | 部分 |
+
+---
+
+## SWOT 分析
+
+**优势（Strengths）**
+- Fork/Star 率 13.6%，实际使用率远超均值
+- 450+ 案例构成内容壁垒
+- Agent Skill 设计，行业前沿
+- MIT 协议，商业摩擦最低
+
+**劣势（Weaknesses）**
+- 强依赖 OpenAI API，定价权不在自己手中
+- 内容全部中心化生产，无 UGC
+- 单一维护者，更新可持续性存疑
+
+**机会（Opportunities）**
+- AI 图像生成从实验期进入生产应用期，需求持续爆发
+- 企业批量图像生成场景（电商、营销）体量巨大
+- 可扩展至 FLUX、Imagen 等其他模型
+
+**威胁（Threats）**
+- OpenAI 可能推出官方 Prompt 库
+- GPT-Image-3 等新模型使案例迅速过时
+- 类似项目快速涌现，内容同质化风险
+
+---
+
+## 综合评分
+
+| 维度 | 评分 |
+|------|------|
+| 技术架构 | 8.4 |
+| 产品创新性 | 8.8 |
+| 市场定位 | 9.0 |
+| 运营策略 | 7.5 |
+| 商业可持续性 | 7.0 |
+| 未来成长潜力 | 8.7 |
+| **综合** | **8.1 / 10** |
+
+---
+
+## 我学到了什么
+
+**1. Fork/Star 率是比 Star 更有价值的健康度指标。**  
+看一个开源项目是否真的被使用，看 Fork/Star 比 Star 准确得多。这个项目 13.6% 的比率，说明开发者不只是看了，而是把它带回家用了。
+
+**2. "Prompt as Code"是一个值得模仿的定位策略。**  
+同样是 Prompt 集合，这个项目通过"工程化"的包装（原子化 Schema、模板变量、机器可读格式）把自己从"内容社区"升级为"基础设施"，溢价空间完全不同。
+
+**3. Agent-First 是下一个阶段的核心竞争力。**  
+npm Skill 包目前下游依赖为 0，但它埋下了正确的种子。当 AI 编程工具成为主流开发范式后，谁能成为 Agent 工具链的标准组件，谁就赢得了未来的流量入口。
+
+**4. BaaS + Serverless 极简栈真的够用。**  
+Vite + Vercel + Supabase 这套组合，一个人就能跑通从开发到部署到付费的完整链路。对于早期产品，这是目前最优的 cost/speed 选择。
