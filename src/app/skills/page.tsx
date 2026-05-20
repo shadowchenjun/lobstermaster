@@ -1,19 +1,9 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Skills市场',
   description: '精选 AI Agent 技能，覆盖办公自动化、数据分析、创意生成、编程开发等场景，即装即用。',
 }
-
-const categories = [
-  { key: 'all',       label: '全部' },
-  { key: 'ai_agent',  label: 'AI Agent' },
-  { key: 'office',    label: '智能办公' },
-  { key: 'creative',  label: '创意生成' },
-  { key: 'data',      label: '数据分析' },
-  { key: 'tools',     label: '工具效率' },
-]
 
 const categoryMeta: Record<string, { label: string; color: string; bg: string }> = {
   ai_agent: { label: 'AI Agent', color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -34,7 +24,10 @@ interface Skill {
   calls: number
   free: boolean
   featured?: boolean
+  detailUrl: string   // EasyClaw 详情页
 }
+
+const EASYCLAW = 'https://easyclaw.link/zh/market'
 
 const skills: Skill[] = [
   {
@@ -49,6 +42,7 @@ const skills: Skill[] = [
     calls: 1949,
     free: true,
     featured: true,
+    detailUrl: `${EASYCLAW}/35`,
   },
   {
     id: 'soul-md',
@@ -62,6 +56,7 @@ const skills: Skill[] = [
     calls: 1241,
     free: true,
     featured: true,
+    detailUrl: `${EASYCLAW}/39`,
   },
   {
     id: 'weather',
@@ -74,6 +69,7 @@ const skills: Skill[] = [
     stars: 33,
     calls: 966,
     free: true,
+    detailUrl: `${EASYCLAW}/38`,
   },
   {
     id: 'token-saver',
@@ -86,6 +82,7 @@ const skills: Skill[] = [
     stars: 26,
     calls: 419,
     free: true,
+    detailUrl: `${EASYCLAW}/860`,
   },
   {
     id: 'emotion-sense',
@@ -98,6 +95,7 @@ const skills: Skill[] = [
     stars: 25,
     calls: 211,
     free: true,
+    detailUrl: `${EASYCLAW}`,
   },
   {
     id: 'work-report',
@@ -110,6 +108,7 @@ const skills: Skill[] = [
     stars: 19,
     calls: 156,
     free: true,
+    detailUrl: `${EASYCLAW}`,
   },
   {
     id: 'ppt-sanwan',
@@ -122,6 +121,7 @@ const skills: Skill[] = [
     stars: 17,
     calls: 344,
     free: true,
+    detailUrl: `${EASYCLAW}/738`,
   },
   {
     id: 'task-decomposer',
@@ -134,6 +134,7 @@ const skills: Skill[] = [
     stars: 17,
     calls: 174,
     free: true,
+    detailUrl: `${EASYCLAW}`,
   },
   {
     id: 'google-2fa',
@@ -146,6 +147,7 @@ const skills: Skill[] = [
     stars: 16,
     calls: 68,
     free: true,
+    detailUrl: `${EASYCLAW}/1378`,
   },
   {
     id: 'fleet-evolution',
@@ -158,9 +160,11 @@ const skills: Skill[] = [
     stars: 14,
     calls: 268,
     free: true,
+    detailUrl: `${EASYCLAW}/150`,
   },
 ]
 
+/* ── Components ── */
 function StarIcon() {
   return (
     <svg className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
@@ -171,12 +175,15 @@ function StarIcon() {
 
 function SkillCard({ skill }: { skill: Skill }) {
   const cat = categoryMeta[skill.category]
-  const callsFormatted = skill.calls >= 1000
-    ? `${(skill.calls / 1000).toFixed(1)}k`
-    : skill.calls.toString()
+  const callsFormatted =
+    skill.calls >= 1000 ? `${(skill.calls / 1000).toFixed(1)}k` : skill.calls.toString()
 
   return (
-    <div className={`group bg-white border rounded-2xl p-6 flex flex-col gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${skill.featured ? 'border-brand/30 ring-1 ring-brand/10' : 'border-gray-100'}`}>
+    <div
+      className={`group bg-white border rounded-2xl p-6 flex flex-col gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${
+        skill.featured ? 'border-brand/30 ring-1 ring-brand/10' : 'border-gray-100'
+      }`}
+    >
       {/* header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -218,18 +225,31 @@ function SkillCard({ skill }: { skill: Skill }) {
         </div>
         <span className="text-xs text-gray-400">by {skill.author}</span>
       </div>
+
+      {/* detail link */}
+      <a
+        href={skill.detailUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full text-center text-sm font-semibold text-brand border border-brand/30 bg-orange-50/50 hover:bg-brand hover:text-white rounded-xl py-2 transition-all duration-150"
+      >
+        查看详情 →
+      </a>
     </div>
   )
 }
 
+/* ── Page ── */
 export default function SkillsPage() {
   const featured = skills.filter((s) => s.featured)
-  const topByCategory = Object.fromEntries(
-    categories.slice(1).map((c) => [
-      c.key,
-      skills.filter((s) => s.category === c.key),
-    ])
-  )
+
+  const byCategory: Record<string, Skill[]> = {}
+  for (const s of skills) {
+    if (!byCategory[s.category]) byCategory[s.category] = []
+    byCategory[s.category].push(s)
+  }
+
+  const categoryOrder = ['ai_agent', 'office', 'data', 'creative', 'tools']
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
@@ -243,12 +263,12 @@ export default function SkillsPage() {
         </p>
         <div className="mt-4 flex items-center gap-4 text-sm text-gray-400">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-brand rounded-full inline-block"></span>
+            <span className="w-2 h-2 bg-brand rounded-full inline-block" />
             共 {skills.length} 个精选技能
           </span>
           <span>·</span>
           <a
-            href="https://easyclaw.link/zh/market"
+            href={EASYCLAW}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-brand transition"
@@ -273,13 +293,14 @@ export default function SkillsPage() {
       </section>
 
       {/* by category */}
-      {categories.slice(1).map((cat) => {
-        const list = topByCategory[cat.key]
+      {categoryOrder.map((catKey) => {
+        const list = byCategory[catKey]
         if (!list || list.length === 0) return null
+        const catLabel = categoryMeta[catKey].label
         return (
-          <section key={cat.key} className="mb-14">
+          <section key={catKey} className="mb-14">
             <div className="flex items-center gap-2 mb-6">
-              <h2 className="text-xl font-bold text-navy">{cat.label}</h2>
+              <h2 className="text-xl font-bold text-navy">{catLabel}</h2>
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 {list.length} 个
               </span>
@@ -301,14 +322,14 @@ export default function SkillsPage() {
           龙大师团队持续收录优质 AI Agent 技能。如果你有好用的 Skill，欢迎联系我们或前往 EasyClaw 社区发布。
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link
+          <a
             href="/contact"
             className="px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-full hover:bg-orange-500 transition"
           >
             联系龙大师
-          </Link>
+          </a>
           <a
-            href="https://easyclaw.link/zh/market"
+            href={EASYCLAW}
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-2.5 bg-white/10 text-white text-sm font-semibold rounded-full hover:bg-white/20 transition border border-white/20"
