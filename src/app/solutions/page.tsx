@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: '解决方案',
-  description: '龙大师团队 AI 落地实践：农业赋能平台、云认养系统、极简 TodoList，从 0 到 1 的真实案例。',
+  description: '龙大师团队 AI 落地实践：农业赋能平台、云认养系统、极简 TodoList、私有化 Agent 平台建设方案。',
 }
 
 /* ── Types ── */
@@ -28,6 +28,7 @@ interface Project {
   summary: string
   github: string
   demo?: string
+  internal?: string
   techStack: TechPill[]
   features: Feature[]
   highlights: string[]
@@ -201,6 +202,60 @@ const projects: Project[] = [
     accentTo: 'to-purple-50',
     borderColor: 'border-indigo-100',
   },
+  {
+    id: 'agent-platform',
+    emoji: '🤖',
+    tag: '企业级 AI',
+    tagColor: 'text-pink-700 bg-pink-100',
+    name: '私有化 Agent 平台建设方案',
+    subtitle: 'Private AI Agent Platform Architecture',
+    summary:
+      '一套覆盖开源大模型私有化部署、RAG 知识库、Agent 管理编排、可观测与审计治理的企业级架构建议。从 MVP 到企业级平台的完整演进路线。',
+    github: 'https://github.com/shadowchenjun/lobstermaster',
+    internal: '/solutions/agent-platform',
+    techStack: [
+      { label: 'Dify', type: 'ai' },
+      { label: 'vLLM', type: 'ai' },
+      { label: 'RAGFlow', type: 'ai' },
+      { label: 'LangGraph', type: 'ai' },
+      { label: 'Xinference', type: 'ai' },
+      { label: 'LiteLLM', type: 'ai' },
+      { label: 'Langfuse', type: 'ai' },
+      { label: 'Keycloak', type: 'infra' },
+      { label: 'Qdrant', type: 'db' },
+      { label: 'PostgreSQL', type: 'db' },
+    ],
+    features: [
+      {
+        icon: '🏗️',
+        title: '分层架构设计',
+        desc: '平台入口 + 能力引擎 + 模型网关 + 治理层，清晰边界，渐进落地。',
+      },
+      {
+        icon: '📚',
+        title: 'RAG 知识库引擎',
+        desc: 'RAGFlow 承载复杂文档解析、切分、检索、重排和引用溯源。',
+      },
+      {
+        icon: '📊',
+        title: '可观测与审计',
+        desc: 'Langfuse Trace、Prometheus 指标、OpenSearch 审计，合规可追溯。',
+      },
+      {
+        icon: '🛡️',
+        title: '安全权限体系',
+        desc: 'Keycloak SSO、RBAC、知识库 ACL、工具审批，四类权限分离治理。',
+      },
+    ],
+    highlights: [
+      '三角色分工：vLLM 生产主力 + Xinference 模型中心 + Ollama 研发试验',
+      'Dify 平台入口 + LangGraph 复杂编排，低代码与代码级 Runtime 组合',
+      '三阶段落地路线：MVP → 治理补齐 → 平台增强，12 周完整演进',
+    ],
+    accentFrom: 'from-pink-50',
+    accentTo: 'to-rose-50',
+    borderColor: 'border-pink-100',
+  },
 ]
 
 /* ── Components ── */
@@ -255,6 +310,14 @@ function ProjectSection({ project, index }: { project: Project; index: number })
               >
                 🔗 在线体验
               </a>
+            )}
+            {project.internal && (
+              <Link
+                href={project.internal}
+                className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand px-4 py-2 rounded-full hover:bg-orange-600 transition shadow-sm"
+              >
+                📖 查看方案
+              </Link>
             )}
           </div>
         </div>
