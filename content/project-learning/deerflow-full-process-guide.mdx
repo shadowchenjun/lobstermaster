@@ -1,0 +1,525 @@
+---
+title: "DeerFlow 全流程架构与实施解读"
+date: "2026-05-24"
+category: "project-learning"
+coverEmoji: "🦌"
+tags: ["DeerFlow", "Agent", "LangGraph", "MCP", "Skills", "架构分析"]
+summary: "把 DeerFlow 理解成一套会工作的 Agent 运行时：Lead Agent、Sub-Agent、中间件、沙箱、记忆、Skills、MCP、Gateway 与生产化部署的完整拆解。"
+rating: "8.6"
+---
+
+> 来源：`deerflow-book.zip` 内的 DeerFlow 源码解析 Markdown 书稿整理。
+>
+> 本文基于原 HTML 长文完整转写为项目学习栏目文章，重点保留 DeerFlow 的设计意图、模块职责和实施路线。
+
+---
+
+## 把 DeerFlow 理解成一套会工作的 Agent 运行时
+
+DeerFlow 不是给开发者拼积木的普通框架，而是一套带模型适配、工具生态、沙箱、长期记忆、子智能体调度、技能系统和 HTTP 网关的完整 Agent 基础设施。
+
+它面向的是 **long-horizon task**：运行时间可以从分钟到小时，任务可以是调研、生成网站、分析代码库、做报告，也可以是围绕上传文件持续产出 artifacts。
+
+几个核心数字可以先建立直觉：
+
+| 指标 | 含义 |
+|------|------|
+| 1 | Lead Agent 作为唯一大脑，动态拆解任务 |
+| 11 | 11 层中间件处理上传、沙箱、摘要、记忆、澄清等横切逻辑 |
+| 3 | 并发 Sub-Agent 默认上限，兼顾效率与资源保护 |
+| 4 | Nginx、Frontend、Gateway、LangGraph 构成核心运行时 |
+
+---
+
+## 01 · 定位：DeerFlow 的关键词不是 Framework，而是 Harness
+
+原文反复强调 DeerFlow 的本质：它不是 LangChain 或 LlamaIndex 那类「你拿积木自己搭」的框架，而是一个更 opinionated 的 Agent 运行时平台。
+
+它预设了 Lead Agent、Sub-Agent、沙箱、记忆、Skills 的协作方式，让开发者可以更快从「模型调用」走到「复杂任务交付」。
+
+一句话理解：
+
+> Framework 让你写流程，Harness 让 Agent 在可控环境里自己规划、执行、产出文件。
+
+| 维度 | Framework | DeerFlow Harness |
+|------|-----------|------------------|
+| 设计理念 | 提供组件，开发者自己编排 | 开箱即用，默认路径已经铺好 |
+| 执行环境 | 沙箱、文件系统、进程隔离通常要自己做 | 内置虚拟文件系统与 Sandbox Provider |
+| 决策方式 | 流程由开发者硬编码 | Lead Agent 动态判断、拆解、委托 |
+| 扩展方式 | 插件、工具、回调 | Skills、MCP Server、Sub-Agent、工具组 |
+
+### Long-horizon 01：运行时间长
+
+DeerFlow 的目标是分钟到小时级任务，比如调研、生成网站、分析代码库、做报告，而不是一问一答。
+
+### Long-horizon 02：自主决策
+
+系统提示词要求先澄清、再规划、按需加载技能，由 Agent 自己决定下一步行动。
+
+### Long-horizon 03：产出初稿
+
+交付物可以是 Markdown 报告、静态网站、PPT、数据分析结果或代码修改稿。
+
+---
+
+## 02 · 运行时全景：前台对话，后台编排
+
+DeerFlow 的运行时像一座小型操作系统。仓库结构分为后端、前端、技能、Docker 与脚本。
+
+真正运行起来后：
+
+- Nginx 负责统一入口
+- Next.js 提供 UI
+- FastAPI Gateway 管配置与文件
+- LangGraph Server 负责 Agent 执行与 SSE 流式事件
+
+### 运行时架构图
+
+```text
+User Interface
+  浏览器
+    用户发起任务、上传文件、查看流式输出
+  Nginx :2026
+    统一入口、CORS、SSE 代理、上传大小限制
+  Next.js :3000
+    对话界面、工具调用状态、文件产物展示
+  Artifacts
+    报告、网页、图片、数据文件
+
+Control Plane
+  Gateway API :8001
+    模型、MCP、Skills、Memory、Uploads、Agents
+  config.yaml
+    模型、工具、沙箱、摘要、记忆、子 Agent
+  extensions_config.json
+    MCP Server 与 Skill 启停
+  .env
+    API Key 与敏感凭据
+
+Agent Plane
+  LangGraph :2024
+    ReAct 循环、状态持久化、SSE 事件
+  Lead Agent
+    模型选择、工具组装、提示词、ThreadState
+  Middleware Pipeline
+    上传、沙箱、摘要、标题、记忆、澄清
+  Sub-Agent Pool
+    并发执行独立子任务
+
+Execution Plane
+  Sandbox
+    Local、aio-sandbox、K8s 三种实现
+  /mnt/user-data
+    uploads、workspace、outputs 虚拟路径
+  Tools + MCP
+    bash、文件、搜索、外部服务工具
+  Skills
+    Markdown 操作手册与脚本模板
+```
+
+### 仓库模块
+
+| 模块 | 说明 |
+|------|------|
+| backend | Python 核心。Agent、Middleware、Sandbox、Gateway、MCP、Skills、Channels 都在后端 |
+| frontend | Next.js UI。通过 SSE 增量展示模型输出、工具调用和产物状态 |
+| skills | Markdown 能力包。内置 deep-research、data-analysis、ppt、web-design 等技能 |
+| docker | 部署编排。包含 Nginx、Gateway、LangGraph、Frontend 和可选沙箱编排器 |
+
+---
+
+## 03 · 核心引擎：LangGraph + Agent 工厂
+
+核心引擎是 LangGraph，但 DeerFlow 把复杂性收进了 Agent 工厂。
+
+DeerFlow 2.0 没有再保留 v1 的 Coordinator → Planner → Researcher/Coder → Reporter 固定多节点图，而是压缩成一个 Lead Agent。
+
+图拓扑变简单了，能力转移到工具、中间件和 Sub-Agent 上，运行时由模型动态选择。
+
+### ReAct 循环
+
+LangGraph 负责把「思考 → 调工具 → 观察 → 再思考」做成可持久化的循环。每个节点执行后可以通过 Checkpointer 保存状态，支持恢复和追踪。
+
+| 节点 | 作用 |
+|------|------|
+| Agent Node | LLM 基于 messages 和 system prompt 生成回复或 tool_calls |
+| Conditional Edge | 检查是否存在工具调用，有则进入工具节点 |
+| Tool Node | 执行工具，把结果写回 ToolMessage，再回到 Agent Node |
+
+### Lead Agent 工厂做五件事
+
+- 解析模型：请求参数优先，其次自定义 Agent，最后回退到全局默认模型
+- 创建 LLM：支持 thinking、reasoning_effort、vision 等能力开关
+- 组装工具：配置工具、内置工具、MCP 工具、Sub-Agent 工具、视觉工具
+- 挂载中间件：把横切逻辑从主循环拆出来
+- 渲染提示词：注入角色、记忆、技能、澄清规则和 Sub-Agent 指令
+
+```text
+make_lead_agent(config)
+  ├─ resolve model_name / thinking / plan mode / subagent options
+  ├─ create_chat_model(...)
+  ├─ get_available_tools(...)
+  ├─ _build_middlewares(...)
+  ├─ apply_prompt_template(...)
+  └─ create_agent(..., state_schema=ThreadState)
+```
+
+### 状态管理
+
+| 概念 | 说明 |
+|------|------|
+| ThreadState | 在 messages 外增加 sandbox、thread_data、title、artifacts、todos、uploaded_files、viewed_images |
+| Reducer | artifacts 去重保序，viewed_images 支持空字典清空，避免状态互相覆盖 |
+| Checkpointer | 开发可用 memory，单机可用 SQLite，生产多实例推荐 PostgreSQL |
+
+---
+
+## 04 · 中间件：11 层 Pipeline 是 DeerFlow 的神经系统
+
+如果所有逻辑都塞进 Agent 主循环，系统会很快变得难维护。
+
+DeerFlow 用中间件处理上传、目录、沙箱、摘要、标题、记忆、视觉、限流和澄清，让每层只做一件事。
+
+| 顺序 | 中间件 | 通俗解释 | 为什么在这里 |
+|------|--------|----------|--------------|
+| 01 | ThreadData | 为每个 thread 推导 workspace、uploads、outputs 目录 | 后续上传和沙箱都依赖线程路径 |
+| 02 | Uploads | 把用户上传文件整理成模型能读懂的上下文 | 要在模型思考前告知有哪些文件可用 |
+| 03 | Sandbox | 分配或复用执行环境 | 依赖 thread_id 和目录信息 |
+| 04 | DanglingToolCall | 修复被中断后残留的悬空工具调用 | 必须在模型调用前保证消息合法 |
+| 05 | Summarization | 长对话超过阈值后压缩上下文 | 可选，防止 token 超限 |
+| 06 | Todo | Plan Mode 下维护任务清单并在摘要后补回 | 确保模型不会因为摘要忘记计划 |
+| 07 | Title | 首轮完整对话后自动生成标题 | 不影响主流程，后置轻量处理 |
+| 08 | Memory | 过滤对话并提交到长期记忆更新队列 | 必须等 Agent 完成后抽取最终信息 |
+| 09 | ViewImage | 视觉模型查看图片后注入 base64 信息 | 只在模型支持视觉时启用 |
+| 10 | SubagentLimit | 限制并行子 Agent 数量 | 只在 Sub-Agent 模式启用 |
+| 11 | Clarification | 识别澄清请求并结束本轮执行 | 必须最后，避免被其他层误处理 |
+
+新增中间件的判断标准：
+
+> 它是否属于「每轮对话都可能发生，但不应该污染核心 Agent 循环」的横切逻辑。如果是，就适合放进 pipeline。
+
+---
+
+## 05 · Sub-Agent 系统：Lead Agent 拆题，Sub-Agent 并行做题
+
+原文里 Sub-Agent 的设计很克制：
+
+- 只能单层委派，不能递归
+- 默认最多 3 个并发
+- 共享同一个沙箱
+- 每个 Sub-Agent 的对话上下文完全隔离
+
+这让并行执行可控，也让调试更简单。
+
+### 角色分工
+
+| 角色 | 说明 | 限制 |
+|------|------|------|
+| Lead Agent | 与用户对话，判断是否需要拆解任务，通过 `task` 工具创建子任务，并最终综合结果 | 可澄清、可展示文件、可创建子任务 |
+| general-purpose | 继承大多数父工具，适合调研和分析 | 禁用 `task`、`ask_clarification`、`present_files`，`max_turns` 50 |
+| bash | 适合构建、测试、文件操作等命令任务 | 只允许 bash、ls、read_file、write_file、str_replace，`max_turns` 30 |
+
+### 为什么上下文隔离？
+
+Sub-Agent 只收到 Lead Agent 写的一条自包含 prompt，不看父对话历史，也不看其他子任务的中间结果。
+
+这样可以减少干扰、节省上下文窗口，并让同一个子任务更容易重放和调试。
+
+代价是 Lead Agent 必须把背景、约束、输出格式写清楚。它不能说「继续刚才那个搜索」，必须写成完整任务说明。
+
+### 资源保护
+
+- 线程池层面限制调度与执行 worker 数量
+- Middleware 层面再次阻止超过并发上限的请求
+- 默认超时 900 秒，不同子 Agent 可用 config 覆盖
+- `trace_id` 串联一轮请求下所有子任务日志
+
+---
+
+## 06 · Memory：长期记忆让 Agent 不必每次从零认识用户
+
+DeerFlow 的记忆不是简单拼接聊天记录，而是后台异步抽取、合并并写入结构化 `memory.json`。
+
+它分为用户画像、时间线和事实库三层，并用置信度阈值过滤噪声。
+
+| 层级 | 内容 | 回答的问题 |
+|------|------|------------|
+| Layer 1：用户画像 | `workContext`、`personalContext`、`topOfMind` | 用户是谁、现在在关心什么 |
+| Layer 2：时间线 | `recentMonths`、`earlierContext`、`longTermBackground` | 用户过去做过什么 |
+| Layer 3：事实库 | preference、knowledge、context、behavior、goal 五类结构化事实 | 哪些偏好、知识、目标需要长期保留 |
+
+### 典型配置
+
+```yaml
+memory:
+  enabled: true
+  debounce_seconds: 30
+  max_facts: 100
+  fact_confidence_threshold: 0.7
+  injection_enabled: true
+  max_injection_tokens: 2000
+```
+
+### 更新流水线
+
+**MemoryMiddleware** 在对话结束后过滤掉工具消息、上传路径等临时信息，只保留用户输入和最终回复。
+
+**Memory Queue** 使用防抖机制避免每轮都写盘，连续对话会合并处理。
+
+**MemoryUpdater** 用 LLM 抽取新事实，达到 0.7 置信度才入库，最终通过临时文件替换实现原子写入。
+
+---
+
+## 07 · Sandbox：Agent 的虚拟计算机，也是安全边界
+
+DeerFlow 让 Agent 统一使用 `/mnt/user-data` 虚拟路径。
+
+无论底层是本地执行、Docker 容器，还是 K8s Pod，工具层看到的路径和接口都一致。
+
+| 虚拟路径 | 用途 | 权限 |
+|----------|------|------|
+| `/mnt/user-data/uploads` | 用户上传文件，Office 文档可转 Markdown | 只读 |
+| `/mnt/user-data/workspace` | Agent 工作区，适合临时分析、代码生成、数据处理 | 读写 |
+| `/mnt/user-data/outputs` | 最终交付物目录，报告、网页、图表应放这里 | 读写 |
+
+### 五个标准工具
+
+- `bash`
+- `ls`
+- `read_file`
+- `write_file`
+- `str_replace`
+
+每个工具都先获取 sandbox、确保目录存在，再在 Local 模式下进行虚拟路径到物理路径的转换。Agent 无需知道自己运行在哪种环境里。
+
+### 三种沙箱实现
+
+| Provider | 用途 | 特点 |
+|----------|------|------|
+| Local | 开发调试 | 直接在宿主机执行，启动快，但隔离弱，适合本地开发 |
+| aio-sandbox | 容器隔离 | 通过 HTTP API 操作 Docker 容器，支持热池复用，是推荐默认方案 |
+| K8s | 生产扩展 | 通过 Provisioner 动态创建 Pod，适合大规模、多租户和资源隔离场景 |
+
+---
+
+## 08 · Skills & MCP：能力说明书与工具扩展口
+
+Skills 和 MCP 解决的是两个不同问题：
+
+- Skill 告诉 Agent「怎么做一类复杂任务」
+- MCP 给 Agent 接入「能调用哪些外部工具」
+
+DeerFlow 把二者组合起来，让能力可沉淀、可热插拔。
+
+### Skill 的三层渐进式加载
+
+| 层级 | 内容 | 作用 |
+|------|------|------|
+| 第一层 | `name + description` | 常驻系统提示词，帮助模型判断何时需要加载技能 |
+| 第二层 | `SKILL.md` 正文 | 只有匹配任务时才读取，提供完整操作流程 |
+| 第三层 | `scripts / templates / references` | 执行过程中按需读取，避免上下文膨胀 |
+
+### Skill 目录示例
+
+```text
+skills/
+  public/
+    deep-research/
+      SKILL.md
+    data-analysis/
+      SKILL.md
+      scripts/
+  custom/
+    competitor-analysis/
+      SKILL.md
+      references/
+```
+
+一个 Skill 本质上是一个目录和一份 `SKILL.md`，frontmatter 里必须有 `name` 与 `description`。
+
+### 扩展方式对比
+
+| 扩展方式 | 适合解决 | 配置位置 | 典型例子 |
+|----------|----------|----------|----------|
+| 内置工具 | Agent 基础动作 | `backend/src/tools` | task、ask_clarification、present_files、view_image |
+| 社区工具 | 搜索、抓取、图片检索等通用能力 | `config.yaml` | Tavily、Jina、图片搜索 |
+| MCP Server | 接入外部服务和本地能力 | `extensions_config.json` | GitHub、Playwright、数据库、企业系统 |
+| Skill | 沉淀团队工作流和复杂任务方法论 | `skills/public` 或 `skills/custom` | 深度研究、竞品分析、PPT 生成、网页设计 |
+
+---
+
+## 09 · Gateway & Channels：管控面与执行面分离
+
+Gateway 是管控面，LangGraph Server 是执行面。
+
+原文把 HTTP 服务拆成两部分：
+
+- FastAPI Gateway 处理配置、上传、技能、记忆、自定义 Agent 和 IM 渠道
+- LangGraph Server 负责真正运行 Agent
+
+这样管理接口和长任务执行不会互相绑死。
+
+### Gateway 九大模块
+
+| 模块 | 说明 |
+|------|------|
+| models | 管理模型配置 |
+| mcp | 管理 MCP Server |
+| memory | 读写长期记忆 |
+| skills | 管理 Skill 启停与内容 |
+| artifacts | 查询 thread 产物 |
+| uploads | 上传文件与文件转 Markdown |
+| agents | 自定义 Agent 管理 |
+| suggestions | 线程建议问题 |
+| channels | IM 渠道生命周期 |
+
+```text
+FastAPI Gateway
+  ├─ /api/models
+  ├─ /api/mcp
+  ├─ /api/memory
+  ├─ /api/skills
+  ├─ /api/threads/{id}/artifacts
+  ├─ /api/threads/{id}/uploads
+  ├─ /api/agents
+  ├─ /api/threads/{id}/suggestions
+  └─ /api/channels
+```
+
+### 三个关键能力
+
+| 能力 | 说明 |
+|------|------|
+| Router | models、mcp、memory、skills、artifacts、uploads、agents、suggestions、channels |
+| Uploads | PDF、PPT、Excel、Word 等上传后可用 markitdown 转换，方便 Agent 读取 |
+| Channels | Telegram、Slack、飞书通过 MessageBus 与 ChannelService 管理生命周期 |
+
+---
+
+## 10 · 落地实施路径：从理解架构到真正落地
+
+如果要把 DeerFlow 部署成团队内部的 Agent 平台，不建议一上来就改核心引擎。
+
+更稳妥的路线是先跑通默认能力，再配置模型和沙箱，然后通过 Skills 与 MCP 扩展业务工作流。
+
+### 五步推进
+
+| 步骤 | 目标 |
+|------|------|
+| 准备配置 | 复制示例配置，填好模型、密钥、工具组和沙箱 provider |
+| 跑通最小闭环 | 通过 Docker 或本地开发启动前端、Gateway、LangGraph |
+| 验证 Agent 能力 | 测试上传文件、执行 bash、生成报告、产出 artifacts |
+| 扩展业务能力 | 为真实工作流编写 Skill，必要时接入 MCP Server |
+| 生产化治理 | 配置 Postgres、LangSmith、Nginx、沙箱并发、日志监控 |
+
+### 最小配置关注点
+
+- `models` 至少配置一个可用聊天模型，推荐长上下文、强 tool-use、支持 reasoning
+- `api_key` 使用 `$OPENAI_API_KEY` 这类环境变量引用，不写死在 YAML
+- `sandbox.use` 开发可用 Local，团队环境建议 aio-sandbox，生产再考虑 K8s
+- `summarization` 为长对话开启摘要，并保留最近若干消息
+- `subagents` 配置超时，避免子任务挂死
+
+### 配置示例
+
+```yaml
+models:
+  - name: claude
+    use: langchain_anthropic:ChatAnthropic
+    model: claude-3-5-sonnet-latest
+    api_key: $ANTHROPIC_API_KEY
+    supports_thinking: true
+    supports_vision: true
+
+sandbox:
+  use: src.community.aio_sandbox:AioSandboxProvider
+  replicas: 3
+  idle_timeout: 600
+
+checkpointer:
+  type: sqlite
+  connection_string: checkpoints.db
+```
+
+---
+
+## 11 · 部署生产化：重点不是能跑，而是可治理地跑
+
+DeerFlow 的 Docker Compose 方案通常包含 Nginx、Frontend、Gateway、LangGraph 和可选 Provisioner。
+
+生产环境要特别关注：
+
+- SSE 代理
+- 密钥管理
+- 沙箱并发
+- 状态持久化
+- 日志和追踪
+
+### 生产关注点
+
+| 模块 | 关注点 | 说明 |
+|------|--------|------|
+| Nginx | SSE 代理 | 关闭 proxy buffering，设置较长 read timeout，否则流式输出容易被缓冲或断开 |
+| Secrets | 密钥安全 | API Key 放 `.env`、K8s Secrets 或云密钥管理，不进仓库 |
+| Tracing | 可观测性 | 通过 LangSmith/OpenTelemetry 追踪模型输入输出、延迟和 token 成本 |
+| State | 状态恢复 | 生产多实例推荐 PostgreSQL Checkpointer，保证线程状态可共享 |
+
+### Docker Compose 服务构成
+
+```text
+services:
+  nginx:      # unified entry, port 2026
+  frontend:   # Next.js UI, port 3000
+  gateway:    # FastAPI API, port 8001
+  langgraph:  # Agent runtime, port 2024
+  provisioner:# optional sandbox orchestration, port 8002
+```
+
+性能调优三件套：
+
+- 控制沙箱 replicas
+- 给长对话配置 summarization
+- 给 Sub-Agent 设置合理 timeout
+
+否则 Agent 平台越「聪明」，越容易把资源吃满。
+
+---
+
+## 12 · 交付清单：团队落地 DeerFlow 的验收项
+
+给团队落地 DeerFlow 时，可以用这份清单验收。
+
+### 架构与功能
+
+- 前端、Gateway、LangGraph、Nginx 的职责边界已明确
+- 至少一个模型可用，Thinking/Vision 能力与配置相符
+- 上传文件能被 Agent 读取，Office 文档转换链路可用
+- Sandbox 工具能执行命令、读写文件，并把最终产物放入 outputs
+- Sub-Agent 并发、超时和 `trace_id` 日志均可验证
+- Skills 能启停，自定义 Skill 能被 Agent 按需加载
+
+### 生产与治理
+
+- 密钥不进入 YAML 和 Git，全部通过环境变量或 Secret 注入
+- Nginx 对 SSE、上传大小、CORS、HTTPS 做了正确配置
+- Checkpointer 从 memory 切到 SQLite 或 PostgreSQL
+- 开启日志、健康检查、LangSmith 或 OpenTelemetry 追踪
+- 为沙箱设定并发上限、空闲回收和容器隔离策略
+- 建立 Skill 审核流程，防止业务操作手册引入危险命令
+
+---
+
+## 总结
+
+DeerFlow 最值得学习的地方，不是某个单点功能，而是它把 Agent 做成了「可运行、可扩展、可治理」的系统。
+
+从这份文档继续往下做，最自然的下一步是为真实业务场景写一个自定义 Skill，再接一个 MCP Server，把平台能力从演示推进到生产。
+
+如果把它放到 AI Agent 基础设施谱系里看，DeerFlow 的核心价值是：
+
+- 它给出了 Agent 运行时的完整分层
+- 它把中间件、沙箱、记忆、Skills、MCP 纳入同一套执行模型
+- 它把单轮对话升级为 long-horizon task 的可治理执行系统
+- 它提供了从本地开发到团队内部平台化的实施路径
+
+这正是项目学习栏目最值得沉淀的地方。

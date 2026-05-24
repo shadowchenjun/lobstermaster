@@ -1,0 +1,207 @@
+---
+title: "Claude Code Haha：本地可运行的 Claude Code 替代方案分析"
+date: "2026-05-24"
+category: "others-stones"
+coverEmoji: "🧠"
+tags: ["Claude Code", "开源项目", "AI编程", "多Agent", "本地化"]
+summary: "基于 Claude Code 泄露源码修复的本地可运行版本，支持接入 Anthropic 兼容 API，并扩展了记忆系统、多 Agent、Skills、IM 接入和桌面端。值得研究，但法律合规风险必须放在第一位。"
+source: "https://github.com/NanmiCoder/cc-haha"
+github: "https://github.com/NanmiCoder/cc-haha"
+---
+
+> 项目文档：[Claude Code Haha 官方文档](https://claudecode-haha.relakkesyang.org/)
+>
+> GitHub：[NanmiCoder/cc-haha](https://github.com/NanmiCoder/cc-haha)
+>
+> 分析时间：2026-05-24
+
+---
+
+## 一句话定位
+
+**Claude Code Haha** 是一个本地可运行的 Claude Code 替代方案。它基于 Claude Code 相关源码进行修复和增强，目标是让开发者在没有 Anthropic 官方 API、或受区域限制的情况下，也能获得类似 Claude Code 的命令行 AI 编程体验。
+
+它不只是一个「能跑起来的 CLI」，而是进一步做了增强：支持第三方 Anthropic 兼容 API、记忆系统、多 Agent、Skills、IM 接入、Computer Use，以及基于 Tauri 的桌面端。
+
+这类项目的价值很清楚：它把顶级 AI 编程助手的交互形态带到了更开放、更可定制的环境里。但它的风险也同样清楚：**源码来源涉及泄露代码，法律合规和商业使用边界必须谨慎看待。**
+
+---
+
+## 项目背景
+
+### 起源
+
+Claude Code Haha 由 **NanmiCoder** 开发，项目定位是对 Claude Code CLI 的本地可运行修复与增强版本。它采用 MIT 开源协议，并提供中英双语文档。
+
+### 解决的问题
+
+官方 Claude Code 对很多开发者来说有几类门槛：
+
+- 需要 Anthropic API Key
+- 存在区域访问限制
+- 不方便接入第三方模型
+- 源码不可控，难以深度定制
+
+Claude Code Haha 针对这些痛点提供了替代路径：本地运行、API 适配、功能增强、开放扩展。
+
+### 适合的研究视角
+
+它最值得看的不是「能不能替代官方」，而是：
+
+- 一个 AI Coding CLI 应该有哪些基础抽象
+- 记忆系统、多 Agent、Skills 如何嵌入开发流
+- IM、桌面端、Computer Use 如何变成同一个 Agent 运行时的不同入口
+- Anthropic Compatible API 适配层如何降低模型切换成本
+
+---
+
+## 核心能力
+
+| 能力 | 说明 |
+|------|------|
+| 完整 TUI 交互 | 使用 Ink 终端界面，提供接近官方 Claude Code 的命令行体验，也支持 `--print` 无头模式 |
+| 记忆系统 | 支持跨会话持久化记忆、自动提取、智能检索，并设计了 AutoDream 整合机制 |
+| 多 Agent 系统 | 支持多代理编排、并行任务执行、Teams 协作和 Worktree 隔离 |
+| Skills 系统 | 提供可扩展插件式能力架构，用于自定义工作流和条件激活 |
+| 第三方模型支持 | 可接入 OpenAI、DeepSeek、Ollama、MiniMax、OpenRouter 等 Anthropic 兼容 API |
+| IM 接入 | 支持微信、钉钉、Telegram、飞书等，通过独立 adapter 进程实现远程对话 |
+| Computer Use | 通过 Python Bridge 实现截屏、鼠标、键盘等桌面控制能力 |
+| 桌面端 | 基于 Tauri 2 + React，支持多标签、多会话，面向 macOS 和 Windows |
+
+---
+
+## 技术架构拆解
+
+可以把 Claude Code Haha 理解成五层：
+
+```text
+桌面端：Tauri 2 + React
+        ↓
+TUI 终端界面：Ink + React
+        ↓
+核心能力层：Skills / Memory / Agent / Channel / Computer Use
+        ↓
+API 适配层：Anthropic Compatible
+        ↓
+模型后端：OpenAI / DeepSeek / Ollama / MiniMax / Anthropic / OpenRouter
+```
+
+几个技术选择也值得关注：
+
+| 模块 | 技术 |
+|------|------|
+| 运行时 | Bun + TypeScript |
+| 终端 UI | Ink + React |
+| 桌面端 | Tauri 2 + React |
+| 文档 | VitePress，中英双语 |
+| 协议 | MIT License |
+
+这个架构的重点，是把「用户入口」和「Agent 能力」拆开：终端、桌面端、IM 都只是入口；真正复用的是下面的记忆、技能、Agent 编排、API 适配和工具调用层。
+
+---
+
+## 典型应用场景
+
+### 个人开发者
+
+把它当成本地 AI 编程助手使用，绕开官方 API 可用性问题，同时可以自由选择后端模型。
+
+### 企业定制
+
+通过私有化部署、自定义 Skills、自定义模型网关，适配企业内部开发规范。
+
+### IM 机器人
+
+接入企业微信群、钉钉、飞书，把 Agent 能力放进团队协作入口。
+
+### 源码架构研究
+
+研究 Claude Code 这类 AI Coding 工具的交互设计、上下文管理、工具调用和 Agent 抽象。
+
+### 多模型对比
+
+在同一套工具链里切换不同模型后端，比较 Claude、GPT、DeepSeek、Ollama 等模型在真实编码任务里的差异。
+
+---
+
+## 优势
+
+### 1. 解决可访问性问题
+
+对无法稳定使用 Anthropic 官方 API 的开发者来说，本地可运行和第三方 API 适配是刚需。
+
+### 2. 开源可控
+
+项目开放之后，社区可以围绕 Skills、Agent、IM adapter、模型适配继续扩展。
+
+### 3. 技术栈现代
+
+Bun、Ink、Tauri 2、React、VitePress 的组合比较新，也适合快速迭代跨端工具。
+
+### 4. 功能不止复刻
+
+记忆系统、多 Agent、IM 接入、Computer Use、桌面端这些能力已经不是单纯复刻 Claude Code，而是向「本地 AI Agent 工作台」演进。
+
+---
+
+## 风险与挑战
+
+### 1. 法律与版权风险
+
+这是最大风险。项目基于泄露源码修复和增强，可能存在版权、许可和合规争议。对个人学习研究可以观察，但商业使用一定要谨慎。
+
+### 2. 官方竞争风险
+
+如果 Anthropic 开放更多官方能力，或官方 Claude Code 在可用性、扩展性、价格上变得更友好，这类替代项目的价值会被压缩。
+
+### 3. 维护成本高
+
+Claude Code 本身迭代很快。要长期保持兼容，就需要持续跟进官方特性、协议变化和模型能力变化。
+
+### 4. 模型兼容差异
+
+「Anthropic 兼容 API」只能解决接口层问题，不能保证模型能力一致。不同模型在工具调用、长上下文、代码理解、多轮规划上的差异，仍然会直接影响体验。
+
+---
+
+## 发展趋势判断
+
+### 短期
+
+它会填补一部分国内开发者对 Claude Code 类工具的需求空白，尤其适合学习、研究和个人实验。
+
+### 中期
+
+如果官方版本更开放，它可能转向差异化竞争：记忆系统、多 Agent、IM 接入、桌面端、本地模型和企业私有化。
+
+### 长期
+
+真正能留下来的，不一定是「Claude Code 替代品」这个身份，而是它沉淀出来的一套本地 Agent 工作台能力。
+
+---
+
+## 我看它的价值
+
+Claude Code Haha 最有意思的地方，是把一个 AI 编程工具拆成了多个可复用层：
+
+- 前端入口：TUI、桌面端、IM
+- Agent 能力：Memory、Skills、多 Agent、Computer Use
+- 模型适配：Anthropic Compatible API
+- 执行环境：本地、Worktree、第三方模型
+
+这说明 AI Coding 工具正在从「一个聊天窗口」变成「一个可编排的开发运行时」。未来真正有壁垒的，不只是模型，而是围绕模型的工作流、上下文、工具权限、记忆和团队协作入口。
+
+---
+
+## 总结
+
+Claude Code Haha 是一个技术上值得研究的开源项目。它解决了实际痛点，也展示了社区对 AI Coding 工具本地化、开放化、可扩展化的强需求。
+
+但结论要分开看：
+
+- **学习研究：值得看**
+- **个人实验：可以试**
+- **企业生产：要谨慎**
+- **商业分发：风险很高**
+
+它山之石，可以攻玉。这个项目值得我们看的，不只是「能不能用」，而是它背后那套 AI Agent 工具链的拆解方式。
