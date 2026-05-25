@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: '解决方案',
-  description: '龙大师团队 AI 落地实践：农业赋能平台、云认养系统、极简 TodoList、私有化 Agent 平台建设方案。',
+  description: '龙大师团队 AI 落地实践：私有化 Agent 平台建设方案、农业赋能平台、云认养系统。',
 }
 
 /* ── Types ── */
@@ -47,6 +47,60 @@ const pillColors: Record<TechPill['type'], string> = {
 }
 
 const projects: Project[] = [
+  {
+    id: 'agent-platform',
+    emoji: '🤖',
+    tag: '企业级 AI',
+    tagColor: 'text-pink-700 bg-pink-100',
+    name: '私有化 Agent 平台建设方案',
+    subtitle: 'Private AI Agent Platform Architecture',
+    summary:
+      '一套覆盖开源大模型私有化部署、RAG 知识库、Agent 管理编排、可观测与审计治理的企业级架构建议。从 MVP 到企业级平台的完整演进路线。',
+    github: 'https://github.com/shadowchenjun/lobstermaster',
+    internal: '/solutions/agent-platform',
+    techStack: [
+      { label: 'Dify', type: 'ai' },
+      { label: 'vLLM', type: 'ai' },
+      { label: 'RAGFlow', type: 'ai' },
+      { label: 'LangGraph', type: 'ai' },
+      { label: 'Xinference', type: 'ai' },
+      { label: 'LiteLLM', type: 'ai' },
+      { label: 'Langfuse', type: 'ai' },
+      { label: 'Keycloak', type: 'infra' },
+      { label: 'Qdrant', type: 'db' },
+      { label: 'PostgreSQL', type: 'db' },
+    ],
+    features: [
+      {
+        icon: '🏗️',
+        title: '分层架构设计',
+        desc: '平台入口 + 能力引擎 + 模型网关 + 治理层，清晰边界，渐进落地。',
+      },
+      {
+        icon: '📚',
+        title: 'RAG 知识库引擎',
+        desc: 'RAGFlow 承载复杂文档解析、切分、检索、重排和引用溯源。',
+      },
+      {
+        icon: '📊',
+        title: '可观测与审计',
+        desc: 'Langfuse Trace、Prometheus 指标、OpenSearch 审计，合规可追溯。',
+      },
+      {
+        icon: '🛡️',
+        title: '安全权限体系',
+        desc: 'Keycloak SSO、RBAC、知识库 ACL、工具审批，四类权限分离治理。',
+      },
+    ],
+    highlights: [
+      '三角色分工：vLLM 生产主力 + Xinference 模型中心 + Ollama 研发试验',
+      'Dify 平台入口 + LangGraph 复杂编排，低代码与代码级 Runtime 组合',
+      '三阶段落地路线：MVP → 治理补齐 → 平台增强，12 周完整演进',
+    ],
+    accentFrom: 'from-pink-50',
+    accentTo: 'to-rose-50',
+    borderColor: 'border-pink-100',
+  },
   {
     id: 'funeng',
     emoji: '🌾',
@@ -153,108 +207,6 @@ const projects: Project[] = [
     accentFrom: 'from-amber-50',
     accentTo: 'to-yellow-50',
     borderColor: 'border-amber-100',
-  },
-  {
-    id: 'todo',
-    emoji: '✅',
-    tag: '效率工具',
-    tagColor: 'text-indigo-700 bg-indigo-100',
-    name: '极简 TodoList',
-    subtitle: 'todo.lobstermaster.me · Focus on What Matters',
-    summary:
-      '去掉一切干扰，只留下任务本身。龙大师团队自用的极简待办清单，专注于让你快速记录、快速完成、快速清空大脑。没有多余的功能，因为最好的工具就是不打扰你工作的工具。',
-    github: 'https://github.com/shadowchenjun/lobstermaster',
-    demo: 'https://todo.lobstermaster.me',
-    techStack: [
-      { label: 'Next.js', type: 'frontend' },
-      { label: 'TypeScript', type: 'frontend' },
-      { label: 'Tailwind CSS', type: 'frontend' },
-      { label: 'Vercel', type: 'infra' },
-    ],
-    features: [
-      {
-        icon: '⚡',
-        title: '零摩擦录入',
-        desc: '打开即用，无需注册，键盘回车即完成任务添加，最小化操作路径。',
-      },
-      {
-        icon: '🎯',
-        title: '专注单一任务',
-        desc: '极简界面设计，让注意力始终在任务上，而不是在工具的功能上。',
-      },
-      {
-        icon: '📱',
-        title: '全平台响应式',
-        desc: '手机、平板、桌面完美适配，随时随地记录和管理你的待办事项。',
-      },
-      {
-        icon: '🦞',
-        title: '龙大师团队自用',
-        desc: '真实使用场景打磨，不是为了做产品而做，是因为自己需要而做。',
-      },
-    ],
-    highlights: [
-      '极简主义设计哲学：功能不是越多越好，而是刚好够用',
-      '龙大师团队日常使用，持续根据真实需求迭代',
-      '开源代码，可 Fork 自部署，完全掌控数据',
-    ],
-    accentFrom: 'from-indigo-50',
-    accentTo: 'to-purple-50',
-    borderColor: 'border-indigo-100',
-  },
-  {
-    id: 'agent-platform',
-    emoji: '🤖',
-    tag: '企业级 AI',
-    tagColor: 'text-pink-700 bg-pink-100',
-    name: '私有化 Agent 平台建设方案',
-    subtitle: 'Private AI Agent Platform Architecture',
-    summary:
-      '一套覆盖开源大模型私有化部署、RAG 知识库、Agent 管理编排、可观测与审计治理的企业级架构建议。从 MVP 到企业级平台的完整演进路线。',
-    github: 'https://github.com/shadowchenjun/lobstermaster',
-    internal: '/solutions/agent-platform',
-    techStack: [
-      { label: 'Dify', type: 'ai' },
-      { label: 'vLLM', type: 'ai' },
-      { label: 'RAGFlow', type: 'ai' },
-      { label: 'LangGraph', type: 'ai' },
-      { label: 'Xinference', type: 'ai' },
-      { label: 'LiteLLM', type: 'ai' },
-      { label: 'Langfuse', type: 'ai' },
-      { label: 'Keycloak', type: 'infra' },
-      { label: 'Qdrant', type: 'db' },
-      { label: 'PostgreSQL', type: 'db' },
-    ],
-    features: [
-      {
-        icon: '🏗️',
-        title: '分层架构设计',
-        desc: '平台入口 + 能力引擎 + 模型网关 + 治理层，清晰边界，渐进落地。',
-      },
-      {
-        icon: '📚',
-        title: 'RAG 知识库引擎',
-        desc: 'RAGFlow 承载复杂文档解析、切分、检索、重排和引用溯源。',
-      },
-      {
-        icon: '📊',
-        title: '可观测与审计',
-        desc: 'Langfuse Trace、Prometheus 指标、OpenSearch 审计，合规可追溯。',
-      },
-      {
-        icon: '🛡️',
-        title: '安全权限体系',
-        desc: 'Keycloak SSO、RBAC、知识库 ACL、工具审批，四类权限分离治理。',
-      },
-    ],
-    highlights: [
-      '三角色分工：vLLM 生产主力 + Xinference 模型中心 + Ollama 研发试验',
-      'Dify 平台入口 + LangGraph 复杂编排，低代码与代码级 Runtime 组合',
-      '三阶段落地路线：MVP → 治理补齐 → 平台增强，12 周完整演进',
-    ],
-    accentFrom: 'from-pink-50',
-    accentTo: 'to-rose-50',
-    borderColor: 'border-pink-100',
   },
 ]
 
@@ -376,7 +328,7 @@ export default function SolutionsPage() {
         <h1 className="text-3xl font-extrabold text-navy mb-3">解决方案</h1>
         <p className="text-gray-500 max-w-xl leading-relaxed">
           龙大师团队用 AI 辅助开发的真实项目落地案例。
-          <br />从农业数字化到效率工具，每个项目都是一次从 0 到 1 的完整实践。
+          <br />从企业级 Agent 平台到农业数字化，每个方案都是一次从 0 到 1 的完整实践。
         </p>
         {/* jump links */}
         <div className="mt-6 flex flex-wrap gap-3">
@@ -404,7 +356,7 @@ export default function SolutionsPage() {
         <div className="text-4xl mb-3">🦞</div>
         <h2 className="text-2xl font-extrabold mb-3">有项目想用 AI 落地？</h2>
         <p className="text-blue-200 text-sm mb-8 max-w-lg mx-auto leading-relaxed">
-          无论是农业数字化、内部效率工具还是 AI Agent 系统，龙大师团队提供从需求分析、架构设计到交付部署的全程支持。
+          无论是企业级 AI Agent 系统、农业数字化还是业务系统改造，龙大师团队提供从需求分析、架构设计到交付部署的全程支持。
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
