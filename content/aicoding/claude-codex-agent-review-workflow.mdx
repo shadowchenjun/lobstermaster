@@ -1,0 +1,441 @@
+---
+title: "Claude 开发与 Codex 审核：一套跨 Agent 的研发质量闭环"
+date: "2026-05-26"
+category: "aicoding"
+coverEmoji: "🔁"
+tags: ["Claude", "Codex", "AIcoding", "Code Review", "自动化", "工程质量"]
+summary: "把 Claude 作为开发执行方，把 Codex 作为独立审核方，用 Spec、PR、CI、本地 automation 和升级规则，搭出一套可执行、可追踪、可评分的跨 Agent 研发闭环。"
+---
+
+## 背景
+
+这篇文章记录的是我在实际项目里设计的一套跨 Agent 协作流程：**Claude 负责开发执行，Codex 负责独立审核**。
+
+目标不是让两个 AI 工具互相聊天，而是把它们组织成一个可复核的工程系统：
+
+- 谁负责写 spec？
+- 谁负责开发？
+- 谁判断完成？
+- 谁跑质量门禁？
+- 什么时候自动返工？
+- 什么时候才需要叫人来决策？
+- 如何客观评价 Claude 的交付质量？
+
+这套流程适合中大型重构、私有化部署、复杂工程迁移、多人/多 Agent 协作开发等场景。
+
+## 核心分工
+
+| 角色 | 职责 |
+|---|---|
+| Claude | 开发执行方：写方案、写代码、更新文档、自测、按审核意见返工 |
+| Codex | 独立审核方：审核 spec、检查 diff、运行门禁、评分、决定是否放行 |
+| GitHub / CI | 自动门禁层：编译、测试、扫描、文档一致性检查 |
+| 用户 | 只处理升级决策：需求变更、高风险豁免、业务冲突、长期低质量交付 |
+
+关键原则：
+
+> Claude 不自证完成，Codex 不默认相信 Claude 的总结。  
+> Claude 可以交付，Codex 才能放行。
+
+## 1. 协作原则
+
+### Claude 的职责
+
+- 根据任务目标编写方案、实现代码、更新文档。
+- 每轮交付前必须完成自测。
+- 必须写清楚变更范围、测试结果、剩余风险。
+- 不得自行宣布最终完成，必须等待 Codex 审核结论。
+
+### Codex 的职责
+
+- 独立读取方案、diff、测试结果和文档。
+- 不只依赖 Claude 的总结。
+- 执行自动门禁、人工审核、风险分级、评分和放行判断。
+- 默认不接管 Claude 的开发，只输出审核问题和返工建议。
+
+### 最重要的一条
+
+Claude 是开发执行方，Codex 是质量审核方。
+
+完成状态只能由 Codex 确认；升级给用户只发生在自动流程无法安全决策时。
+
+## 2. 需求 Spec 双方同步机制
+
+前期 spec 阶段是整个闭环里最重要的同步点。
+
+Claude 和 Codex 都必须参与，但职责不同：
+
+- Claude 负责形成可执行方案。
+- Codex 负责验证方案是否完整、可验收、风险可控。
+
+### Spec 阶段 Claude 产物
+
+| 文件 | 用途 |
+|---|---|
+| `spec.md` | 业务目标、非目标、用户价值、约束 |
+| `impact-map.md` | 模块、配置、数据、外部依赖影响面 |
+| `acceptance-criteria.md` | 可执行验收标准 |
+| `implementation-plan.md` | 阶段拆分、文件范围、测试计划 |
+| `open-questions.md` | 尚未确认的问题和建议默认假设 |
+
+### Spec 阶段 Codex 审核
+
+Codex 要检查：
+
+- 目标和非目标是否清晰。
+- 是否混入无关需求。
+- API、配置、数据隔离、部署、回滚和测试是否都有验收口径。
+- 模糊项哪些可以默认假设，哪些必须升级用户确认。
+
+Codex 输出：
+
+```text
+docs/refactoring/spec/current/spec-review.md
+```
+
+结论只能是：
+
+- 通过
+- 不通过
+- 需要用户决策
+
+### Spec 同步状态机
+
+| 状态 | 责任方 | 说明 |
+|---|---|---|
+| `SPEC_DRAFT` | Claude | 写初版 spec，列出目标、非目标、验收标准和开放问题 |
+| `SPEC_REVIEW` | Codex | 审核 spec，标出缺口、风险和必须升级用户的问题 |
+| `SPEC_SYNC` | Claude + Codex | Claude 根据 Codex 意见修订 spec；普通工程问题不找用户，业务决策项才升级 |
+| `SPEC_LOCKED` | Codex | Codex 确认 spec 可验收后锁定版本，后续开发必须以该版本为准 |
+
+Spec 一旦锁定，任何新增范围、验收标准变化、风险豁免都必须进入变更记录。
+
+Claude 不能在实现阶段静默改目标。Codex 审核时以锁定 spec 为准。
+
+## 3. 任务状态机
+
+每个任务按固定状态流转，避免靠聊天上下文判断进度。
+
+| 状态 | 责任方 | 说明 |
+|---|---|---|
+| `SPEC_LOCKED` | Codex | 需求 spec 已通过 Codex 审核，目标、非目标、验收标准和升级项已明确 |
+| `DRAFT_PLAN` | Claude | Claude 基于锁定 spec 编写实施计划、影响面和阶段拆分 |
+| `CODEX_PLAN_REVIEW` | Codex | Codex 审核方案是否可执行、是否遗漏风险、是否有验收标准 |
+| `CLAUDE_IMPLEMENTING` | Claude | Claude 根据通过的方案实现，不扩大范围 |
+| `CLAUDE_SELF_CHECK` | Claude | Claude 运行约定测试，生成交付文件和自测记录 |
+| `CODEX_REVIEW` | Codex | Codex 读取交付文件、查看 diff、运行门禁脚本、输出审核报告和评分 |
+| `CLAUDE_FIXING` | Claude | 若审核不通过，Claude 按 P0/P1/P2 问题逐项返工 |
+| `CODEX_RECHECK` | Codex | Codex 只复核返工范围和未关闭问题，决定通过、继续返工或升级 |
+| `DONE / ESCALATED` | Gate | 通过则归档评分；触发升级规则时整理决策项给用户 |
+
+这个状态机的核心价值是：**Claude 不能跳过审核，Codex 不能跳过证据。**
+
+## 4. 标准交付文件
+
+跨 Agent 协作以仓库文件作为交接载体，降低上下文丢失和口头描述偏差。
+
+### Spec 文件
+
+| 文件 | 责任方 | 用途 |
+|---|---|---|
+| `docs/refactoring/spec/current/spec.md` | Claude | 记录需求目标、非目标、约束、验收标准和开放问题 |
+| `docs/refactoring/spec/current/spec-review.md` | Codex | 记录 Codex 对 spec 的审核结论、风险缺口和是否允许进入开发 |
+| `docs/refactoring/spec/current/decision-log.md` | Shared | 记录需求变更、默认假设、用户决策和风险豁免 |
+
+### 交付与审核文件
+
+| 文件 | 责任方 | 用途 |
+|---|---|---|
+| `docs/refactoring/reviews/current/claude-handoff.md` | Claude | 描述任务目标、完成内容、涉及文件、测试结果、未完成事项、已知风险 |
+| `docs/refactoring/reviews/current/test-results.md` | Claude | 记录 Claude 自测命令、结果、失败项和未执行原因 |
+| `docs/refactoring/reviews/current/changed-files.md` | Claude | 列出本轮变更文件、变更目的和风险等级 |
+| `docs/refactoring/reviews/current/codex-review.md` | Codex | 记录审核结论、完成度、问题清单、评分和放行判断 |
+| `docs/refactoring/reviews/current/blockers.md` | Codex | 记录阻塞项、升级原因和需要用户决策的问题 |
+| `docs/refactoring/reviews/scorecard.md` | Codex | 长期记录每轮审核分数、通过率、返工轮数和趋势 |
+
+## 5. Claude 交付模板
+
+Claude 每次进入 Codex 审核前，必须在 handoff 文件中包含以下内容：
+
+```text
+任务目标：
+对应 Spec 版本：
+完成内容：
+涉及文件：
+测试结果：
+未完成事项：
+已知风险：
+需要 Codex 审核的问题：
+是否请求进入下一阶段：
+```
+
+如果测试未执行，必须写清楚原因。
+
+不能用“理论上可行”“应该没问题”替代自测记录。
+
+## 6. Codex 审核模板
+
+Codex 每次审核输出固定结构，便于 Claude 按项返工，也便于长期统计。
+
+```text
+审核结论：通过 / 有条件通过 / 不通过 / 升级
+
+完成度：
+- Spec 对齐：
+- 需求覆盖：
+- 编译：
+- 测试：
+- 文档一致性：
+- 风险处理：
+
+主要问题：
+- P0：
+- P1：
+- P2：
+
+质量评分：xx/100
+
+是否允许进入下一阶段：是/否
+
+返工建议：
+升级决策项：
+```
+
+## 7. 自动质量门禁
+
+建议在仓库中提供：
+
+```text
+scripts/quality/check_refactoring.sh
+```
+
+Claude 自测和 Codex 审核共同使用同一套脚本。
+
+| 门禁 | 自动检查方向 | 失败处理 |
+|---|---|---|
+| Spec 锁定门禁 | 检查 `spec.md`、`spec-review.md`、验收标准和开放问题是否已关闭或升级 | P0，未锁定不得开发 |
+| 编译门禁 | `mvn clean install -DskipTests` | P0，必须返工 |
+| 内部依赖残留 | 扫描 POM 中内部 SNAPSHOT、Nacos、ShardingSphere 依赖残留 | P0/P1，按目标判断 |
+| 配置完整性 | 检查私有化 profile 是否包含 MySQL、Redis、OSS、SMS、HN 等配置模板 | P1，阻塞启动则 P0 |
+| API 兼容 | 运行替换类契约测试，覆盖 GeneralMapper、UserSession、Assert 等 | P0/P1，必须返工 |
+| storeId 隔离 | 检查核心查询、更新、删除是否有 storeId 条件或归属校验 | P0，涉及跨租户风险 |
+| 文档一致性 | 检查 SDD、PROGRESS、TDD 与文件和测试状态是否一致 | P1/P2，视偏差程度 |
+
+### 脚本骨架
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+test -f docs/refactoring/spec/current/spec.md
+test -f docs/refactoring/spec/current/spec-review.md
+
+mvn clean install -DskipTests
+
+rg "SNAPSHOT|nacos|sharding" pom.xml business-*/pom.xml || true
+rg "storeId == 1000|store_id = 1000" business-* || true
+rg "TODO|FIXME" docs/refactoring business-* || true
+```
+
+这个脚本只是基础版。后续可以继续扩展：
+
+- API 兼容契约测试
+- storeId 隔离测试
+- 配置完整性检查
+- 文档一致性检查
+- GitHub PR 描述检查
+
+## 8. 质量评分体系
+
+每次 Codex 审核给 Claude 打分，形成长期效果数据。
+
+| 维度 | 权重 | 审核重点 |
+|---|---:|---|
+| 需求契合度 | 20 | 是否解决本阶段真实目标，是否引入无关改动 |
+| 架构一致性 | 15 | 是否符合模块边界、同包名替换策略、私有化目标 |
+| API / 数据兼容性 | 15 | 替换类、配置、数据隔离和 storeId 语义是否兼容 |
+| 测试充分性 | 15 | 是否覆盖高风险路径，而不只是 happy path |
+| 代码质量 | 15 | 实现是否简单、可维护、无过度抽象和无危险硬编码 |
+| 可部署性 | 10 | 客户环境是否能独立构建、启动、配置和排障 |
+| 文档质量 | 10 | 文档是否和实现一致，风险和剩余工作是否说清楚 |
+
+### 评分结论
+
+| 分数 | 结论 | 处理方式 |
+|---|---|---|
+| 90-100 | 通过 | 可进入下一阶段或准备合并 |
+| 80-89 | 有条件通过 | 记录风险，P0/P1 必须关闭，P2 可排后续 |
+| 70-79 | 局部返工 | 按 Codex 问题清单返工后复审 |
+| 低于 70 | 不通过 | 不得进入下一阶段，必要时升级用户 |
+
+## 9. 问题分级
+
+| 等级 | 含义 | 处理要求 |
+|---|---|---|
+| P0 | 编译失败、启动失败、核心链路不可用、数据串租户、安全/权限高风险 | 必须修复，不允许通过 |
+| P1 | 高风险兼容问题、测试缺失、配置缺失、可部署性明显不足 | 原则上必须修复，豁免需升级 |
+| P2 | 文档偏差、小范围代码质量问题、可维护性建议 | 可本轮修复或记录后续 |
+| P3 | 命名、风格、低风险优化 | 不阻塞交付 |
+
+问题分级的意义是避免“所有问题都一样急”。
+
+P0/P1 是质量门禁，P2/P3 是工程改进。
+
+## 10. 升级规则
+
+自动闭环优先处理常规问题。只有触发以下情况时，才 call 用户做决策。
+
+| 触发条件 | 升级原因 |
+|---|---|
+| Spec 阶段存在业务目标冲突或开放问题无法默认 | 需求方向不清时不能进入实现，必须用户确认 |
+| 实现阶段需要偏离已锁定 Spec | 属于需求变更，必须记录并由用户确认或授权 |
+| P0 问题 Claude 两轮仍未修复 | 可能存在方案错误、能力边界或需要人工拆解 |
+| Codex 与 Claude 对方案判断冲突 | 需要用户确认方向或风险偏好 |
+| 需要改变需求范围、非目标或验收标准 | 属于产品/项目决策，不由 Agent 自行决定 |
+| 需要接受高风险豁免 | 例如跳过测试、绕过权限、暂不处理跨租户风险 |
+| 涉及数据迁移、支付、权限、跨租户隔离 | 影响面高，必须让用户确认 |
+| 质量评分连续两轮低于 75 | 说明执行策略可能需要调整 |
+| 自动测试环境缺失，无法判断完成度 | 需要用户决定补环境、降低验收或调整计划 |
+
+普通编译错误、测试失败、文档偏差、API 漏签名，不需要找用户，直接退回 Claude 修。
+
+## 11. 自动化落地建议
+
+### 11.1 GitHub PR 流程
+
+推荐以 GitHub 分支和 PR 作为正式交付载体。
+
+本地交付文件作为 Agent 间上下文，CI 作为第一层自动门禁，Codex 作为第二层独立审核。
+
+| 阶段 | 责任方 | 动作 |
+|---|---|---|
+| Issue / Spec | GitHub + Claude + Codex | 用户或 Claude 创建 Issue，Claude 提交 spec 草案；Codex 审核 spec 并在 Issue 或 spec-review 中给出是否锁定 |
+| Branch | Claude | Claude 从锁定 spec 创建约定分支，所有实现都关联 Issue |
+| Pull Request | Claude | Claude 提交 PR，PR 描述必须链接 spec、handoff、自测结果和风险清单 |
+| CI Checks | GitHub Actions | 运行编译、契约测试、依赖扫描、文档一致性和 storeId 隔离检查 |
+| Codex Review | Codex | 读取 PR diff、CI 结果、handoff 和 spec，发布审核报告或 PR review comment |
+| Fix / Recheck | Claude + Codex | Claude 按 Codex 的 P0/P1/P2 修改并 push；Codex 复审未关闭问题 |
+| Merge / Escalate | Gate | Codex 通过且 CI 全绿后允许合并；触发升级规则时在 PR 中 @ 用户决策 |
+
+### 11.2 GitHub Actions 建议
+
+| Job | 触发 | 检查内容 |
+|---|---|---|
+| `spec-check` | PR opened / synchronize | 确认 spec、acceptance criteria、decision log 存在且引用到 PR |
+| `build` | PR opened / synchronize | 运行 `mvn clean install -DskipTests` |
+| `contract-tests` | PR opened / synchronize | 运行替换类 API 兼容测试和 Mapper 契约测试 |
+| `private-deploy-scan` | PR opened / synchronize | 扫描内部依赖、Nacos/ShardingSphere 残留、硬编码租户和配置缺失 |
+| `doc-consistency` | PR opened / synchronize | 检查 SDD、PROGRESS、TDD、handoff 与实际状态是否一致 |
+
+示例 workflow：
+
+```yaml
+name: refactoring-quality
+
+on:
+  pull_request:
+    paths:
+      - "business-*/**"
+      - "pom.xml"
+      - "docs/refactoring/**"
+      - "scripts/quality/**"
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: bash scripts/quality/check_refactoring.sh
+```
+
+### 11.3 Codex 本地 Automation
+
+Codex 本地 automation 用来主动监控交付状态，减少用户轮询成本。
+
+它不替代 GitHub CI，而是负责：
+
+- 发现交付
+- 执行审核
+- 归档报告
+- 触发升级
+
+| Automation | 触发方式 | 动作 |
+|---|---|---|
+| Spec 审核提醒 | 每小时或检测到 `spec/current/spec.md` 更新 | 读取 spec，生成 `spec-review.md`，需要用户决策时升级 |
+| PR / 分支审核 | 每小时检查当前仓库分支、PR 状态或 handoff 更新时间 | 运行质量脚本，生成 `codex-review.md` 和评分 |
+| 返工复审 | 检测到 Claude push 新提交或 handoff 标记“请求复审” | 只复核未关闭问题和新增 diff，避免重复全量噪音 |
+| 升级监控 | 评分连续低于阈值、P0 两轮未关、测试环境缺失 | 生成 `blockers.md`，向用户提交决策项 |
+
+### 11.4 本地目录与 PR 内容对齐
+
+建议目录结构：
+
+```text
+docs/refactoring/
+├── agent-review-workflow.html
+├── REVIEW-PROCESS.md
+├── spec/
+│   └── current/
+│       ├── spec.md
+│       ├── impact-map.md
+│       ├── acceptance-criteria.md
+│       ├── implementation-plan.md
+│       ├── open-questions.md
+│       ├── spec-review.md
+│       └── decision-log.md
+├── reviews/
+│   ├── current/
+│   │   ├── claude-handoff.md
+│   │   ├── test-results.md
+│   │   ├── changed-files.md
+│   │   ├── codex-review.md
+│   │   └── blockers.md
+│   ├── 2026-05-26-phase1-review.md
+│   └── scorecard.md
+└── ...
+
+scripts/
+└── quality/
+    └── check_refactoring.sh
+```
+
+流程建议：
+
+1. 在仓库中固定 spec 目录：`docs/refactoring/spec/current/`。
+2. 在仓库中固定交付目录：`docs/refactoring/reviews/current/`。
+3. 新增质量脚本：`scripts/quality/check_refactoring.sh`。
+4. Claude 每轮交付前写 handoff、changed-files、test-results，并在 PR 描述中链接。
+5. Codex 看到交付文件或 PR 更新后自动运行门禁并生成 review 和 scorecard。
+6. 审核失败时 Claude 按 P0/P1/P2 返工，并在 handoff 中逐项回应。
+7. 审核通过时归档 current 目录到日期目录，并更新总分表。
+8. 触发升级规则时，Codex 只向用户提交决策项，不让用户处理普通工程返工。
+
+## 12. Claude 执行清单
+
+Claude 在执行任何 refactoring 阶段任务前，应按以下清单自检。
+
+1. 我是否只处理当前 refactoring 目标，没有混入 H5、UI、匿名访问等无关事项？
+2. 我是否先更新了 spec、影响面、验收标准，并等待 Codex 锁定 spec？
+3. 我是否在实现阶段严格对齐已锁定 spec，没有静默改变范围？
+4. 我是否保留同包名替换的 API 兼容，而不是让业务代码迁就新实现？
+5. 我是否运行了约定测试，并把失败原因写入交付文件？
+6. 我是否更新了 SDD、PROGRESS、TDD 中受影响的状态？
+7. 我是否说明了剩余风险和需要 Codex 特别审核的点？
+8. 我是否没有自行标记 DONE，而是请求 Codex 审核？
+
+## 结语
+
+这套流程的目的不是增加仪式感，而是让跨 Agent 开发变成可复核的工程系统。
+
+它要回答四个问题：
+
+- 谁做了什么？
+- 质量如何？
+- 为什么放行？
+- 何时需要人类决策？
+
+当 Claude 负责推进、Codex 负责审核、CI 负责门禁、GitHub 负责承载记录，AI 开发就不再是一次性的“生成代码”，而更像一个可以持续改进的研发系统。
