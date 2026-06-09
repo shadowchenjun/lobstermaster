@@ -15,6 +15,7 @@ export interface ArticleMeta {
   github?: string
   stars?: number
   rating?: string
+  directUrl?: string
 }
 
 export interface Article extends ArticleMeta {
@@ -43,6 +44,7 @@ export function getArticles(category: string): ArticleMeta[] {
         github: data.github,
         stars: data.stars,
         rating: data.rating,
+        directUrl: data.directUrl,
       } as ArticleMeta
     })
     .sort((a, b) => (a.date < b.date ? 1 : -1))
@@ -68,6 +70,7 @@ export function getArticle(category: string, slug: string): Article | null {
     github: data.github,
     stars: data.stars,
     rating: data.rating,
+    directUrl: data.directUrl,
   }
 }
 

@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI基础设施投资分享：算力、存力与光互联</title>
+  <style>
+    :root {
+      --ink: #101214;
+      --muted: #5d646b;
+      --line: #d7dce0;
+      --paper: #f8f9f7;
+      --panel: #ffffff;
+      --green: #22c55e;
+      --cyan: #00a6c8;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --graphite: #2a2f34;
+      --soft: #edf1f2;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(16,18,20,.045) 1px, transparent 1px) 0 0 / 56px 56px,
+        linear-gradient(0deg, rgba(16,18,20,.035) 1px, transparent 1px) 0 0 / 56px 56px,
+        var(--paper);
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.72;
+    }
+
+    a { color: inherit; text-decoration-color: rgba(0,166,200,.55); text-underline-offset: 3px; }
+    .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    header {
+      min-height: 92vh;
+      display: grid;
+      align-items: end;
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 72% 16%, rgba(34,197,94,.18), transparent 28%),
+        radial-gradient(circle at 18% 20%, rgba(0,166,200,.16), transparent 24%);
+    }
+
+    .kicker {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--ink);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--panel);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+    .kicker::before {
+      content: "";
+      width: 11px;
+      height: 11px;
+      background: var(--green);
+      border: 1px solid var(--ink);
+      display: inline-block;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.08;
+      margin: 0;
+      font-family: Georgia, "Songti SC", "SimSun", serif;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+    h1 {
+      max-width: 980px;
+      margin-top: 32px;
+      font-size: clamp(44px, 8.2vw, 116px);
+    }
+    .lead {
+      max-width: 840px;
+      margin: 28px 0 0;
+      font-size: clamp(18px, 2.1vw, 27px);
+      color: #24292e;
+      font-weight: 600;
+    }
+    .hero-grid {
+      margin-top: 44px;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .thesis {
+      background: var(--ink);
+      color: white;
+      padding: 28px;
+      border: 1px solid var(--ink);
+      min-height: 260px;
+      display: grid;
+      align-content: space-between;
+    }
+    .thesis strong { color: #a7f3d0; }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--ink);
+      padding: 18px;
+      min-height: 122px;
+      box-shadow: 4px 4px 0 rgba(16,18,20,.9);
+    }
+    .stat .num {
+      font-family: Georgia, serif;
+      font-size: clamp(28px, 4.6vw, 50px);
+      line-height: 1;
+      font-weight: 800;
+    }
+    .stat .label { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(248,249,247,.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    nav .wrap {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+    nav a {
+      flex: 0 0 auto;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      background: var(--panel);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    section { padding: 76px 0; border-bottom: 1px solid var(--line); }
+    .section-head {
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 34px;
+      align-items: start;
+      margin-bottom: 30px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+    h2 { font-size: clamp(34px, 5vw, 68px); }
+    .section-head p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 22px;
+    }
+    .card.dark {
+      background: var(--graphite);
+      color: white;
+      border-color: var(--ink);
+    }
+    .card h3 {
+      font-family: "Avenir Next", "PingFang SC", sans-serif;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .card p, .card li { color: var(--muted); }
+    .card.dark p, .card.dark li { color: #d7dde2; }
+    .card ul { padding-left: 18px; margin: 10px 0 0; }
+
+    .chain {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      gap: 1px;
+    }
+    .chain .node {
+      background: var(--panel);
+      padding: 20px 16px;
+      min-height: 160px;
+    }
+    .node .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 3px 7px;
+      border: 1px solid var(--ink);
+      margin-bottom: 12px;
+      background: var(--soft);
+    }
+    .node:nth-child(3) .tag { background: #dcfce7; }
+    .node:nth-child(4) .tag { background: #cffafe; }
+    .node:nth-child(5) .tag { background: #fef3c7; }
+    .node h3 { font-family: "Avenir Next", sans-serif; font-size: 19px; margin-bottom: 9px; }
+    .node p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .barset { display: grid; gap: 15px; margin-top: 18px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 94px;
+      gap: 14px;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .track {
+      height: 18px;
+      background: #e8ecef;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .fill { height: 100%; background: var(--green); }
+    .fill.cyan { background: var(--cyan); }
+    .fill.yellow { background: var(--yellow); }
+    .fill.red { background: var(--red); }
+
+    .split-visual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+    }
+    .metric-block {
+      background: var(--panel);
+      padding: 24px;
+    }
+    .metric-block .big {
+      font-family: Georgia, serif;
+      font-size: clamp(36px, 6vw, 82px);
+      line-height: 1;
+      font-weight: 900;
+    }
+    .metric-block .caption { color: var(--muted); margin-top: 8px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 13px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--ink);
+      color: white;
+      font-size: 13px;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .ticker {
+      font-weight: 900;
+      white-space: nowrap;
+      color: #0f766e;
+    }
+
+    .callout {
+      border-left: 8px solid var(--green);
+      background: var(--panel);
+      padding: 22px 24px;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 1px 0 var(--line);
+    }
+    .muted { color: var(--muted); }
+    .note {
+      margin-top: 22px;
+      padding: 14px 16px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #7c2d12;
+      font-size: 14px;
+    }
+
+    .source-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      font-size: 14px;
+    }
+    .source-list a {
+      display: block;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+    }
+
+    footer {
+      padding: 42px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .wrap { width: min(100% - 26px, 1180px); }
+      header { min-height: auto; padding-top: 32px; }
+      .hero-grid, .section-head, .grid-3, .grid-2, .split-visual, .source-list { grid-template-columns: 1fr; }
+      .hero-stats { grid-template-columns: 1fr 1fr; }
+      .chain { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 96px 1fr 64px; }
+      section { padding: 54px 0; }
+      table { font-size: 13px; }
+      th, td { padding: 10px 9px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="kicker">AI 基础设施学习笔记整理 · AI Infrastructure</div>
+      <h1>Token工厂时代：半导体产业链的下一轮重估</h1>
+      <p class="lead">从“买GPU”进入“建AI工厂”：算力、存力、高速互联共同决定 Token 的生产成本。最值得追踪的边际变化，是光互联、CPO、OCS 与硅光。</p>
+
+      <div class="hero-grid">
+        <div class="thesis">
+          <div>
+            <p><strong>主结论：</strong>AI 不是单一应用行情，而是基础设施扩张周期。投资框架应从模型层下沉到“卖铲子”：GPU/XPU、HBM/存储、交换芯片、光模块、硅光、CPO/OCS、先进封装、设备材料。</p>
+            <p>当模型走向长上下文、推理、智能体和多模态，瓶颈会从单卡算力扩展到集群互联、内存墙、电力与散热。</p>
+          </div>
+          <div class="muted" style="color:#b8c0c7">整理日期：2026-06-09；仅作研究分享，不构成投资建议。</div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="num">$75.2B</div>
+            <div class="label">NVIDIA FY2027 Q1 数据中心收入，同比增长 92%</div>
+          </div>
+          <div class="stat">
+            <div class="num">$14.8B</div>
+            <div class="label">NVIDIA 数据中心网络收入，同比增长 199%</div>
+          </div>
+          <div class="stat">
+            <div class="num">$35.7B</div>
+            <div class="label">Alphabet Q1 2026 资本开支，同比增长 107%</div>
+          </div>
+          <div class="stat">
+            <div class="num">19B</div>
+            <div class="label">Google 第一方模型 API 每分钟处理 Token，约同比 6 倍</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="wrap">
+      <a href="#logic">核心逻辑</a>
+      <a href="#verify">数据验证</a>
+      <a href="#chain">产业链</a>
+      <a href="#optics">光互联</a>
+      <a href="#stocks">代表公司</a>
+      <a href="#risks">风险指标</a>
+      <a href="#sources">来源</a>
+    </div>
+  </nav>
+
+  <section id="logic">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">01 / Thesis</div>
+          <h2>AI = Token = 生产力</h2>
+        </div>
+        <p>分享中的关键判断是：未来 AI 竞争会逐渐量化为 Token 生产效率。谁能以更低成本、更高能效、更稳定供应生产 Token，谁就占据基础设施定价权。</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>算力：仍是底座</h3>
+          <p>GPU、TPU、ASIC、交换芯片和先进封装继续承接大额资本开支。NVIDIA 和 Google 都把下一代系统定义为 rack / pod / factory，而不是单颗芯片。</p>
+        </div>
+        <div class="card">
+          <h3>存力：内存墙变成硬约束</h3>
+          <p>推理、长上下文、MoE、KV Cache 会推高 HBM、DRAM、NAND、高速存储和存储网络需求。国产替代方向对应长鑫、长存等存储链条。</p>
+        </div>
+        <div class="card dark">
+          <h3>互联：最快变化点</h3>
+          <p>集群规模变大后，GPU/TPU 之间的数据流动成为成本和性能瓶颈。CPO、OCS、硅光、光模块、光源和连接器成为下一阶段重点。</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:22px">看不清方向的时候，看巨头把 CapEx 投向哪里：NVIDIA 把 AI 工厂做成产品，Google 把 TPU、OCS 和 Cloud 打成一套系统。</div>
+    </div>
+  </section>
+
+  <section id="verify">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">02 / Evidence</div>
+          <h2>用 NVIDIA GTC 与 Google 财报验证趋势</h2>
+        </div>
+        <p>分享笔记里的“算力为王、互联加速、Token 工厂经济”不是孤立叙事。NVIDIA 与 Alphabet 的最新披露都指向同一件事：AI 基础设施正在进入更大规模、更高网络密度、更高资本强度的阶段。</p>
+      </div>
+
+      <div class="split-visual">
+        <div class="metric-block">
+          <div class="big">$81.6B</div>
+          <div class="caption">NVIDIA FY2027 Q1 总收入，同比增长 85%；Q2 指引约 $91B。</div>
+          <div class="barset">
+            <div class="bar-row"><span>Data Center</span><div class="track"><div class="fill" style="width:92%"></div></div><span>+92%</span></div>
+            <div class="bar-row"><span>Compute</span><div class="track"><div class="fill cyan" style="width:77%"></div></div><span>+77%</span></div>
+            <div class="bar-row"><span>Networking</span><div class="track"><div class="fill red" style="width:100%"></div></div><span>+199%</span></div>
+          </div>
+          <p class="muted">网络收入增速显著高于计算收入，验证“高速互联是最快增长点”的判断。</p>
+        </div>
+
+        <div class="metric-block">
+          <div class="big">$180-190B</div>
+          <div class="caption">Alphabet 披露 2026 年 CapEx 预期区间，并预计 2027 年继续显著增长。</div>
+          <div class="barset">
+            <div class="bar-row"><span>Q1收入</span><div class="track"><div class="fill" style="width:22%"></div></div><span>+22%</span></div>
+            <div class="bar-row"><span>Google Cloud</span><div class="track"><div class="fill cyan" style="width:63%"></div></div><span>+63%</span></div>
+            <div class="bar-row"><span>CapEx</span><div class="track"><div class="fill red" style="width:100%"></div></div><span>+107%</span></div>
+          </div>
+          <p class="muted">Cloud 收入和资本开支同步放大，说明 AI 基础设施供给仍是增长约束。</p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:18px">
+        <div class="card">
+          <h3>NVIDIA GTC：AI 工厂产品化</h3>
+          <p>GTC 2026 发布 Vera Rubin DSX AI Factory reference design，强调 “token per watt”、计算、网络、存储、电力、冷却、运维的整体设计。Rubin 平台把 CPU、GPU、NVLink 6、ConnectX、BlueField、Spectrum-X 等作为一台 rack/pod 级超级计算机协同工作。</p>
+        </div>
+        <div class="card">
+          <h3>Google：TPU + OCS + Cloud</h3>
+          <p>Google 官方 TPU 页面显示 TPU 8t 面向大规模预训练、TPU 8i 面向推理；Ironwood 可扩展到 9,216 颗液冷芯片。Google Research 的 Jupiter 论文则显示 OCS 帮助数据中心网络降低 CapEx 和功耗，支撑大规模重构。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chain">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">03 / Map</div>
+          <h2>半导体产业链：从单芯片到系统级重构</h2>
+        </div>
+        <p>AI 超级工厂不是传统服务器堆叠，而是计算、存储、互联、电力、散热、软件调度共同优化的系统工程。投资机会也随之从“只看 GPU”扩散到整条上游基础设施。</p>
+      </div>
+
+      <div class="chain">
+        <div class="node">
+          <span class="tag">Compute</span>
+          <h3>计算芯片</h3>
+          <p>GPU、TPU、ASIC、CPU、DPU。核心变量是性能、能效、供应、软件生态。</p>
+        </div>
+        <div class="node">
+          <span class="tag">Memory</span>
+          <h3>存储与HBM</h3>
+          <p>HBM、DRAM、NAND、KV Cache 存储、存储网络。长上下文推理强化“存力”价值。</p>
+        </div>
+        <div class="node">
+          <span class="tag">Interconnect</span>
+          <h3>高速互联</h3>
+          <p>NVLink、InfiniBand、Ethernet、SerDes、DSP、交换芯片、光模块。</p>
+        </div>
+        <div class="node">
+          <span class="tag">Photonics</span>
+          <h3>CPO / OCS / 硅光</h3>
+          <p>光引擎、激光器、调制器、探测器、光交换、光子集成。</p>
+        </div>
+        <div class="node">
+          <span class="tag">Tools</span>
+          <h3>设备材料</h3>
+          <p>先进封装、测试、光纤阵列、连接器、液冷、电源、数据中心工程。</p>
+        </div>
+      </div>
+
+      <div class="note">原始手记中的部分数字，如“算力 42.5%、存力 25%、互联 37.5%”“316 亿/325 亿”等，建议视为分享口径，未在本页作为公开财报事实引用。</div>
+    </div>
+  </section>
+
+  <section id="optics">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">04 / Optical</div>
+          <h2>为什么光互联是下一条主线</h2>
+        </div>
+        <p>AI 集群越大，电互联在距离、功耗、带宽密度上越吃力。CPO 把光学能力贴近计算/交换芯片，OCS 用光层做动态网络重构，硅光则承担光电集成的量产路径。</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>CPO：从板边走向封装旁</h3>
+          <p>共封装光学的核心是缩短电信号路径，降低功耗并提高带宽密度。短期仍与 800G/1.6T 可插拔模块并存，中期在高端交换机和 AI 集群逐步放量。</p>
+        </div>
+        <div class="card">
+          <h3>OCS：Google 已验证的方向</h3>
+          <p>Google Jupiter 论文显示，OCS 与 SDN 结合带来 30% CapEx 降低、41% 功耗降低、3 倍更快 fabric reconfiguration。AI 集群更需要这种可重构网络。</p>
+        </div>
+        <div class="card">
+          <h3>硅光：量产和成本的桥</h3>
+          <p>硅光把调制、耦合、探测等光学功能尽量搬进半导体工艺体系。它不是单一公司机会，而是光芯片、光源、封装、测试、连接器的系统机会。</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:22px">投资上不要只买“CPO概念”，更应找已经在 800G/1.6T 赚钱、同时向光引擎/硅光/CPO/OCS 卡位的公司。</div>
+    </div>
+  </section>
+
+  <section id="stocks">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">05 / Companies</div>
+          <h2>美股与A股代表公司</h2>
+        </div>
+        <p>以下是产业链位置梳理，不是买入建议。排序按产业链环节展开，而非收益预测。</p>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3 style="margin-bottom:12px">美股 / 海外链条</h3>
+          <table>
+            <thead><tr><th>公司</th><th>代码</th><th>位置</th></tr></thead>
+            <tbody>
+              <tr><td>NVIDIA</td><td class="ticker">NVDA</td><td>GPU、NVLink、Spectrum-X、AI Factory 架构定义者</td></tr>
+              <tr><td>Broadcom</td><td class="ticker">AVGO</td><td>交换芯片、SerDes、ASIC、CPO/硅光生态</td></tr>
+              <tr><td>Marvell</td><td class="ticker">MRVL</td><td>光 DSP、定制 ASIC、数据中心互联</td></tr>
+              <tr><td>Micron</td><td class="ticker">MU</td><td>HBM/DRAM/NAND，AI 存力链</td></tr>
+              <tr><td>TSMC</td><td class="ticker">TSM</td><td>先进制程、CoWoS/先进封装核心产能</td></tr>
+              <tr><td>Coherent</td><td class="ticker">COHR</td><td>激光器、光器件、光模块、材料</td></tr>
+              <tr><td>Lumentum</td><td class="ticker">LITE</td><td>激光器、光源、光通信器件</td></tr>
+              <tr><td>Corning</td><td class="ticker">GLW</td><td>光纤、玻璃、连接材料</td></tr>
+              <tr><td>Ayar Labs</td><td class="ticker">未上市</td><td>光 I/O、硅光互联，一级市场代表</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h3 style="margin-bottom:12px">A股 / 国产替代链条</h3>
+          <table>
+            <thead><tr><th>公司</th><th>代码</th><th>位置</th></tr></thead>
+            <tbody>
+              <tr><td>中际旭创</td><td class="ticker">300308</td><td>高速光模块龙头，800G/1.6T 主线</td></tr>
+              <tr><td>新易盛</td><td class="ticker">300502</td><td>高速数通光模块，海外 AI 客户链</td></tr>
+              <tr><td>天孚通信</td><td class="ticker">300394</td><td>光器件、光引擎核心零部件</td></tr>
+              <tr><td>光迅科技</td><td class="ticker">002281</td><td>光芯片、光器件、光模块</td></tr>
+              <tr><td>源杰科技</td><td class="ticker">688498</td><td>激光器/光芯片，光源国产化</td></tr>
+              <tr><td>剑桥科技</td><td class="ticker">603083</td><td>光模块、NPO/CPO 相关布局</td></tr>
+              <tr><td>华工科技</td><td class="ticker">000988</td><td>光通信与激光加工，CPO 光引擎研发</td></tr>
+              <tr><td>光库科技</td><td class="ticker">300620</td><td>光器件、调制器相关</td></tr>
+              <tr><td>太辰光</td><td class="ticker">300570</td><td>光连接器、光器件</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="risks">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">06 / Watchlist</div>
+          <h2>风险与跟踪指标</h2>
+        </div>
+        <p>这条产业链的机会很大，但波动也会很大。核心矛盾不是有没有需求，而是需求兑现速度、技术路线、估值和产能节奏能否匹配。</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>观察 1：CapEx 是否继续上修</h3>
+          <ul>
+            <li>Alphabet、Microsoft、Meta、Amazon、Oracle 的 AI 基础设施开支。</li>
+            <li>资本开支从 GPU 扩散到网络、存储、电力、液冷。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>观察 2：网络收入是否持续高增</h3>
+          <ul>
+            <li>NVIDIA networking、Broadcom AI networking、Marvell 光 DSP/ASIC。</li>
+            <li>交换机、SerDes、CPO/OCS 订单能否商业化。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>观察 3：可插拔与CPO的节奏</h3>
+          <ul>
+            <li>800G/1.6T 仍是当下业绩主线。</li>
+            <li>CPO 商用若慢于预期，纯概念标的估值会回撤。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note">风险提示：AI 基础设施投资存在估值前置、技术路线变化、客户集中、出口管制、价格竞争、CapEx 周期波动等风险。本页用于整理投资分享与公开资料，不构成任何证券买卖建议。</div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">07 / Sources</div>
+          <h2>公开来源</h2>
+        </div>
+        <p>页面中的财务数据和技术口径主要来自公司官方披露与 Google Research 论文；核心观点根据学习笔记整理，并用公开资料做趋势验证。</p>
+      </div>
+
+      <div class="source-list">
+        <a href="https://nvidianews.nvidia.com/_gallery/download_pdf/6a0e17dc3d633295d45282e6/">NVIDIA FY2027 Q1 Financial Results：收入、数据中心、网络收入</a>
+        <a href="https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer">NVIDIA Rubin 平台：token cost、NVLink、Spectrum-X</a>
+        <a href="https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Releases-Vera-Rubin-DSX-AI-Factory-Reference-Design-and-Omniverse-DSX-Digital-Twin-Blueprint-With-Broad-Industry-Support/default.aspx">NVIDIA GTC 2026 DSX AI Factory：token per watt、AI 工厂参考设计</a>
+        <a href="https://s206.q4cdn.com/479360582/files/doc_financials/2026/q1/2026q1-alphabet-earnings-release.pdf">Alphabet Q1 2026 Earnings Release：收入、Cloud、AI R&D</a>
+        <a href="https://s206.q4cdn.com/479360582/files/doc_financials/2026/q1/Alphabet-Q1-2026-Earnings-Slides.pdf">Alphabet Q1 2026 Earnings Slides：CapEx、Cloud 增速、FCF</a>
+        <a href="https://s206.q4cdn.com/479360582/files/doc_news/2026/Jun/01/attachments/2026-June-Alphabet-Equity-Capital-Raise-Press-Release-PDF.pdf">Alphabet 2026 Equity Offering：2026/2027 CapEx、Cloud backlog、Token API</a>
+        <a href="https://cloud.google.com/tpu?hl=en_US">Google Cloud TPU 官方页：TPU 8t、8i、Ironwood、OCS</a>
+        <a href="https://research.google/pubs/jupiter-evolving-transforming-googles-datacenter-network-via-optical-circuit-switches-and-software-defined-networking/">Google Research Jupiter Evolving：OCS、CapEx、功耗、网络重构</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">整理文件：ai-infra-cpo-share.html · 建议用于内部学习、路演准备或进一步扩展成 PPT。</div>
+  </footer>
+</body>
+</html>

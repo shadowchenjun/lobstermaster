@@ -9,9 +9,11 @@ const categoryMeta: Record<string, { label: string; emoji: string; color: string
 
 export default function ArticleCard({ article }: { article: ArticleMeta }) {
   const meta = categoryMeta[article.category]
+  const href = article.directUrl ?? `/${article.category}/${article.slug}`
+
   return (
     <Link
-      href={`/${article.category}/${article.slug}`}
+      href={href}
       className="group block bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     >
       <div className="flex items-center justify-between mb-3">
