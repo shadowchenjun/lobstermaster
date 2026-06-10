@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优秀抖音外卖视频学习笔记 · 流量密码拆解</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f232d;
+    --text:#e8eaf0; --muted:#9aa3b2;
+    --red:#fe2c55; --cyan:#25f4ee; --gold:#ffd700; --green:#4caf7d;
+    --border:#2a2f3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;line-height:1.7}
+  .wrap{max-width:860px;margin:0 auto;padding:24px 20px 80px}
+  header{text-align:center;padding:48px 0 32px}
+  header .tag{display:inline-block;background:linear-gradient(90deg,var(--red),#ff6b81);color:#fff;font-size:13px;padding:4px 14px;border-radius:999px;letter-spacing:2px}
+  header h1{font-size:30px;margin:16px 0 8px;background:linear-gradient(90deg,var(--cyan),#fff,var(--red));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  header p{color:var(--muted);font-size:14px}
+  h2{font-size:21px;margin:48px 0 16px;padding-left:12px;border-left:4px solid var(--red)}
+  h3{font-size:16px;margin:20px 0 10px;color:var(--cyan)}
+  p{margin:8px 0}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--card2);color:var(--cyan);font-weight:600;white-space:nowrap}
+  td{color:var(--text)}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;margin:2px 4px 2px 0;border:1px solid var(--border);background:var(--card2)}
+  .pill.red{color:var(--red);border-color:var(--red)}
+  .pill.cyan{color:var(--cyan);border-color:var(--cyan)}
+  .pill.gold{color:var(--gold);border-color:var(--gold)}
+  .pill.green{color:var(--green);border-color:var(--green)}
+  .big{font-size:26px;font-weight:700;color:var(--gold)}
+  .vtitle{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .vtitle .no{font-size:22px;font-weight:800;color:var(--red)}
+  .vtitle .name{font-size:17px;font-weight:700}
+  /* 切点节奏可视化 */
+  .timeline{position:relative;height:34px;background:var(--card2);border-radius:8px;margin:10px 0 4px;overflow:hidden}
+  .timeline .cut{position:absolute;top:0;bottom:0;width:2px;background:var(--red)}
+  .timeline .hook{position:absolute;top:0;bottom:0;left:0;background:rgba(37,244,238,.18);border-right:2px dashed var(--cyan)}
+  .timeline .cta{position:absolute;top:0;bottom:0;right:0;background:rgba(255,215,0,.15);border-left:2px dashed var(--gold)}
+  .timeline .label{position:absolute;font-size:11px;color:var(--muted);top:50%;transform:translateY(-50%);padding:0 6px}
+  .legend{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:-1px}
+  .quote{border-left:3px solid var(--gold);background:var(--card2);padding:10px 14px;border-radius:0 10px 10px 0;margin:10px 0;font-size:14px}
+  .num{color:var(--gold);font-weight:700}
+  .steps{counter-reset:s;list-style:none}
+  .steps li{counter-increment:s;position:relative;padding:8px 0 8px 44px;border-bottom:1px dashed var(--border)}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--red),#ff6b81);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  code{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:1px 7px;font-size:12.5px;color:var(--cyan);font-family:Menlo,Consolas,monospace}
+  footer{margin-top:56px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">学 习 笔 记</span>
+  <h1>优秀抖音外卖视频 · 流量密码拆解</h1>
+  <p>5 条对标样片逐帧分析 → 提炼可复制的混剪方法论<br>2026-06-10 · 抖音餐饮外卖视频 AI 混剪项目组</p>
+</header>
+
+<h2>① 样本与方法</h2>
+<div class="card">
+  <p>对 <code>samples/</code> 下 7 个文件做 md5 去重,得到 <span class="num">5 条独立视频</span>,恰好覆盖餐饮外卖赛道五种主流打法。</p>
+  <p class="muted">分析手段:ffprobe 元数据 · ffmpeg 场景切点检测 · whisper 语音转写 · 频谱通量 BPM 估算 · 逐帧读图</p>
+  <table>
+    <tr><th>#</th><th>账号 / 品类</th><th>规格 · 时长</th><th>打法定位</th></tr>
+    <tr><td>V1</td><td>上腮红的玩具熊 · 牛肋排卤味</td><td>3:4 · 15.4s</td><td>纯食欲快剪卡点</td></tr>
+    <tr><td>V2</td><td>山楂棒棒糖 · 烽火烤蹄 79 元套餐</td><td>9:16 · 17.6s</td><td>价格锚定口播带货</td></tr>
+    <tr><td>V3</td><td>微微团购 · 烽火烤蹄(投流广告)</td><td>9:16 · 7.1s</td><td>投流极短素材</td></tr>
+    <tr><td>V4</td><td>迟大聪明 · 炭火烤串</td><td>9:16 · 10.8s</td><td>烟火气 ASMR 一镜到底</td></tr>
+    <tr><td>V5</td><td>泡芙味的女孩子O · 多品类外卖凑桌</td><td>3:4 · 11.1s</td><td>生活方式氛围快剪(UGC 视角)</td></tr>
+  </table>
+</div>
+
+<h2>② 逐条拆解</h2>
+
+<div class="card">
+  <div class="vtitle"><span class="no">V1</span><span class="name">纯食欲快剪卡点型</span><span class="pill red">无字幕</span><span class="pill cyan">BGM 139 BPM</span><span class="pill gold">11+ 镜头/15s</span></div>
+  <div class="legend">青色=钩子段 <i style="background:rgba(254,44,85,.9)"></i>红线=切点 <i style="background:rgba(255,215,0,.5)"></i>金色=搜索卡</div>
+  <div class="timeline">
+    <div class="hook" style="width:15.4%"><span class="label">钩子 2.4s</span></div>
+    <div class="cut" style="left:15.4%"></div><div class="cut" style="left:21.6%"></div><div class="cut" style="left:29.2%"></div><div class="cut" style="left:36.8%"></div><div class="cut" style="left:43.1%"></div><div class="cut" style="left:47.6%"></div><div class="cut" style="left:53.0%"></div><div class="cut" style="left:59.7%"></div><div class="cut" style="left:66.7%"></div><div class="cut" style="left:73.6%"></div>
+    <div class="cta" style="width:12%"><span class="label" style="right:0">搜索卡</span></div>
+  </div>
+  <h3>🎵 背景音乐</h3>
+  <p>约 <span class="num">139 BPM</span> 高燃快节奏纯音乐,<b>能量前置</b>(开头最炸,结尾收静给搜索卡让位)。人声只有一句感叹 <b>"哇,好香啊"</b>(2-4s),没有口播。</p>
+  <h3>✍️ 文案</h3>
+  <p><b>全片没有一个字幕</b> —— 画面即文案:大锅浇汁、热气、辣椒红油直接传达"香"。结尾搜索彩蛋:"大家都在抖音搜 <b>牛肋排</b>"。</p>
+  <h3>🎬 镜头</h3>
+  <p>首镜头(浇汁大场面)保持 <span class="num">2.4s</span>,之后 0.7-1.2s/刀全程硬切。序列:大锅浇汁 → 夹起肉块 → 小杯卤味阵列(数量感)→ 砂锅藕汤(品类丰富感)。</p>
+</div>
+
+<div class="card">
+  <div class="vtitle"><span class="no">V2</span><span class="name">价格锚定口播带货型</span><span class="pill red">口播五段式</span><span class="pill cyan">1.3s/刀 严格卡点</span><span class="pill gold">12+ 镜头/17.6s</span></div>
+  <div class="timeline">
+    <div class="hook" style="width:9.8%"><span class="label">人+奇观 1.7s</span></div>
+    <div class="cut" style="left:9.8%"></div><div class="cut" style="left:17.2%"></div><div class="cut" style="left:24.6%"></div><div class="cut" style="left:31.9%"></div><div class="cut" style="left:39.1%"></div><div class="cut" style="left:46.3%"></div><div class="cut" style="left:53.5%"></div><div class="cut" style="left:60.7%"></div><div class="cut" style="left:68.4%"></div><div class="cut" style="left:75.6%"></div><div class="cut" style="left:83.0%"></div>
+    <div class="cta" style="width:11%"><span class="label" style="right:0">搜索卡</span></div>
+  </div>
+  <h3>🎵 背景音乐</h3>
+  <p>低音量节奏垫乐(≈94 BPM,每 2 拍切一刀),<b>口播是绝对主角</b>。</p>
+  <h3>✍️ 口播文案 —— 教科书级五段式</h3>
+  <ol class="steps">
+    <li><b>价格锚定</b>:"79 块钱"(开口第一句就是数字!)</li>
+    <li><b>套餐清单</b>:"一份炭烤卤猪排、一份炭烤卤猪蹄、<b>65 串</b>鲜烤烤串、两罐饮料"</li>
+    <li><b>渠道便利</b>:"抖音外卖,还直接配送到家"</li>
+    <li><b>履约信任</b>:"锡纸包装很严实,送到手里还是热乎的"</li>
+    <li><b>产品卖点</b>:"猪排换成了更好的餐盘,软烂脱骨"</li>
+  </ol>
+  <h3>🎬 镜头</h3>
+  <p>开场人端<b>多层展示架</b>出镜(奇观钩子)→ 手抓一大把串(数量感)→ 俯拍全桌铺陈(丰盛感)→ 双手捧盘推近。右上角合规小字"视频仅作商品展示"。结尾搜索"烽火烤蹄<b>优惠券</b>"——给搜索一个利益理由。</p>
+</div>
+
+<div class="card">
+  <div class="vtitle"><span class="no">V3</span><span class="name">投流极短广告型</span><span class="pill red">带"广告"标</span><span class="pill cyan">BGM 163 BPM</span><span class="pill gold">全片仅 7.1s</span></div>
+  <div class="timeline">
+    <div class="hook" style="width:14%"><span class="label">特写</span></div>
+    <div class="cut" style="left:14%"></div><div class="cut" style="left:28%"></div>
+    <div class="cta" style="width:42%"><span class="label" style="right:0">搜索卡占 42%!</span></div>
+  </div>
+  <h3>结构逻辑</h3>
+  <p>烤蹄油亮特写(1s)→ 换角度(1s)→ 冒烟烤翅+葱花(2s)→ <b>搜索卡直接占满后 3 秒(42%)</b>。无字幕、无口播。投流场景用户耐心极低:<b>4 秒把食欲打满,马上上转化组件</b>,一秒不浪费。</p>
+</div>
+
+<div class="card">
+  <div class="vtitle"><span class="no">V4</span><span class="name">烟火气 ASMR 一镜到底型</span><span class="pill green">无 BGM</span><span class="pill cyan">环境声</span><span class="pill gold">单镜头 7.8s</span></div>
+  <div class="timeline">
+    <div class="hook" style="width:72%"><span class="label">一镜到底:横移扫过炭火烤串炉(满屏串+浓烟+炭火)</span></div>
+    <div class="cta" style="width:27%"><span class="label" style="right:0">账号搜索卡</span></div>
+  </div>
+  <h3>结构逻辑</h3>
+  <p>与快剪完全相反的差异化打法:手持镜头缓慢横移,<b>炭火滋滋声</b>就是全部音频。烟雾、炭火红光、满炉肉串是天然的"动态食欲信号"。真实、零包装、沉浸 —— 适合烧烤类目和账号人设。</p>
+</div>
+
+<div class="card">
+  <div class="vtitle"><span class="no">V5</span><span class="name">生活方式氛围快剪型(UGC 视角)</span><span class="pill green">英文情绪人声曲</span><span class="pill cyan">0.73s/刀 全场最快</span><span class="pill gold">POV 第一人称</span></div>
+  <div class="timeline">
+    <div class="hook" style="width:7%"><span class="label">全景</span></div>
+    <div class="cut" style="left:7%"></div><div class="cut" style="left:13.6%"></div><div class="cut" style="left:20.8%"></div><div class="cut" style="left:27.7%"></div><div class="cut" style="left:35.5%"></div><div class="cut" style="left:42.2%"></div><div class="cut" style="left:47.9%"></div><div class="cut" style="left:53.9%"></div><div class="cut" style="left:59.9%"></div><div class="cut" style="left:66.8%"></div>
+    <div class="cta" style="width:27%"><span class="label" style="right:0">搜索卡 27%</span></div>
+  </div>
+  <h3>🎵 背景音乐</h3>
+  <p>英文情绪人声曲("I'll be fine, I'll be fine, be fine…")——<b>慢情绪曲 × 全场最快的剪辑</b>,"治愈+爽感"反差是记忆点。无口播无字幕,音乐 8.3s 淡出给搜索卡。</p>
+  <h3>🎬 镜头与场景</h3>
+  <p>Hello Kitty 主题房全景定场(电视动画+玩偶+满桌外卖)→ 筷子拌面 POV 特写 → 戴手套拿鸡腿 → 各品类轮切。桌面是<b>跨店多品类凑桌</b>:小龙虾、披萨、烤串、拌面、水果、蛋挞、西瓜、整排奶茶。</p>
+  <h3>💡 关键差异</h3>
+  <p>第一人称视角(手/筷子/手套入画)制造"即将开吃"代入感;种草的是<b>场景</b>不是单品——结尾搜索词是场景词"<b>夏天好友啤酒烧烤</b>"。转发动机:<b>@朋友"我们也这样搞一次"</b>(社交召集型,与 V2 的拼单型转发不同源同样高效)。</p>
+</div>
+
+<h2>③ 流量密码 · 十条共性</h2>
+<div class="grid">
+  <div class="card"><h3>1. 前 2 秒强钩子</h3><p>首镜头比后续长 1.5-2 倍:V1 浇汁大场面 2.4s,V2 人+奇观道具,V3 怼最油亮的特写。<b>把最香的一帧放最前面。</b></p></div>
+  <div class="card"><h3>2. 卡点硬切,拒绝花哨转场</h3><p>0.73-1.3s/刀,15s 内 10-12 镜头。五条片<b>零 crossfade、零滑动转场</b> —— 转场越花,越像广告。</p></div>
+  <div class="card"><h3>3. 数量堆叠 = 转发动机</h3><p>"65 串"、整桌俯拍、小杯阵列、满炉串。价值感拉满后"才 79 块"形成反差,驱动 <b>@朋友拼单式转发</b>。</p></div>
+  <div class="card"><h3>4. 全动作镜头,零静态摆拍</h3><p>浇汁、舀起、夹起、手抓、烟雾流动 —— 每个镜头内部都有运动,静止即划走。</p></div>
+  <div class="card"><h3>5. 市井真实感 &gt; 棚拍精致感</h3><p>店内实拍、手持、炭火、热气。过度包装降低可信度,"看起来就是那家店"才有下单冲动。</p></div>
+  <div class="card"><h3>6. 结尾 100% 搜索组件</h3><p>五条全部以抖音搜索彩蛋收尾(品类词/品牌词/优惠券/账号名/场景词),吃平台分发加权 + 承接搜索转化,BGM 同步收弱。</p></div>
+  <div class="card"><h3>7. 音频双层结构</h3><p>节奏层(128-163 BPM BGM 或环境声)+ 人声层(五段式口播,或一句"哇好香啊"感叹词)。</p></div>
+  <div class="card"><h3>8. 时长按场景分层</h3><p>自然流 15-18s、投流素材 7s、氛围片 10-11s —— 不存在"标准时长",存在"标准节奏"。</p></div>
+  <div class="card"><h3>9. 搜索词分三类</h3><p>品类词(牛肋排)、品牌+利益词(烽火烤蹄优惠券)、<b>场景词(夏天好友啤酒烧烤)</b>——场景词蹭活动流量,适合非品牌内容。</p></div>
+  <div class="card"><h3>10. BGM 可以和剪辑"反差"</h3><p>V5 用慢情绪英文人声曲配 0.73s/刀最快剪辑,治愈+爽感反差成记忆点。<b>BGM 不必一律高燃。</b></p></div>
+</div>
+
+<h2>④ 落地:我们混剪系统的优化方案</h2>
+<div class="card">
+  <h3>全局参数(settings.yaml)</h3>
+  <table>
+    <tr><th>项</th><th>现状</th><th>优化</th><th>依据</th></tr>
+    <tr><td>时长</td><td>统一 15s</td><td>模板级覆盖:口播 17-18s / 投流 7-8s</td><td>V2=17.6s,V3=7.1s</td></tr>
+    <tr><td>BGM</td><td>按池随机</td><td>逐条标注 BPM(128-163),开启 <code>beat_sync</code>,镜头长度=2 拍</td><td>V2 严格 1.27s/2拍</td></tr>
+    <tr><td>结尾</td><td>无专门处理</td><td>预留 1.5-3s CTA/搜索引导帧,BGM 淡出</td><td>四条片 100% 如此</td></tr>
+  </table>
+  <h3>模板调整</h3>
+  <table>
+    <tr><th>模板</th><th>调整</th></tr>
+    <tr><td>T01 极速食欲冲击</td><td>新增 <code>hook_first_clip_sec: 2.0-2.4</code>;转场改硬切为主(≥0.8),去掉 slide</td></tr>
+    <tr><td>T04 价格钩子前置</td><td>文案重构为五段式(价格→清单→渠道→履约→卖点),清单强制带数量词;放宽到 17-18s</td></tr>
+    <tr><td>T05 套餐豪华感</td><td>镜头 1.0-2.0s → <b>1.2-1.4s</b>;crossfade/zoom → 硬切卡点;保留俯拍全桌镜头位</td></tr>
+    <tr><td>新增 T06 投流极短</td><td>7-8s:3-4 个 1s 食欲镜头 + 3s CTA 尾帧;163 BPM</td></tr>
+    <tr><td>新增 T07 烟火气长镜头</td><td>单镜头慢移 7-8s,环境声为主不加/低加 BGM,+ 尾卡</td></tr>
+    <tr><td>新增 T08 生活方式氛围</td><td>0.6-0.8s/刀极速快剪;情绪人声 BGM(慢曲快剪反差);全景定场+POV 动作特写;场景词收尾</td></tr>
+  </table>
+  <h3>素材选片(VLM 打分新维度)</h3>
+  <p><span class="pill red">动态食欲信号</span>浇汁 / 拉丝 / 热气 / 烟雾 / 舀起 / 夹起 / 翻动 → 加权,静态摆盘降权,<b>首镜头必须是动作镜头</b></p>
+  <p><span class="pill gold">数量感</span>阵列 / 整桌俯拍 / 手抓一把 → 每条片排入 1-2 个</p>
+  <p><span class="pill cyan">烟雾蒸汽</span>有烟雾的镜头优先(V3/V4 的核心食欲元素)</p>
+  <h3>音频层</h3>
+  <p>口播型:首句必须是价格数字;非口播型:2-4s 处叠一句感叹词音效;全部:结尾收静或配品牌音效。</p>
+</div>
+
+<h2>⑤ 一句话总结</h2>
+<div class="card">
+  <p class="quote">爆款外卖视频 = <b>2 秒最香钩子</b> × <b>卡点硬切</b> × <b>数量反差</b>("这么多才 79")× <b>市井真实感</b> × <b>搜索组件收尾</b>。<br>我们的混剪系统要优化的不是"更精致",而是<b>"更准的节奏 + 更野的真实感 + 更狠的价格钩子"</b>。</p>
+</div>
+
+<footer>
+  数据来源:samples/ 对标样片 · 完整拆解记录见 findings.md 与 docs/对标视频分析报告.md<br>
+  抖音餐饮外卖视频 AI 混剪项目 · 2026-06-10
+</footer>
+
+</div>
+</body>
+</html>
