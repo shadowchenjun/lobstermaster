@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
@@ -30,6 +30,7 @@ export default async function ArticlePage({
   const { slug } = await params
   const article = getArticle(CATEGORY, slug)
   if (!article) notFound()
+  if (article.directUrl) redirect(article.directUrl)
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">

@@ -1,0 +1,22 @@
+---
+title: "dy-cut：抖音餐饮外卖视频 AI 混剪系统实践"
+date: "2026-06-10"
+category: "aicoding"
+coverEmoji: "🎬"
+tags: ["AI混剪", "短视频", "ffmpeg", "VLM", "DeepSeek", "抖音", "AIcoding"]
+summary: "面向餐饮品牌自营投放的本地 AI 混剪流水线：每周从约 100 分钟菜品特写素材中批量生成 500-1000 条 15 秒竖屏裸片。云端 VLM/LLM 负责语义理解和字幕生成，本地 ffmpeg 负责渲染，Gradio 工作台负责人工复审，Phase 1 成本控制在每周 100 元以内。"
+directUrl: "/douyin-takeout-ai-remix-share.html"
+---
+
+## 项目概要
+
+dy-cut 是一套面向餐饮品牌自营抖音投放的视频 AI 混剪系统：把每周约 100 分钟的菜品特写素材，批量合成为带字幕、转场、调色和 BGM 的 15 秒竖屏裸片，目标产量 500-1000 条/周，成本控制在 ¥100/周以内。
+
+核心思路是**本地编排 + 云端 AI 补足**：
+
+- **编排层**：Python orchestrator 串起 Catalog → Ingest → Frame → Understand → Copy → Select → Render/Export 七阶段流水线
+- **AI 能力**：豆包 VLM 做菜品语义理解，DeepSeek 生成套餐 × 模板字幕，弥补 M1 8GB 本地算力不足
+- **媒体处理**：ffmpeg 多段拼接、xfade 转场、调色、drawtext 字幕和 BGM 混音全部本地完成
+- **复审闭环**：Gradio 本地工作台逐条复审，支持字幕编辑和重生成队列
+
+完整的项目说明书（背景、架构、阶段状态、调参配置、已知限制）请看跳转后的页面。
