@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>口播 BGM 卡点混剪实验流程说明</title>
+  <style>
+    :root {
+      --ink: #171512;
+      --muted: #6c6258;
+      --paper: #f7f2ea;
+      --panel: #fffaf2;
+      --line: #d9cbbc;
+      --charcoal: #292520;
+      --green: #1f7a5b;
+      --red: #b2432f;
+      --gold: #b9822c;
+      --blue: #2e5f8d;
+      --shadow: 0 18px 42px rgba(41, 37, 32, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(41,37,32,.045) 1px, transparent 1px) 0 0 / 48px 48px,
+        linear-gradient(0deg, rgba(41,37,32,.035) 1px, transparent 1px) 0 0 / 48px 48px,
+        radial-gradient(circle at 20% 8%, rgba(185,130,44,.14), transparent 28%),
+        radial-gradient(circle at 80% 12%, rgba(31,122,91,.12), transparent 30%),
+        var(--paper);
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+
+    a { color: inherit; }
+    .page {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      min-height: 520px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) 360px;
+      gap: 34px;
+      align-items: end;
+      padding: 44px 0 34px;
+      border-bottom: 2px solid var(--charcoal);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border: 1px solid var(--charcoal);
+      background: var(--panel);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      box-shadow: 4px 4px 0 var(--charcoal);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: var(--red);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    h1 {
+      font-family: Georgia, "Songti SC", serif;
+      font-size: clamp(42px, 7vw, 86px);
+      line-height: .96;
+      letter-spacing: 0;
+      margin: 0 0 22px;
+      max-width: 850px;
+    }
+
+    .hero p {
+      font-size: 20px;
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0;
+    }
+
+    .status-board {
+      background: var(--charcoal);
+      color: #fff8ec;
+      padding: 22px;
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .status-board::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 0 72%, rgba(185,130,44,.32) 72% 100%);
+      pointer-events: none;
+    }
+    .status-board h2 {
+      position: relative;
+      margin: 0 0 18px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+    .metric {
+      position: relative;
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 14px;
+      padding: 14px 0;
+      border-top: 1px solid rgba(255,248,236,.2);
+    }
+    .metric b {
+      color: #f3c775;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .metric span {
+      color: rgba(255,248,236,.82);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 22px 0 34px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: rgba(247,242,234,.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(41,37,32,.14);
+    }
+    .nav a {
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    section {
+      padding: 44px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-head {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+      margin-bottom: 26px;
+    }
+    .kicker {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+    h2 {
+      font-family: Georgia, "Songti SC", serif;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.08;
+      margin: 0;
+      letter-spacing: 0;
+    }
+    .lead {
+      font-size: 18px;
+      line-height: 1.75;
+      color: var(--muted);
+      margin: 14px 0 0;
+    }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .compare-card, .card, .code-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: 8px 8px 0 rgba(41,37,32,.08);
+    }
+    .compare-card {
+      padding: 22px;
+      min-height: 250px;
+    }
+    .compare-card.old { border-top: 7px solid var(--muted); }
+    .compare-card.new { border-top: 7px solid var(--green); }
+    .compare-card h3, .card h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    .compare-card p, .card p, li {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid currentColor;
+    }
+    .tag.gray { color: var(--muted); }
+    .tag.green { color: var(--green); }
+    .tag.red { color: var(--red); }
+    .tag.blue { color: var(--blue); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 24px;
+    }
+    .step {
+      background: var(--panel);
+      border: 1px solid var(--charcoal);
+      border-radius: 6px;
+      padding: 16px;
+      position: relative;
+      min-height: 152px;
+    }
+    .step::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 900;
+      color: var(--red);
+      z-index: 1;
+    }
+    .step:last-child::after { content: ""; }
+    .step b {
+      display: block;
+      font-size: 30px;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+    .step strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .step span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .card {
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 8px 8px 0 rgba(41,37,32,.08);
+    }
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    th {
+      background: #efe2d1;
+      color: var(--charcoal);
+      font-size: 13px;
+    }
+    td code, p code, li code {
+      background: rgba(41,37,32,.08);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .92em;
+    }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: 13px;
+      color: #fff8ec;
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+    .code-card {
+      background: var(--charcoal);
+      padding: 18px;
+      box-shadow: none;
+      border-color: var(--charcoal);
+    }
+
+    .lane {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: 16px 0;
+      border-top: 1px dashed var(--line);
+    }
+    .lane:first-child { border-top: 0; }
+    .lane-title {
+      font-weight: 800;
+      color: var(--charcoal);
+    }
+    .lane-body {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .callout {
+      border-left: 7px solid var(--red);
+      background: #fff4e3;
+      padding: 18px 20px;
+      margin-top: 18px;
+      border-radius: 0 6px 6px 0;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .callout strong { color: var(--ink); }
+
+    .foot {
+      padding-top: 30px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .hero, .section-head, .compare, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+      .step:nth-child(2n)::after { content: ""; }
+      .status-board { max-width: 520px; }
+    }
+    @media (max-width: 620px) {
+      .page { width: min(100% - 24px, 1180px); }
+      .hero { min-height: 0; padding-top: 24px; }
+      .flow { grid-template-columns: 1fr; }
+      .step::after { content: ""; }
+      .lane { grid-template-columns: 1fr; }
+      th, td { display: block; width: 100%; }
+      th { display: none; }
+      td { border-bottom: 0; padding: 10px 14px; }
+      tr { display: block; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> Phase 1 实验链路 · beatmix · 2026-06-13</div>
+        <h1>口播 BGM 卡点混剪实验流程说明</h1>
+        <p>
+          新方案把传统“素材填满时长、BGM 贴上去”的做法反过来：
+          先把口播 BGM 拆成带时间的内容槽位，再让素材逐槽卡点。
+          目标是在餐饮外卖短视频里实现“念到猪排就看见猪排，念到配送就看见包装/出餐”的声画同步。
+        </p>
+      </div>
+      <aside class="status-board">
+        <h2>当前实现状态</h2>
+        <div class="metric"><b>1</b><span>独立命令：<code>python -m src.orchestrator beatmix</code></span></div>
+        <div class="metric"><b>6</b><span>差异化 fingerprint 维度，控制同 BGM 多条视频不撞</span></div>
+        <div class="metric"><b>10</b><span>默认每条 BGM 产出条数，由 <code>--keep</code> 控制</span></div>
+        <div class="metric"><b>1</b><span>素材自动打标模块已存在：<code>src/beatmix/tagging.py</code></span></div>
+      </aside>
+    </header>
+
+    <nav class="nav" aria-label="页面导航">
+      <a href="#why">方案变化</a>
+      <a href="#inputs">输入资产</a>
+      <a href="#flow">运行流程</a>
+      <a href="#code">代码映射</a>
+      <a href="#status">现状与缺口</a>
+      <a href="#handoff">协作交接</a>
+    </nav>
+
+    <section id="why">
+      <div class="section-head">
+        <div class="kicker">01 · Strategy</div>
+        <div>
+          <h2>核心变化：BGM 不是背景，是剪辑骨架</h2>
+          <p class="lead">老流程追求批量产出和差异化，新实验追求“口播语义和画面素材对齐”。两条链路隔离，互不影响。</p>
+        </div>
+      </div>
+      <div class="compare">
+        <article class="compare-card old">
+          <span class="tag gray">旧 run 流程</span>
+          <h3>选片填时长，BGM 叠加</h3>
+          <p>先按 hook、差异化和模板节奏挑选素材片段，填满 15 秒；BGM 只作为音轨叠上去，不理解歌词/口播内容。</p>
+          <p><strong>适合：</strong>稳定批量跑 5 套餐 × 5 模板，产出可复审的视频池。</p>
+        </article>
+        <article class="compare-card new">
+          <span class="tag green">新 beatmix 实验</span>
+          <h3>先读口播槽位，再让素材卡点</h3>
+          <p>先把口播 BGM 转成带时间戳的 voicemap，再让正文素材按菜名、价格、包装、配送等槽位逐段匹配。</p>
+          <p><strong>适合：</strong>验证专业剪辑打法，追求强钩子开头和声画同步。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="inputs">
+      <div class="section-head">
+        <div class="kicker">02 · Assets</div>
+        <div>
+          <h2>实验输入资产全部独立存放</h2>
+          <p class="lead">这些目录与老流程 <code>input/raw</code>、<code>scratch/features</code> 隔离。协作者只要补齐这几类资产，就能跑 beatmix。</p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>路径</th>
+            <th>内容</th>
+            <th>谁产生 / 谁维护</th>
+            <th>当前代码状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>input/starter/</code></td>
+            <td>黄金开头素材，通常是端菜、近景、强食欲钩子，默认取约 2 秒。</td>
+            <td>人工挑选放入；无需标签。</td>
+            <td>已读取，<code>runner.py</code> 用随机种子选择。</td>
+          </tr>
+          <tr>
+            <td><code>input/material/</code></td>
+            <td>正文卡点素材，文件名必须能被 tags.json 引用。</td>
+            <td>人工放入，后续可接素材库。</td>
+            <td>已读取素材时长，用于中心裁剪。</td>
+          </tr>
+          <tr>
+            <td><code>input/material/tags.json</code></td>
+            <td>每条正文素材的 <code>category</code>、<code>dish</code>、<code>is_bspot</code>。</td>
+            <td>设计上应由 VLM 自动初标 + 人工校正。</td>
+            <td>自动打标模块已实现；当前主 <code>beatmix</code> 命令仍只读取该文件。</td>
+          </tr>
+          <tr>
+            <td><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code></td>
+            <td>BGM 口播槽位表：时间、文字、kind。</td>
+            <td>ASR 离线转写 + LLM 初分 kind + 人工校正。</td>
+            <td>已读取；<code>asr.py</code> 有离线生成能力，但未挂 CLI。</td>
+          </tr>
+          <tr>
+            <td><code>cache/bgm/bgm_index.json</code></td>
+            <td>BGM id 到真实音频路径的索引。</td>
+            <td>人工维护或由导入工具维护。</td>
+            <td>已读取；<code>--bgm</code> 必须能在这里找到。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-2" style="margin-top: 18px;">
+        <div class="code-card">
+<pre>{
+  "mat_001.mp4": {"category": "主菜", "dish": "烤猪排", "is_bspot": false},
+  "mat_002.mp4": {"category": "烤串", "dish": "烤串", "is_bspot": false},
+  "mat_003.mp4": {"category": "价格牌", "dish": "", "is_bspot": false},
+  "mat_004.mp4": {"category": "空镜", "dish": "", "is_bspot": true}
+}</pre>
+        </div>
+        <div class="card">
+          <span class="tag blue">字段解释</span>
+          <h3>tags.json 怎么理解</h3>
+          <p><code>category</code> 是粗分类，决定 fallback 的素材池；<code>dish</code> 是细菜名，帮助 LLM 语义匹配；<code>is_bspot</code> 表示万能补位镜头，可用于包装、配送、价格、空镜等 filler 槽位。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="flow">
+      <div class="section-head">
+        <div class="kicker">03 · Pipeline</div>
+        <div>
+          <h2>一条 beatmix 视频如何生成</h2>
+          <p class="lead">当前实现是“读输入 → LLM 编排 → 代码兜底 → 去重筛选 → 转成 SegmentPlan → ffmpeg 渲染”。</p>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="step"><b>1</b><strong>读取 BGM 槽位</strong><span>从 <code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code> 读取口播时间轴，过滤掉 intro。</span></div>
+        <div class="step"><b>2</b><strong>读取素材标签</strong><span>读取 <code>input/material/tags.json</code>，把素材变成可被 LLM 选择的清单。</span></div>
+        <div class="step"><b>3</b><strong>LLM 一次编排</strong><span>把所有槽位和所有素材一次性发给 LLM，返回 slot_idx 到 clip 的映射。</span></div>
+        <div class="step"><b>4</b><strong>确定性兜底</strong><span>LLM 选错、重复或缺失时，按菜品/空镜/万能素材补齐，避免黑屏。</span></div>
+        <div class="step"><b>5</b><strong>差异化去重</strong><span>采样 30 个候选，按 D1-D6 fingerprint 选出不撞的 Top-N。</span></div>
+        <div class="step"><b>6</b><strong>渲染输出</strong><span>转成现有 SegmentPlan，复用 render + ffmpeg，输出 mp4 和 plan.json。</span></div>
+      </div>
+
+      <div class="callout">
+        <strong>关键业务判断：</strong>开头素材是“黄金 2 秒豁免区”，不参与口播语义匹配；后续正文素材才严格按口播槽位时长卡点。
+      </div>
+    </section>
+
+    <section id="code">
+      <div class="section-head">
+        <div class="kicker">04 · Code Map</div>
+        <div>
+          <h2>代码如何对应方案</h2>
+          <p class="lead">以下是协作者最需要看的文件。先看入口和 runner，再看四个纯函数模块。</p>
+        </div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-title"><code>src/orchestrator.py</code></div>
+        <div class="lane-body">注册 <code>beatmix</code> 子命令。命令参数为 <code>--bgm</code>、<code>--keep</code>、<code>--settings</code>。调用 <code>run_beatmix(args.bgm, settings, n_keep=args.keep)</code>。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/runner.py</code></div>
+        <div class="lane-body">实验流程主编排：读取 voicemap、materials、starter；构建 LLM prompt；采样候选；去重；探测素材时长；渲染；写 <code>.plan.json</code>。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/asr.py</code></div>
+        <div class="lane-body">口播 BGM 的离线转写工具：ASR 得到词/短句时间戳，再用 LLM 给短句标 <code>intro</code>、<code>dish</code>、<code>filler</code>，最终形成 voicemap。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/materials.py</code></div>
+        <div class="lane-body">负责读取 <code>input/material/tags.json</code>，供主 <code>beatmix</code> 编排链路使用。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/tagging.py</code></div>
+        <div class="lane-body">素材 VLM 自动打标模块：扫描 <code>input/material</code> 下的视频，抽取若干帧，调用注入的 VLM 函数生成 <code>category</code>、<code>dish</code>、<code>is_bspot</code>，写入 <code>tags.json</code>；已存在的素材标签会跳过，保留人工校正。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/assembler.py</code></div>
+        <div class="lane-body">槽位填充与兜底：LLM 选择有效则采用；无效则按 food/filler 类别、<code>is_bspot</code>、任意未用素材逐层兜底。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/dedup.py</code></div>
+        <div class="lane-body">D1-D6 指纹和去重。硬约束确保整体序列和菜品序列不重复，软距离控制开头、集合、filler、类别首选差异。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/render_adapter.py</code></div>
+        <div class="lane-body">把 BeatMixPlan 转成老渲染器能吃的 SegmentPlan。每个正文素材按槽位时长做中心裁剪。</div>
+      </div>
+
+      <div class="code-card" style="margin-top: 18px;">
+<pre>python -m src.orchestrator beatmix --bgm bgm_core_01 --keep 10
+
+# 输出
+output/beatmix/&lt;bgm_id&gt;/
+  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.mp4
+  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.plan.json</pre>
+      </div>
+    </section>
+
+    <section id="status">
+      <div class="section-head">
+        <div class="kicker">05 · Reality Check</div>
+        <div>
+          <h2>当前已实现与尚未接上的部分</h2>
+          <p class="lead">这部分适合汇报时直接说明，避免把设计目标误认为已完成能力。</p>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <span class="tag green">已实现</span>
+          <h3>beatmix 主链路</h3>
+          <p>命令入口、voicemap 读取、tags 读取、LLM 编排、fallback、去重、SegmentPlan 适配、渲染输出都已接入。</p>
+        </div>
+        <div class="card">
+          <span class="tag green">已实现</span>
+          <h3>ASR 生成 voicemap 的模块</h3>
+          <p><code>src/beatmix/asr.py</code> 已有转写和 kind 标注函数，但还不是一个可直接调用的 orchestrator 子命令。</p>
+        </div>
+        <div class="card">
+          <span class="tag green">已实现模块</span>
+          <h3>material 自动 VLM 打标</h3>
+          <p><code>src/beatmix/tagging.py</code> 已实现扫描、抽帧、VLM prompt、结果规范化、保留人工改动和写入 <code>tags.json</code>；对应单测已覆盖。</p>
+        </div>
+        <div class="card">
+          <span class="tag red">待接线</span>
+          <h3>material 自动 VLM 打标</h3>
+          <p>当前 <code>src/orchestrator.py</code> 还没有暴露单独的 <code>beatmix-tag-materials</code> 子命令；如需从命令行直接触发，下一步应把 <code>tag_materials_dir</code> 接入 CLI。</p>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>建议下一个小迭代：</strong>把已实现的 <code>tag_materials_dir</code> 注册为 <code>python -m src.orchestrator beatmix-tag-materials</code>，让协作者无需写 Python 调用即可生成可人工校正的 <code>tags.json</code>。
+      </div>
+    </section>
+
+    <section id="handoff">
+      <div class="section-head">
+        <div class="kicker">06 · Handoff</div>
+        <div>
+          <h2>给协作者的最短上手路径</h2>
+          <p class="lead">如果只想跑通一次实验，按下面顺序准备即可。</p>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>运行前检查</h3>
+          <ul>
+            <li><code>cache/bgm/bgm_index.json</code> 中存在目标 <code>bgm_id</code>。</li>
+            <li><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code> 已人工校正时间和文字。</li>
+            <li><code>input/starter/</code> 至少有 1 条 mp4，最好 10 条以上。</li>
+            <li><code>input/material/</code> 有正文素材，且 <code>tags.json</code> 文件名完全匹配。</li>
+            <li><code>config/settings.yaml</code> 里的 LLM API 可用。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>验收标准</h3>
+          <ul>
+            <li>输出目录有 mp4 和对应 <code>.plan.json</code>。</li>
+            <li>口播念到菜品时，画面主体是对应菜品或近似类目。</li>
+            <li>价格、包装、配送类口播不黑屏，能用价格牌/空镜/出餐动作承接。</li>
+            <li>同一 BGM 的多条成片不出现完全相同的正文素材序列。</li>
+            <li>素材不足时允许少产，但不为了凑数放宽硬约束。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="foot">
+        来源：<code>docs/superpowers/specs/2026-06-13-口播BGM卡点混剪-design.md</code>、
+        <code>docs/superpowers/plans/2026-06-13-口播BGM卡点混剪.md</code>、
+        <code>src/beatmix/*</code>、<code>src/orchestrator.py</code>。本说明页反映当前代码状态：自动打标模块已实现，但主 CLI 接线仍需确认或补齐。
+      </div>
+    </section>
+  </main>
+</body>
+</html>
