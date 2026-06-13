@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dy-cut vs html-video · 产品对比学习总结</title>
+  <style>
+    :root {
+      --paper: #f7f5ef;
+      --ink: #20242a;
+      --muted: #66707c;
+      --line: #d8d2c4;
+      --panel: #fffefa;
+      --panel-2: #efebe0;
+      --red: #d93a31;
+      --yellow: #f0b429;
+      --teal: #178f84;
+      --blue: #2b68a8;
+      --charcoal: #121417;
+      --shadow: 0 18px 45px rgba(32, 36, 42, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(32, 36, 42, 0.04) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(32, 36, 42, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.68;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 62vh;
+      display: grid;
+      align-items: end;
+      color: #fff;
+      background:
+        linear-gradient(120deg, rgba(18, 20, 23, 0.95), rgba(18, 20, 23, 0.72)),
+        radial-gradient(circle at 82% 18%, rgba(240, 180, 41, 0.78), transparent 34%),
+        linear-gradient(135deg, #1b2528 0%, #913026 42%, #176f69 100%);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.2;
+      background-image:
+        linear-gradient(45deg, transparent 47%, rgba(255, 255, 255, 0.36) 48%, rgba(255, 255, 255, 0.36) 52%, transparent 53%);
+      background-size: 24px 24px;
+    }
+
+    .hero-inner {
+      position: relative;
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 78px 0 48px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 7px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffe9a8;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(36px, 7vw, 76px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 780px;
+      margin: 22px 0 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 19px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 920px;
+      margin-top: 30px;
+    }
+
+    .hero-card {
+      min-height: 104px;
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+    }
+
+    .hero-card b {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .hero-card span {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 13px;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 76px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 14px 0 26px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 254, 250, 0.82);
+      color: var(--ink);
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(32, 36, 42, 0.04);
+    }
+
+    section {
+      padding: 36px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: clamp(26px, 4vw, 38px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      color: var(--charcoal);
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    .lead {
+      max-width: 880px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .verdict {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 22px;
+    }
+
+    .verdict-main,
+    .panel,
+    .card,
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 254, 250, 0.95);
+      box-shadow: var(--shadow);
+    }
+
+    .verdict-main {
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(217, 58, 49, 0.09), rgba(255, 254, 250, 0.96) 42%),
+        var(--panel);
+    }
+
+    .verdict-main .sentence {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      line-height: 1.22;
+    }
+
+    .verdict-main .sentence span {
+      color: var(--red);
+    }
+
+    .verdict-side {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini {
+      padding: 17px;
+      border-left: 5px solid var(--teal);
+    }
+
+    .mini:nth-child(2) {
+      border-left-color: var(--yellow);
+    }
+
+    .mini b {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 17px;
+    }
+
+    .mini span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .compare {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--charcoal);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:first-child {
+      width: 16%;
+      color: var(--charcoal);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    td:nth-child(2) {
+      background: rgba(217, 58, 49, 0.045);
+    }
+
+    td:nth-child(3) {
+      background: rgba(23, 143, 132, 0.045);
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.red { color: var(--red); }
+    .tag.teal { color: var(--teal); }
+    .tag.yellow { color: #9a6500; }
+    .tag.blue { color: var(--blue); }
+
+    .two-col,
+    .three-col {
+      display: grid;
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+    }
+
+    .card strong {
+      color: var(--ink);
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .lane {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 74px 1fr;
+      gap: 14px;
+      align-items: stretch;
+      margin-top: 20px;
+    }
+
+    .lane .product {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .product h3 {
+      margin: 0 0 12px;
+      font-size: 26px;
+    }
+
+    .product.dy h3 {
+      color: var(--red);
+    }
+
+    .product.hv h3 {
+      color: var(--teal);
+    }
+
+    .bridge {
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .bridge span {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--charcoal);
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .step {
+      min-height: 132px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .step b {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .step:nth-child(even) b {
+      background: var(--teal);
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .note {
+      padding: 22px;
+      border-left: 8px solid var(--yellow);
+      background:
+        linear-gradient(135deg, rgba(240, 180, 41, 0.16), rgba(255, 254, 250, 0.96) 48%),
+        var(--panel);
+    }
+
+    .quote {
+      margin: 0;
+      padding: 20px 22px;
+      border-left: 6px solid var(--red);
+      border-radius: 0 8px 8px 0;
+      background: var(--panel-2);
+      color: var(--charcoal);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    code {
+      padding: 2px 6px;
+      border: 1px solid rgba(18, 20, 23, 0.14);
+      border-radius: 6px;
+      background: rgba(18, 20, 23, 0.06);
+      color: #0b5d58;
+      font-family: Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    footer {
+      padding: 34px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .verdict,
+      .two-col,
+      .three-col,
+      .lane,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .bridge span {
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+        padding: 10px 14px;
+      }
+
+      .compare {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 780px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      nav {
+        display: none;
+      }
+
+      .card,
+      .panel,
+      .verdict-main,
+      .product,
+      .step,
+      .note {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">产品学习总结 · 2026-06-13</p>
+      <h1>dy-cut vs html-video：谁负责让人馋，谁负责让信息更炸</h1>
+      <p class="hero-copy">
+        这份总结把 dy-cut 和 nexu-io/html-video 放在同一个业务问题里看：抖音餐饮外卖视频批量生产。结论不是二选一，而是主链路和动效层的分工。
+      </p>
+      <div class="hero-grid">
+        <div class="hero-card">
+          <b>dy-cut</b>
+          <span>真实菜品素材混剪流水线，面向抖音外卖投流和自营批量生产。</span>
+        </div>
+        <div class="hero-card">
+          <b>html-video</b>
+          <span>HTML/CSS 动画生成 MP4 的 agent 视频工具，适合图文动效和信息包装。</span>
+        </div>
+        <div class="hero-card">
+          <b>融合方向</b>
+          <span>dy-cut 做主体快剪，html-video 做价格牌、片头、CTA、榜单等 overlay 资产。</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <a href="#summary">核心结论</a>
+      <a href="#comparison">功能对比</a>
+      <a href="#same">相同点</a>
+      <a href="#different">关键差异</a>
+      <a href="#fit">适配场景</a>
+      <a href="#merge">融合方案</a>
+      <a href="#roadmap">落地建议</a>
+      <a href="#references">资料来源</a>
+    </nav>
+
+    <section id="summary">
+      <h2>一、核心结论</h2>
+      <p class="lead">
+        dy-cut 和 html-video 都能生成 MP4，但它们不是同类产品。dy-cut 的核心价值是从真实菜品素材中选片、混剪、差异化出片；html-video 的核心价值是把结构化内容和 prompt 转成 HTML 动画视频。
+      </p>
+
+      <div class="verdict">
+        <div class="verdict-main">
+          <p class="sentence">
+            <span>dy-cut 负责真实食欲和投流主链路，</span><br />
+            html-video 适合成为动效包装供应商。
+          </p>
+          <p style="margin-top:18px;color:var(--muted)">
+            对餐饮外卖视频来说，最关键的是油亮、热气、拉丝、出锅、包装、数量感和市井真实感。这些必须来自真实素材。HTML 动画可以增强价格信息和转化信息，但不能替代菜品画面。
+          </p>
+        </div>
+        <div class="verdict-side">
+          <div class="mini panel">
+            <b>不要替代</b>
+            <span>不要用 html-video 替代 dy-cut 的选片、混剪、VLM 理解和 7 维差异化。</span>
+          </div>
+          <div class="mini panel">
+            <b>可以吸收</b>
+            <span>吸收 html-video 的 HTML 动效模板、agent 生成 storyboard、片头片尾和价格卡思想。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="comparison">
+      <h2>二、功能对比</h2>
+      <p class="lead">
+        下表按产品定位、输入输出、AI 使用方式、视频能力和业务适配做横向对比。
+      </p>
+      <div class="compare">
+        <table>
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>dy-cut</th>
+              <th>html-video</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>产品定位</td>
+              <td>抖音餐饮外卖视频 AI 混剪系统。</td>
+              <td>HTML/CSS 到 MP4 的 agent 视频生成工具。</td>
+            </tr>
+            <tr>
+              <td>目标用户</td>
+              <td>自营餐饮品牌、加盟店体系、外卖投流团队。</td>
+              <td>开发者、内容团队、AI agent 用户。</td>
+            </tr>
+            <tr>
+              <td>核心输入</td>
+              <td>菜品实拍视频、套餐库、授权 BGM、模板配置。</td>
+              <td>prompt、文章链接、GitHub repo、HTML 模板和结构化变量。</td>
+            </tr>
+            <tr>
+              <td>核心输出</td>
+              <td>15s 左右的 1080×1920 抖音竖屏裸片，人工复审后手动上传。</td>
+              <td>HTML 动画渲染出的 MP4，可用于解释视频、产品介绍、标题卡、数据视频。</td>
+            </tr>
+            <tr>
+              <td>视频主体</td>
+              <td>真实菜品特写、出餐、包装、桌面、炭火、热气。</td>
+              <td>HTML/CSS/GSAP/图文组件/数据图/标题动效。</td>
+            </tr>
+            <tr>
+              <td>AI 作用</td>
+              <td>VLM 看懂素材；LLM 生成抖音风格字幕文案；选片算法做差异化。</td>
+              <td>Agent 生成 storyboard、content graph、HTML frame 和模板变量。</td>
+            </tr>
+            <tr>
+              <td>渲染方式</td>
+              <td>Python orchestrator 调 ffmpeg 拼接、变速、调色、烧字幕、混 BGM。</td>
+              <td>Headless Chromium 录制 HTML 动画，再由 ffmpeg 编码 MP4。</td>
+            </tr>
+            <tr>
+              <td>模板体系</td>
+              <td>5 个餐饮外卖模板：极速食欲、慢镜特写、出锅过程、价格钩子、套餐豪华感。</td>
+              <td>23 个本地模板：数据图、glitch title、kinetic type、product promo、logo outro 等。</td>
+            </tr>
+            <tr>
+              <td>差异化机制</td>
+              <td>7 维指纹：开场镜头、镜头顺序、BGM、转场、字幕句、调色、节奏曲线。</td>
+              <td>主要靠模板选择、agent 生成内容、frame 顺序和视觉样式变化。</td>
+            </tr>
+            <tr>
+              <td>复审方式</td>
+              <td>Gradio 本地复审台：通过、丢弃、重生成。</td>
+              <td>本地 Studio：模板画廊、项目编辑、agent 生成、预览与导出。</td>
+            </tr>
+            <tr>
+              <td>平台适配</td>
+              <td>明确服务抖音餐饮外卖，输出裸片，平台自动加水印/团购入口。</td>
+              <td>通用视频生成工具，不专门适配抖音餐饮投流规则。</td>
+            </tr>
+            <tr>
+              <td>成熟度判断</td>
+              <td>自研垂直 MVP，需求边界清晰，适合继续围绕业务打磨。</td>
+              <td>开源早期项目，本地已可安装、构建、doctor 和 smoke 均通过。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="same">
+      <h2>三、相同点</h2>
+      <div class="three-col">
+        <div class="card">
+          <h3>都本地出片</h3>
+          <p>两者最终都在本机生成 MP4，核心链路不依赖云端渲染服务，成本和隐私更可控。</p>
+        </div>
+        <div class="card">
+          <h3>都依赖 ffmpeg</h3>
+          <p>dy-cut 用 ffmpeg 做拼接、字幕、调色和音频；html-video 用 ffmpeg 把录制结果编码为 MP4。</p>
+        </div>
+        <div class="card">
+          <h3>都有模板思想</h3>
+          <p>dy-cut 的模板是餐饮视频节奏规则；html-video 的模板是可被 agent 填充的 HTML 动画框架。</p>
+        </div>
+        <div class="card">
+          <h3>都追求批量化</h3>
+          <p>dy-cut 面向每周 500-1000 条；html-video 面向从 prompt/link/repo 自动生成多帧视频。</p>
+        </div>
+        <div class="card">
+          <h3>都不适合自由剪辑</h3>
+          <p>它们都不是 PR/AE/剪映式时间线编辑器，而是通过规则和模板生成视频。</p>
+        </div>
+        <div class="card">
+          <h3>都适合 AI 介入</h3>
+          <p>dy-cut 让 AI 看懂真实素材和写文案；html-video 让 agent 直接生产 storyboard 和 HTML frame。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="different">
+      <h2>四、最大不同：真实镜头 vs 信息动效</h2>
+      <p class="lead">
+        餐饮外卖视频的转化关键，不是“有没有动画”，而是“用户看了会不会馋、会不会觉得划算、会不会立刻想点”。这决定了 dy-cut 必须是主链路。
+      </p>
+      <div class="lane">
+        <div class="product dy">
+          <h3>dy-cut</h3>
+          <p><span class="tag red">真实素材</span><span class="tag yellow">食欲钩子</span><span class="tag blue">投流裸片</span></p>
+          <ul>
+            <li>从菜品实拍素材中挑选最有食欲的镜头。</li>
+            <li>把热气、油光、拉丝、出锅、包装、数量感剪成短视频。</li>
+            <li>用 7 维差异化解决批量出片的同质化问题。</li>
+            <li>更适合作为抖音餐饮外卖视频的生产主干。</li>
+          </ul>
+        </div>
+        <div class="bridge"><span>互补</span></div>
+        <div class="product hv">
+          <h3>html-video</h3>
+          <p><span class="tag teal">HTML 动画</span><span class="tag yellow">信息包装</span><span class="tag blue">Agent 生成</span></p>
+          <ul>
+            <li>把结构化内容变成标题卡、数据图、价格牌和 CTA。</li>
+            <li>适合生成片头、片尾、榜单、促销卡、说明页。</li>
+            <li>能用 agent 快速改文字、样式、分镜和模板变量。</li>
+            <li>更适合作为 dy-cut 的动效层和素材补充层。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="fit">
+      <h2>五、适配场景判断</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>dy-cut 更适合</h3>
+          <ul>
+            <li>餐饮外卖真实素材混剪。</li>
+            <li>多门店、多套餐、批量投流视频。</li>
+            <li>菜品特写、出餐、包装、桌面氛围的快剪。</li>
+            <li>需要同一套餐多条视频显著不同。</li>
+            <li>需要复审、断点续跑和低成本周产。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>html-video 更适合</h3>
+          <ul>
+            <li>促销片头和片尾 CTA。</li>
+            <li>价格牌、卖点条、限时优惠卡。</li>
+            <li>本周热卖榜、套餐销量榜、门店战报。</li>
+            <li>文章、项目、报告类内容解读视频。</li>
+            <li>无需真实菜品画面的信息型视频。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:18px">
+        <h3 style="margin-top:0">重要边界</h3>
+        <p>
+          如果目标是“让用户看到菜马上想下单”，html-video 不能替代真实素材；如果目标是“把活动信息讲清楚、做得更有冲击力”，html-video 很有参考价值。
+        </p>
+      </div>
+    </section>
+
+    <section id="merge">
+      <h2>六、推荐融合方案</h2>
+      <p class="lead">
+        最合理的融合方式是：dy-cut 继续保持真实素材混剪主链路，html-video 的思想进入 dy-cut 的 motion_overlays 层。
+      </p>
+      <div class="flow">
+        <div class="step">
+          <b>1</b>
+          <strong>真实素材输入</strong>
+          <span>商家拍摄菜品、出餐、包装、门店和桌面场景。</span>
+        </div>
+        <div class="step">
+          <b>2</b>
+          <strong>dy-cut 选片</strong>
+          <span>VLM 理解素材，select 阶段做镜头组合和差异化。</span>
+        </div>
+        <div class="step">
+          <b>3</b>
+          <strong>html 动效资产</strong>
+          <span>生成价格牌、开场大字、卖点条、CTA 卡。</span>
+        </div>
+        <div class="step">
+          <b>4</b>
+          <strong>ffmpeg 合成</strong>
+          <span>真实视频主体 + overlay + 字幕 + BGM 统一出片。</span>
+        </div>
+        <div class="step">
+          <b>5</b>
+          <strong>复审与投放</strong>
+          <span>Gradio 通过/丢弃/重生成，合格裸片手动上传抖音。</span>
+        </div>
+      </div>
+
+      <div class="three-col">
+        <div class="card">
+          <h3>短期可做</h3>
+          <p>先不接完整 html-video，只借鉴它的模板思想，在 dy-cut 里实现确定性的价格牌、CTA 卡和开头冲击字。</p>
+        </div>
+        <div class="card">
+          <h3>中期可接</h3>
+          <p>把 HTML 动效渲染成透明 WebM 或 PNG 序列，作为 dy-cut 的 overlay 资产进入 render 阶段。</p>
+        </div>
+        <div class="card">
+          <h3>长期可扩</h3>
+          <p>做一个“自然语言改版助手”：用户说“开头更炸、价格晚点出”，系统转成可审计的模板 patch。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2>七、对 dy-cut 的落地建议</h2>
+      <div class="compare">
+        <table>
+          <thead>
+            <tr>
+              <th>优先级</th>
+              <th>建议能力</th>
+              <th>说明</th>
+              <th>参考 html-video 的点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>P0</td>
+              <td>motion_overlays 契约</td>
+              <td>在模板 YAML 中登记开场大字、价格牌、卖点条、CTA 卡的时间、位置、样式。</td>
+              <td>模板 manifest 和结构化变量。</td>
+            </tr>
+            <tr>
+              <td>P0</td>
+              <td>确定性价格牌</td>
+              <td>先用 ffmpeg drawtext/shape 实现，不依赖复杂 AI 动效，保证可测试可复现。</td>
+              <td>把信息块资产化，而不是逐条手工设计。</td>
+            </tr>
+            <tr>
+              <td>P1</td>
+              <td>HTML 片头/片尾生成器</td>
+              <td>用 HTML/CSS 生成 0-1.2s 开场和 13-15s 结尾 CTA，再合入 dy-cut 成片。</td>
+              <td>Chromium + ffmpeg 的 HTML 动画渲染方式。</td>
+            </tr>
+            <tr>
+              <td>P1</td>
+              <td>自然语言调参</td>
+              <td>复审时输入“少闪白、字幕更大、价格晚一点”，转成白名单 JSON/YAML patch。</td>
+              <td>agent 把人话转结构化改版请求。</td>
+            </tr>
+            <tr>
+              <td>P2</td>
+              <td>榜单/战报视频</td>
+              <td>用 html-video 思路生成“本周热卖 TOP5”“套餐复购榜”等非真实菜品主体视频。</td>
+              <td>数据图、rollup、kinetic type 模板。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>不建议做的事</h3>
+      <div class="two-col">
+        <div class="card">
+          <h3>不要把主剪辑交给 html-video</h3>
+          <p>餐饮主视频的核心是镜头本身，HTML 动画不能替代食物的真实质感。</p>
+        </div>
+        <div class="card">
+          <h3>不要变成自由时间线编辑器</h3>
+          <p>dy-cut 的优势是批量、稳定、低成本、可复现。自由拖拽编辑会拖慢生产链路。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="references">
+      <h2>八、资料来源</h2>
+      <div class="card">
+        <p>
+          <strong>dy-cut 本地资料：</strong>
+          <code>README.md</code>、<code>docs/使用说明书.md</code>、<code>docs/superpowers/specs/2026-06-09-抖音餐饮混剪-design.md</code>、<code>docs/ChatCut能力拆解与产品融合设计.md</code>。
+        </p>
+        <p>
+          <strong>html-video 资料：</strong>
+          <a href="https://github.com/nexu-io/html-video">nexu-io/html-video GitHub</a>、
+          <a href="https://open-design.ai/html-video/">Open Design html-video 页面</a>、
+          本地试用目录 <code>/Users/chenjun/Documents/AI项目开发/html-video</code>。
+        </p>
+        <p>
+          <strong>本地试用结果：</strong>
+          已完成 <code>pnpm install</code>、<code>pnpm -r build</code>、<code>doctor</code> 和 <code>pnpm smoke</code>；Studio 可在 <code>http://127.0.0.1:3071</code> 打开。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <p class="quote">
+        最终判断：dy-cut 是抖音餐饮外卖视频的生产系统；html-video 是可借鉴、可接入的动效和信息包装系统。前者解决“看了想吃”，后者解决“信息更醒目”。
+      </p>
+    </section>
+
+    <footer>
+      dy-cut 产品学习资料 · 由前期产品研究、代码文档和 html-video 本地试用结果整理。
+    </footer>
+  </main>
+</body>
+</html>
