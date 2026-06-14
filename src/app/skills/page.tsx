@@ -162,6 +162,19 @@ const skills: Skill[] = [
     free: true,
     detailUrl: `${EASYCLAW}/150`,
   },
+  {
+    id: 'storage-analyzer',
+    name: 'Storage Analyzer',
+    subtitle: '全盘存储分析与清理向导',
+    description:
+      '自动扫描 Mac/Windows 整机磁盘占用，将每一项分为 🟢 可自动清理 / 🟡 人工判断 / 🔴 谨慎操作 三级，生成交互式 HTML 报告并可一键移入废纸篓。全程只读扫描，删除需主动确认。',
+    author: 'KKKKhazix',
+    category: 'tools',
+    stars: 38,
+    calls: 0,
+    free: true,
+    detailUrl: 'https://github.com/KKKKhazix/khazix-skills/tree/main/storage-analyzer',
+  },
 ]
 
 /* ── Components ── */
