@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dy-cut 团队导览: 抖音餐饮外卖视频 AI 混剪系统</title>
+  <style>
+    :root {
+      --ink:#16202c; --muted:#5c6b7a; --soft:#f5f7fa; --panel:#ffffff; --line:#d7e0ea;
+      --navy:#26384d; --teal:#16756b; --amber:#b36b12; --red:#b42318; --blue:#345f91;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; color:var(--ink); background:#edf1f5;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      letter-spacing:0;
+    }
+    header {
+      color:white; background:#182435;
+      padding:42px 48px 34px; border-bottom:1px solid #2c3d52;
+    }
+    header h1 { margin:0; font-size:34px; line-height:1.2; letter-spacing:0; max-width:1040px; }
+    header p { margin:14px 0 0; max-width:980px; color:#d2dae4; line-height:1.75; font-size:16px; }
+    main { max-width:1180px; margin:0 auto; padding:28px 24px 64px; }
+    section { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:24px; margin:18px 0; overflow-x:auto; }
+    h2 { margin:0 0 14px; font-size:23px; line-height:1.35; }
+    h3 { margin:22px 0 10px; font-size:17px; }
+    p, li { line-height:1.72; }
+    code { font-family:"SFMono-Regular",Consolas,monospace; font-size:.92em; background:#f0f3f7; border:1px solid #dce3eb; border-radius:5px; padding:1px 5px; overflow-wrap:anywhere; }
+    .chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+    .chip { border:1px solid #42566f; background:#223148; color:#edf5ff; border-radius:999px; padding:7px 12px; font-size:13px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .thirds { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .metrics { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:16px; }
+    .grid > *,.thirds > *,.metrics > * { min-width:0; }
+    .metric { background:#f8fafc; border:1px solid var(--line); border-radius:8px; padding:15px; }
+    .metric strong { display:block; font-size:27px; }
+    .metric span { display:block; color:var(--muted); font-size:13px; margin-top:3px; }
+    .card { border:1px solid var(--line); border-radius:8px; padding:16px; background:#fbfcfe; }
+    .card h3 { margin-top:0; }
+    .callout { border-left:4px solid var(--teal); background:#f2f8f7; padding:13px 16px; border-radius:6px; }
+    .warn { border-left-color:var(--amber); background:#fff8ed; }
+    .timeline-list { display:grid; gap:12px; margin-top:16px; }
+    .timeline-item { display:grid; grid-template-columns:148px 1fr; gap:14px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:14px; background:#fbfcfe; }
+    .timeline-item b { display:block; color:var(--blue); }
+    .timeline-item span { display:block; color:var(--muted); font-size:13px; margin-top:3px; }
+    .flow rect { fill:white; stroke:#b8c6d5; }
+    .flow.accent rect { fill:#eff8f7; stroke:#8dbfba; }
+    .flow.quality rect { fill:#fff7ea; stroke:#d9b16d; }
+    .flow text { text-anchor:middle; fill:#1f2f3f; font-size:13px; font-weight:650; }
+    .flow text + text { fill:#5d6c79; font-size:11px; font-weight:500; }
+    .flow path { stroke:#39546f; stroke-width:2; fill:none; }
+    .lane-title { fill:#26384d; font-size:15px; font-weight:750; }
+    .pipeline { width:100%; height:auto; display:block; }
+    .chart-row { display:grid; grid-template-columns:96px 1fr; align-items:center; gap:10px; margin:9px 0; }
+    .chart-row b { font-size:13px; color:#344458; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar { position:relative; height:25px; border-radius:6px; overflow:hidden; background:#e9eef4; }
+    .bar span { display:block; height:100%; background:var(--blue); }
+    .bar.excellent span { background:var(--teal); }
+    .bar.good span { background:#2d7f58; }
+    .bar.mid span { background:var(--amber); }
+    .bar.risk span { background:var(--red); }
+    .bar em { position:absolute; top:3px; left:9px; color:white; font-style:normal; font-size:12px; text-shadow:0 1px 1px rgba(0,0,0,.35); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:10px; text-align:left; vertical-align:top; }
+    th { background:#f7f9fb; color:#475569; }
+    .pill { display:inline-block; min-width:28px; text-align:center; border-radius:999px; color:white; padding:3px 8px; font-weight:700; font-size:12px; }
+    .pill.excellent,.pill.good { background:#2d7f58; }
+    .pill.mid { background:var(--amber); }
+    .pill.risk { background:var(--red); }
+    .kbd { font-family:"SFMono-Regular",Consolas,monospace; background:#172033; color:#eef6ff; border-radius:6px; display:block; padding:12px 14px; overflow:auto; line-height:1.7; }
+    .small { color:var(--muted); font-size:13px; }
+    @media (max-width:900px) {
+      header { padding:30px 24px; }
+      header h1 { font-size:27px; }
+      .grid,.thirds,.metrics { grid-template-columns:1fr; }
+      .timeline-item { grid-template-columns:1fr; }
+      section { padding:18px; }
+      .chart-row { grid-template-columns:84px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>dy-cut 团队导览: 抖音餐饮外卖视频 AI 混剪系统</h1>
+    <p>这份介绍面向新加入项目的同学和需要协作拍摄、调参、复审的团队成员。它把当前版本的核心流程、最近两天的探索方向、素材质量最佳实践和后续深入方向放到一张地图里。</p>
+    <div class="chips">
+      <span class="chip">Phase 1 自营</span>
+      <span class="chip">9:16 短视频</span>
+      <span class="chip">模板批量线</span>
+      <span class="chip">口播 BGM 卡点</span>
+      <span class="chip">素材质量预处理</span>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>一句话理解项目</h2>
+      <p><strong>dy-cut 的目标是把餐饮门店素材,批量剪成适合抖音外卖转化的短视频。</strong>老主线解决“每周大量稳定出片”,新 beatmix 线解决“口播 BGM 声画同步更像专业剪辑”,质量预处理线解决“别让差素材拖累算法”。</p>
+
+<svg class="pipeline" viewBox="0 0 1180 360" role="img" aria-label="dy-cut 核心流程图">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#39546f"></path>
+    </marker>
+  </defs>
+  <rect x="18" y="22" width="1144" height="316" rx="10" fill="#f7fafc" stroke="#d7e0ea"></rect>
+  <text x="42" y="58" class="lane-title">主流程: 老批量模板线</text>
+  <text x="42" y="168" class="lane-title">探索线: 口播 BGM 卡点 beatmix</text>
+  <text x="42" y="278" class="lane-title">质量线: 素材预处理与反馈</text>
+
+  <g class="flow" transform="translate(248,34)">
+    <rect x="0" y="0" width="128" height="54" rx="8"></rect><text x="64" y="23">input/raw</text><text x="64" y="40">原始素材</text>
+    <rect x="180" y="0" width="128" height="54" rx="8"></rect><text x="244" y="23">VLM</text><text x="244" y="40">理解画面</text>
+    <rect x="360" y="0" width="128" height="54" rx="8"></rect><text x="424" y="23">模板/文案</text><text x="424" y="40">选片去重</text>
+    <rect x="540" y="0" width="128" height="54" rx="8"></rect><text x="604" y="23">render</text><text x="604" y="40">成片导出</text>
+    <rect x="720" y="0" width="128" height="54" rx="8"></rect><text x="784" y="23">review UI</text><text x="784" y="40">人工复审</text>
+    <path d="M128 27 H178" marker-end="url(#arrow)"></path><path d="M308 27 H358" marker-end="url(#arrow)"></path><path d="M488 27 H538" marker-end="url(#arrow)"></path><path d="M668 27 H718" marker-end="url(#arrow)"></path>
+  </g>
+
+  <g class="flow accent" transform="translate(248,144)">
+    <rect x="0" y="0" width="128" height="54" rx="8"></rect><text x="64" y="23">voicemap</text><text x="64" y="40">口播槽位</text>
+    <rect x="180" y="0" width="128" height="54" rx="8"></rect><text x="244" y="23">tag / score</text><text x="244" y="40">素材标签</text>
+    <rect x="360" y="0" width="128" height="54" rx="8"></rect><text x="424" y="23">LLM Top-K</text><text x="424" y="40">槽位候选</text>
+    <rect x="540" y="0" width="128" height="54" rx="8"></rect><text x="604" y="23">dedup</text><text x="604" y="40">差异约束</text>
+    <rect x="720" y="0" width="128" height="54" rx="8"></rect><text x="784" y="23">beatmix</text><text x="784" y="40">声画同步</text>
+    <path d="M128 27 H178" marker-end="url(#arrow)"></path><path d="M308 27 H358" marker-end="url(#arrow)"></path><path d="M488 27 H538" marker-end="url(#arrow)"></path><path d="M668 27 H718" marker-end="url(#arrow)"></path>
+  </g>
+
+  <g class="flow quality" transform="translate(248,254)">
+    <rect x="0" y="0" width="128" height="54" rx="8"></rect><text x="64" y="23">quality</text><text x="64" y="40">A/B/C/D/X</text>
+    <rect x="180" y="0" width="128" height="54" rx="8"></rect><text x="244" y="23">review list</text><text x="244" y="40">软淘汰</text>
+    <rect x="360" y="0" width="128" height="54" rx="8"></rect><text x="424" y="23">best window</text><text x="424" y="40">最佳片段</text>
+    <rect x="540" y="0" width="128" height="54" rx="8"></rect><text x="604" y="23">SOP</text><text x="604" y="40">拍摄反馈</text>
+    <rect x="720" y="0" width="128" height="54" rx="8"></rect><text x="784" y="23">素材库</text><text x="784" y="40">持续进化</text>
+    <path d="M128 27 H178" marker-end="url(#arrow)"></path><path d="M308 27 H358" marker-end="url(#arrow)"></path><path d="M488 27 H538" marker-end="url(#arrow)"></path><path d="M668 27 H718" marker-end="url(#arrow)"></path>
+  </g>
+</svg>
+
+    </section>
+
+    <section>
+      <h2>原始项目初衷: 不是做剪辑器,而是做可复制的内容生产线</h2>
+      <div class="grid">
+        <div>
+          <p>项目最早服务的是<strong>自营餐饮品牌的抖音本地生活内容生产</strong>: 每周大约有大量菜品特写素材,人工剪 500-1000 条短视频成本高、节奏不稳定、复用困难。dy-cut 的第一性目标是把“拍摄素材 → 批量混剪 → 人工复审 → 手动上传抖音”这条链路变成稳定流水线。</p>
+          <p>所以它一开始就不是一个自由拖拽的视频编辑器,也不是 SaaS 平台。它更像一个内容工厂的本地生产引擎: 配置可控、成本可算、结果可复审、错误可回滚。</p>
+        </div>
+        <div class="card">
+          <h3>Phase 1 的边界</h3>
+          <ul>
+            <li><strong>做:</strong> 素材导入、去重、抽帧、VLM 理解、LLM 文案、选片、渲染、导出、复审。</li>
+            <li><strong>不做:</strong> 抖音 OpenAPI 上传、多账号矩阵、SaaS、AI 配音、数据回传。</li>
+            <li><strong>产物:</strong> 只生成裸片,店名、POI、团购角标和水印留给抖音发布链路。</li>
+            <li><strong>原则:</strong> 所有关键调参走配置和可审计 JSON,不要把运营经验散落在代码里。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><strong>500-1000</strong><span>目标周产视频数</span></div>
+        <div class="metric"><strong>15s</strong><span>主链路标准时长</span></div>
+        <div class="metric"><strong>1080x1920</strong><span>当前竖屏规格</span></div>
+        <div class="metric"><strong>5</strong><span>T01-T05 模板</span></div>
+        <div class="metric"><strong>7</strong><span>主链路差异维度</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>分支演进: 几条线分别解决什么问题</h2>
+      <p>当前项目不是一条直线长出来的,而是从“稳定批量生产”逐步叠加“9:16 真实素材输入”“复审重生成”“灵感学习”“口播卡点”和“素材质量预处理”。理解分支差异,能帮助新人判断代码里哪些是主干生产能力,哪些是实验能力。</p>
+      <div class="timeline-list">
+        <div class="timeline-item">
+          <div><b>main</b><span>当前主干</span></div>
+          <div>
+            <strong>定位:</strong> 批量混剪主链路 + inspiration 灵感分析能力。包含本地素材导入、VLM/LLM、模板混剪、复审队列基础和对标视频学习沉淀。<br>
+            <strong>适合:</strong> 看 Phase 1 的稳定生产边界,理解项目为什么强调配置、缓存、复审和成本控制。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div><b>feature/9x16-source-input</b><span>真实素材输入增强</span></div>
+          <div>
+            <strong>定位:</strong> 把成片规格切到 1080x1920,补齐 9:16 输入、模板级字幕开关、复审工作台增强、自然语言重生成队列和对标视频分析。<br>
+            <strong>关键变化:</strong> 从“样片能跑”走向“真实门店素材能批量跑”,同时把复审从只看结果扩展到能编辑字幕和排队重生成。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div><b>feature/beatmix-voice-driven-mix</b><span>当前工作分支</span></div>
+          <div>
+            <strong>定位:</strong> 独立的口播 BGM 卡点实验线。新增 voicemap、ASR、素材 tag、LLM 槽位编排、beatmix dedup、渲染适配、并行渲染和质量评分。<br>
+            <strong>关键变化:</strong> 从“先选素材再叠 BGM”变成“口播 BGM 是骨架,素材卡到每个口播槽位”;这是最近两天探索最集中的方向。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div><b>本地未提交探索</b><span>质量预处理</span></div>
+          <div>
+            <strong>定位:</strong> 给 2026-W24 素材库打分、分层、标记 review/reject 风险,产出质量报告。<br>
+            <strong>注意:</strong> 这是软淘汰流程,只写标签和报告,不自动删除素材。任何批量物理删除都必须先列清单并人工确认。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>三条工作线</h2>
+      <div class="thirds">
+        <div class="card">
+          <h3>1. 模板批量线</h3>
+          <p>从 <code>input/raw/&lt;week&gt;</code> 读取素材,经 ingest、抽帧、VLM 理解、文案、差异化选片、render 和 export,生成可复审的批量成片。</p>
+          <p class="small">适合稳定周产、模板化投放、黄金测试基线。</p>
+        </div>
+        <div class="card">
+          <h3>2. beatmix 探索线</h3>
+          <p>以口播 BGM 的 ASR 槽位为骨架,让素材去卡“烤串、饮品、价格”等口播词。画面不是随便铺 BGM,而是跟着口播走。</p>
+          <p class="small">适合验证更强节奏、更高商业信息密度的剪辑打法。</p>
+        </div>
+        <div class="card">
+          <h3>3. 素材质量线</h3>
+          <p>在混剪前给素材打分、分层、标记负面风险和最佳片段,低分进入复审,不直接删除。它是素材库的“入库质检”。</p>
+          <p class="small">适合把拍摄反馈、软淘汰和编排权重串起来。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>docs 里的方法论沉淀</h2>
+      <p>现有 docs 不是附属说明,而是项目决策的来源。新人读代码前,先理解这些文档里的业务判断,会更容易明白为什么系统不追求“炫技剪辑”,而追求“可规模化复制的高转化短视频”。</p>
+      <div class="grid">
+        <div class="card">
+          <h3>项目说明书</h3>
+          <p>强调自营投放、裸片产物、500-1000 周产、成本可控和 Phase 1 边界。它定义了项目最底层的产品取舍: 本地生产线优先,暂不做上传、矩阵和 SaaS。</p>
+        </div>
+        <div class="card">
+          <h3>architecture.html</h3>
+          <p>把主流程拆成 Ingest、Frame、Understand、Copy、Select、Render、Export,并明确缓存、输出、复审队列和费用报告的路径。它是新人理解代码模块的地图。</p>
+        </div>
+        <div class="card">
+          <h3>优秀抖音外卖视频学习笔记</h3>
+          <p>沉淀了对标视频的核心规律: 前 2 秒强钩子、1-1.3 秒硬切、数量反差、市井真实感、动作镜头、结尾搜索承接。</p>
+        </div>
+        <div class="card">
+          <h3>ChatCut 融合设计</h3>
+          <p>明确不照搬在线剪辑器,而是吸收“自然语言调参”和“动效资产化”: AI 生成配置补丁和可复用叠层,最终仍由确定性 render 执行。</p>
+        </div>
+      </div>
+      <h3>对标视频给系统带来的具体影响</h3>
+      <table>
+        <thead><tr><th>观察</th><th>系统里的落点</th><th>对拍摄/运营的要求</th></tr></thead>
+        <tbody>
+          <tr><td>前 2 秒必须最香</td><td>hook 镜头、starter 素材、质量评分里的 intro/dish 优先级</td><td>补拍端菜、开盖、刷酱、撒料、夹起等高能瞬间</td></tr>
+          <tr><td>硬切卡点优于花哨转场</td><td>模板节奏、beatmix 槽位时长、后续 beat_sync 方向</td><td>素材每条最好只有一个清晰动作,方便 1 秒级切分</td></tr>
+          <tr><td>价格和数量制造转发理由</td><td>T04 价格钩子、filler 槽位、价格牌/套餐全景素材</td><td>拍价格牌、套餐全桌、外卖包装和饮品,不要只拍烤炉</td></tr>
+          <tr><td>真实烟火气比棚拍更可信</td><td>质量评分不是追求过度精致,而是过滤脏乱/无信息/静态重复</td><td>保留炭火、热气、手部动作,但清理油污墙面和杂物</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>主流程: 从原始素材到批量成片</h2>
+      <div class="grid">
+        <div>
+          <h3>核心步骤</h3>
+          <ol>
+            <li><strong>素材入库:</strong> 把每周素材放进 <code>input/raw/&lt;week&gt;</code>,系统生成代理视频和导入索引。</li>
+            <li><strong>画面理解:</strong> 抽关键帧,调用云端 VLM 识别菜品、动作、卖点和可用语义。</li>
+            <li><strong>模板和文案:</strong> 套餐库、模板 YAML、BGM 池和文案共同决定每条片的表达方向。</li>
+            <li><strong>差异化选片:</strong> 指纹维度约束重复度,避免一批视频看起来几乎一样。</li>
+            <li><strong>渲染导出:</strong> ffmpeg 统一成 1080x1920 竖屏视频,输出到 <code>output/&lt;combo_id&gt;/</code>。</li>
+            <li><strong>人工复审:</strong> Gradio UI 负责看成片、保留或退回。</li>
+          </ol>
+        </div>
+        <div>
+          <h3>运行命令</h3>
+          <pre class="kbd">pip install -e ".[dev]"
+cp .env.example .env
+
+python -m src.orchestrator run --week 2026-W24
+python -m src.ui.gradio_app</pre>
+          <p class="small">主链路的可调参数集中在 <code>config/settings.yaml</code> 和 <code>config/templates/*.yaml</code>,优先调配置,不要轻易改代码里的业务阈值。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>最近两天重点一: beatmix 口播 BGM 卡点</h2>
+      <p><strong>beatmix 的范式变化是“BGM 不再只是背景音乐,而是剪辑骨架”。</strong>口播里说到“六十五串现烤烤串”时,画面应该是烤串;说到“两罐饮料”时,画面应该是饮品;说到价格、福利、口号时,画面用价格牌、包装、空镜或高转化补位。</p>
+      <div class="grid">
+        <div class="card">
+          <h3>输入结构</h3>
+          <ul>
+            <li><code>input/starter/*.mp4</code>: 开头强钩子素材。</li>
+            <li><code>input/material/&lt;batch&gt;/tags.json</code>: 内容素材标签。</li>
+            <li><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code>: 口播槽位表。</li>
+            <li><code>cache/bgm/bgm_index.json</code>: BGM 音频索引。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>新机制</h3>
+          <ul>
+            <li><strong>Top-K 候选:</strong> LLM 不只返回一个 clip,而是返回多个候选,本地按 seed 加权抽样,提高多样性。</li>
+            <li><strong>slot category_hint:</strong> 槽位可指定 <code>["烤串"]</code> 或 <code>["饮品"]</code>,解决全局 dish_categories 无法覆盖饮品口播的问题。</li>
+            <li><strong>历史 plan 去重:</strong> 读取旧 plan 指纹,避免同一 BGM 多次运行产出重复片。</li>
+          </ul>
+        </div>
+      </div>
+      <h3>运行命令</h3>
+      <pre class="kbd">python -m src.orchestrator beatmix tag --dir input/material/2026-W24
+python -m src.orchestrator beatmix score --dir input/material/2026-W24 --workers 4
+python -m src.orchestrator beatmix mix --bgm bgm_core_01 --material-dir input/material/2026-W24</pre>
+    </section>
+
+    <section>
+      <h2>最近两天重点二: 素材质量预处理</h2>
+      <p><strong>素材质量层回答的是“这条素材值不值得被用,适合用在哪里”。</strong>它不替代人工判断,也不自动删除原始素材,而是在 <code>tags.json</code> 中写入质量字段,同时输出复审清单和报告。</p>
+      <div class="metrics">
+        <div class="metric"><strong>231</strong><span>已评分素材</span></div>
+        <div class="metric"><strong>15</strong><span>B 类正常使用</span></div>
+        <div class="metric"><strong>111</strong><span>C 类兜底</span></div>
+        <div class="metric"><strong>105</strong><span>D 类复审</span></div>
+        <div class="metric"><strong>78</strong><span>当前最高分</span></div>
+      </div>
+      <div class="grid">
+        <div>
+          <h3>质量分层</h3>
+          <div class='chart-row'><b>A</b><div class="bar excellent"><span style="width:0.0%"></span><em>0 (0.0%)</em></div></div>
+<div class='chart-row'><b>B</b><div class="bar good"><span style="width:13.5%"></span><em>15 (6.5%)</em></div></div>
+<div class='chart-row'><b>C</b><div class="bar mid"><span style="width:100.0%"></span><em>111 (48.1%)</em></div></div>
+<div class='chart-row'><b>D</b><div class="bar risk"><span style="width:94.6%"></span><em>105 (45.5%)</em></div></div>
+<div class='chart-row'><b>X</b><div class="bar risk"><span style="width:0.0%"></span><em>0 (0.0%)</em></div></div>
+        </div>
+        <div>
+          <h3>品类覆盖</h3>
+          <div class='chart-row'><b>烤串</b><div class="bar neutral"><span style="width:100.0%"></span><em>132 (57.1%)</em></div></div>
+<div class='chart-row'><b>主菜</b><div class="bar neutral"><span style="width:59.8%"></span><em>79 (34.2%)</em></div></div>
+<div class='chart-row'><b>饮品</b><div class="bar neutral"><span style="width:7.6%"></span><em>10 (4.3%)</em></div></div>
+<div class='chart-row'><b>蘸料特写</b><div class="bar neutral"><span style="width:3.0%"></span><em>4 (1.7%)</em></div></div>
+<div class='chart-row'><b>出餐动作</b><div class="bar neutral"><span style="width:3.0%"></span><em>4 (1.7%)</em></div></div>
+<div class='chart-row'><b>配菜</b><div class="bar neutral"><span style="width:0.8%"></span><em>1 (0.4%)</em></div></div>
+<div class='chart-row'><b>空镜</b><div class="bar neutral"><span style="width:0.8%"></span><em>1 (0.4%)</em></div></div>
+        </div>
+      </div>
+      <div class="callout warn">
+        <strong>当前结论:</strong> 2026-W24 的 231 条素材没有 A 类,最高分 78,B 类只有 15 条。素材“能用”的数量不少,但强钩子、干净成品、动作高点和转化信息不足。
+      </div>
+    </section>
+
+    <section>
+      <h2>Top 10 素材样本: 目前最适合优先进入混剪</h2>
+      <table>
+        <thead><tr><th>#</th><th>素材</th><th>品类</th><th>菜品</th><th>分数</th><th>等级</th><th>正向点</th><th>风险点</th></tr></thead>
+        <tbody><tr><td>1</td><td><code>VID_20260610_232204.mp4</code></td><td>主菜</td><td>烤羊腿</td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>主菜主体清晰,两根大块羊腿骨肉饱满,体量大、视觉；撒葱花动作有动态和节奏感,辛香料粉末增加食欲感</td><td>背景为白瓷砖+金属台+沥水筐,后厨出餐环境略显凌；底部多次出现沾有油渍的红色针织手套,卫生观感扣分</td></tr>
+<tr><td>2</td><td><code>VID_20260610_221340.mp4</code></td><td>蘸料特写</td><td>烤串撒料</td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>食欲感强,辣椒面颜色饱和、颗粒感清晰,串品红亮诱；动作能量好,撒料动作连贯,粉末飞溅有动感</td><td>画面边缘可见烤糊肉串(左上角),略有脏乱感；灶台背景油渍较多,环境不够干净</td></tr>
+<tr><td>3</td><td><code>VID_20260610_213900.mp4</code></td><td>蘸料特写</td><td></td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:辣椒面红色调饱和,撒料瞬间颗粒飞溅视觉；动作能量好:勺子倾倒辣椒面+肉串转动的连续动作有</td><td>构图偏乱:背景出现调料瓶、铁盆、铁架等多元素分散；脏乱感:操作台面油渍、散落辣椒残渣明显,部分观众</td></tr>
+<tr><td>4</td><td><code>VID_20260611_000143.mp4</code></td><td>主菜</td><td>烧烤拼盘</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:四盘烧烤色泽红亮、撒料清晰可见,搭配生；独特性高:西瓜饮品桶+多种烧烤拼盘的组合有辨识度</td><td>构图较差:俯拍角度导致人物手臂/手部多次入镜(左；敏感信息:背景桌上疑似有纸币/现金露出,存在平台</td></tr>
+<tr><td>5</td><td><code>VID_20260610_235701.mp4</code></td><td>主菜</td><td>烤羊腿</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:羊腿表面香料颗粒清晰、红棕色焦香色泽诱；构图饱满:羊腿占画面主体,配生菜摆盘有层次感</td><td>重复感严重:5帧几乎完全一致,无可用动作/剪辑点；构图抖动:画面轻微偏移且裁切不一致</td></tr>
+<tr><td>6</td><td><code>VID_20260610_235051.mp4</code></td><td>主菜</td><td>烤羊排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:烤羊排色泽焦褐油亮,撒料颗粒清晰可见,；菜品丰富度高:包含羊排、带骨肉、肋排、羊肉串等多</td><td>画面变化过大:5帧之间镜头持续平移下摇,导致构图；构图差:整桌菜(西瓜、饮料瓶、果汁)杂乱入镜,主</td></tr>
+<tr><td>7</td><td><code>VID_20260610_231719.mp4</code></td><td>烤串</td><td>烤羊排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感：羊肉烤至金黄焦香,油脂光泽明显,色面诱人；动作能量：钳子夹持羊排翻面/夹起,形成完整动作弧</td><td>脏乱:台面油渍、辣椒碎屑较多,背景烤网油污明显,；构图:主体偏左下,背景网架+瓷砖墙杂乱,广告感弱</td></tr>
+<tr><td>8</td><td><code>VID_20260610_222606.mp4</code></td><td>主菜</td><td>烤牛排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强,红橙色香料裹层色泽饱满,视觉冲击力好；动作能量:第二帧有夹子夹起牛排下落的动态瞬间,适</td><td>背景杂乱:铁网、烤架、调料盆、裸露手套挤占画面,；烤制痕迹较重,边角发黑有&#x27;烤糊&#x27;观感,可能引发卫</td></tr>
+<tr><td>9</td><td><code>VID_20260610_222222.mp4</code></td><td>主菜</td><td>烤牛排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:牛排焦褐色外壳+油脂光泽+鲜红辣椒粉撒；动作能量突出:撒料的颗粒坠落轨迹清晰可辨,慢动作</td><td>背景杂物较多:铁丝网、墙体、电话号码(18848；构图略有倾斜:网格背景占据画面过多,主体牛排未处</td></tr>
+<tr><td>10</td><td><code>VID_20260610_222138.mp4</code></td><td>烤串</td><td>烤排骨</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:排骨表面金黄泛油,撒料瞬间粉红色香料如；动作能量足:连续撒粉动作形成动态画面,有粉尘飘落</td><td>背景瓷砖油渍明显,墙面脏乱,卫生观感差；底部烤箱文字&#x27;天博科&#x27;及电话号码暴露敏感/店铺信</td></tr></tbody>
+      </table>
+      <p class="small">Top 10 仍主要停在 B 类,说明下一轮拍摄要追求更强的近景食欲、动作瞬间和干净商业呈现,而不只是增加素材数量。</p>
+    </section>
+
+    <section>
+      <h2>团队最佳实践</h2>
+      <div class="grid">
+        <div>
+          <h3>工程侧</h3>
+          <ul>
+            <li><strong>配置优先:</strong> 模板节奏、BGM 池、视频参数、diff 权重优先写在 YAML/settings,减少硬编码。</li>
+            <li><strong>旧链路和新实验隔离:</strong> beatmix 输入输出独立,验证稳定后再考虑并入主流程。</li>
+            <li><strong>任何批量删除先确认:</strong> 质量分是软淘汰依据,不能未经确认物理删除素材。</li>
+            <li><strong>产物可复盘:</strong> 成片旁边保留 plan/report,能追踪每个槽位为什么选这条素材。</li>
+            <li><strong>小步验证:</strong> 改 selector、dedup、render 时用单测和黄金样片一起守住回归。</li>
+          </ul>
+        </div>
+        <div>
+          <h3>运营/拍摄侧</h3>
+          <ul>
+            <li><strong>按槽位拍:</strong> 烤串、主菜、饮品、价格牌、包装、空镜都要独立成类。</li>
+            <li><strong>每条只讲一件事:</strong> 一条素材只表达一个动作或主体,方便算法卡口播。</li>
+            <li><strong>先清场再拍:</strong> 油污墙、杂物、品牌瓶、纸箱会显著拉低素材分。</li>
+            <li><strong>制造动作高点:</strong> 刷酱、撒料、夹起、切开、开盖、装盒都比静态俯拍更好剪。</li>
+            <li><strong>补齐转化镜头:</strong> 外卖盒、套餐全景、价格牌、饮品和配送到手,是 filler 槽位的关键素材。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>新人上手路线</h2>
+      <ol>
+        <li>先读 <code>README.md</code>、<code>docs/beatmix运行说明.md</code>、<code>docs/RUNBOOK.md</code>,搞清楚主流程和 beatmix 是两条线。</li>
+        <li>跑一次主链路样片,确认本机依赖和 ffmpeg 可用。</li>
+        <li>看一份 <code>tags.json</code>,理解 <code>category</code>、<code>dish</code>、<code>is_bspot</code>、<code>quality</code> 的含义。</li>
+        <li>改一个 voicemap 槽位的 <code>category_hint</code>,再跑 beatmix,观察 plan.json 里素材选择是否更准。</li>
+        <li>看质量报告,把 D 类原因翻译成下一次拍摄 SOP。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>后续值得深入的方向</h2>
+      <div class="thirds">
+        <div class="card">
+          <h3>1. 质量分真正参与渲染</h3>
+          <p>当前 best_window 主要记录在标签和报告里。下一步应让 render 优先裁取最佳 1-2 秒,而不是默认中心裁剪。</p>
+        </div>
+        <div class="card">
+          <h3>2. 近重复聚类</h3>
+          <p>把首帧/中帧 phash、菜品语义和历史 plan 结合起来,同组只优先用最高分素材,减少“看着像同一条”的成片。</p>
+        </div>
+        <div class="card">
+          <h3>3. 人工复审闭环</h3>
+          <p>复审 UI 不只看成片,还应能批准/拒绝素材质量判断,把人工反馈写回标签。</p>
+        </div>
+        <div class="card">
+          <h3>4. 口播槽位语义增强</h3>
+          <p>继续扩展饮品、价格、配送、门店环境、套餐全景等 category_hint,让 BGM 口播和素材库建立更精细的契约。</p>
+        </div>
+        <div class="card">
+          <h3>5. 投放数据反哺</h3>
+          <p>未来接入发布后的播放、完播、转化数据,把“素材好不好”从主观评分升级为效果评分。</p>
+        </div>
+        <div class="card">
+          <h3>6. 拍摄 SOP 标准化</h3>
+          <p>把质量报告中的负面原因转为门店拍摄清单,让素材源头稳定产生 B/A 类片段。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关键路径速查</h2>
+      <div class="grid">
+        <div>
+          <ul>
+            <li>主设计: <code>docs/superpowers/specs/2026-06-09-抖音餐饮混剪-design.md</code></li>
+            <li>beatmix 设计: <code>docs/superpowers/specs/2026-06-13-口播BGM卡点混剪-design.md</code></li>
+            <li>质量评分设计: <code>docs/superpowers/specs/2026-06-14-素材质量评分与淘汰-design.md</code></li>
+            <li>运行说明: <code>docs/beatmix运行说明.md</code></li>
+          </ul>
+        </div>
+        <div>
+          <ul>
+            <li>配置: <code>config/settings.yaml</code>、<code>config/templates/*.yaml</code></li>
+            <li>BGM 槽位: <code>config/bgm_voicemap/*.json</code></li>
+            <li>素材标签: <code>input/material/&lt;batch&gt;/tags.json</code></li>
+            <li>质量报告: <code>output/material_quality/&lt;batch&gt;/</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="dy-cut-series-nav.js" defer></script>
+</body>
+</html>

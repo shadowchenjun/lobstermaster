@@ -437,8 +437,8 @@
             <li><code>src/orchestrator.py</code> 串起 7 阶段流水线和 CLI。</li>
             <li><code>src/stages/ingest.py</code> 扫描素材、ffprobe 校验、pHash 去重。</li>
             <li><code>src/stages/frame.py</code> 以 ffmpeg 1fps 抽关键帧。</li>
-            <li><code>src/stages/understand.py</code> 调豆包 VLM 输出菜品语义。</li>
-            <li><code>src/stages/copy.py</code> 调 DeepSeek 生成套餐 × 模板字幕，并缓存。</li>
+            <li><code>src/stages/understand.py</code> 调MiniMax-M3 VLM 输出菜品语义。</li>
+            <li><code>src/stages/copy.py</code> 调 MiniMax-M3 生成套餐 × 模板字幕，并缓存。</li>
             <li><code>src/stages/select.py</code> 根据模板节奏填满 15s，并计算 7 维差异分。</li>
             <li><code>src/workers/ffmpeg_worker.py</code> 支持多段拼接、xfade、调色、drawtext、BGM/静音轨。</li>
             <li><code>src/ui/gradio_app.py</code> 支持复审工作台、套餐/模板/BGM 详情、字幕编辑和重生成队列。</li>
@@ -465,8 +465,8 @@
           <tr><td>Catalog</td><td><span class="status done">完成</span></td><td>优先飞书 OpenAPI，同步失败降级本地 <code>catalog/combos.json</code>。</td></tr>
           <tr><td>Ingest</td><td><span class="status done">完成</span></td><td>扫描 <code>input/raw/2026-06-09</code> 下的 MP4/MOV/M4V，源文件 pHash 去重，并归一化为 1080×1920 proxy。</td></tr>
           <tr><td>Frame</td><td><span class="status done">完成</span></td><td>按 clip 输出 <code>scratch/frames/&lt;clip_id&gt;/frame_*.jpg</code> 和时间戳。</td></tr>
-          <tr><td>Understand</td><td><span class="status done">完成</span></td><td>把前 3 张关键帧送豆包视觉模型，落地 <code>scratch/features/*.json</code>。</td></tr>
-          <tr><td>Copy</td><td><span class="status done">完成</span></td><td>DeepSeek 生成 5 句字幕结构，失败使用 <code>config/fallback_copy.json</code>。</td></tr>
+          <tr><td>Understand</td><td><span class="status done">完成</span></td><td>把前 3 张关键帧送MiniMax-M3视觉模型，落地 <code>scratch/features/*.json</code>。</td></tr>
+          <tr><td>Copy</td><td><span class="status done">完成</span></td><td>MiniMax-M3 生成 5 句字幕结构，失败使用 <code>config/fallback_copy.json</code>。</td></tr>
           <tr><td>Select</td><td><span class="status done">完成</span></td><td>按模板切片时长自动填满 15s，采样 N 个候选并按历史 K 条差异化选优。</td></tr>
           <tr><td>Render</td><td><span class="status done">完成</span></td><td>真实多段 ffmpeg filter_complex，支持变速、转场、调色、字幕和 BGM。</td></tr>
           <tr><td>Export</td><td><span class="status done">完成</span></td><td>按 <code>&lt;combo&gt;_&lt;template&gt;_&lt;bgm&gt;_&lt;sha8&gt;.mp4</code> 归档并写 manifest。</td></tr>
@@ -498,7 +498,7 @@
         </div>
         <div class="card">
           <strong>执行层</strong>
-          <p>ffmpeg/ffprobe、豆包 VLM、DeepSeek LLM、飞书 OpenAPI、BGM 选择、字体解析和缓存读写。</p>
+          <p>ffmpeg/ffprobe、MiniMax-M3 VLM、MiniMax-M3 LLM、飞书 OpenAPI、BGM 选择、字体解析和缓存读写。</p>
         </div>
       </div>
 
@@ -566,10 +566,10 @@
           <strong>VLM：素材语义理解</strong>
           <p>
             实现位置：<code>src/stages/understand.py</code> 与 <code>src/workers/vlm_worker.py</code>。
-            frame 阶段先抽关键帧，understand 阶段取前 3 张图调用豆包 Vision，并要求模型返回严格 JSON。
+            frame 阶段先抽关键帧，understand 阶段取前 3 张图调用MiniMax-M3 Vision，并要求模型返回严格 JSON。
           </p>
           <ul>
-            <li>输入：单条 clip 的关键帧、VLM prompt、豆包 API 配置。</li>
+            <li>输入：单条 clip 的关键帧、VLM prompt、MiniMax-M3 API 配置。</li>
             <li>输出：<code>ClipSemantics</code>，落地到 <code>scratch/features/&lt;clip_id&gt;.json</code>。</li>
             <li>字段：主菜名、置信度、食材、动作、视觉风格、适合钩子、不适合钩子、理解时间。</li>
             <li>逻辑：图片转 base64，拼成多模态 <code>chat/completions</code> 请求，开启 JSON response format，失败指数退避重试。</li>
@@ -583,10 +583,10 @@
             copy 阶段按 <code>combo × template</code> 预生成字幕，把套餐信息转成抖音短视频话术。
           </p>
           <ul>
-            <li>输入：套餐名、价格、原始卖点、主食材、模板 ID、DeepSeek API 配置。</li>
+            <li>输入：套餐名、价格、原始卖点、主食材、模板 ID、MiniMax-M3 API 配置。</li>
             <li>输出：<code>SubtitlePlan</code>，缓存到 <code>cache/copy/&lt;combo&gt;_&lt;template&gt;.json</code>。</li>
             <li>结构：1 句钩子、3 句卖点、1 句 CTA，每句提供多个候选。</li>
-            <li>逻辑：拼接 prompt 和 JSON schema hint，调用 DeepSeek JSON mode，解析为 5 条 <code>SubtitleLine</code>。</li>
+            <li>逻辑：拼接 prompt 和 JSON schema hint，调用 MiniMax-M3 JSON mode，解析为 5 条 <code>SubtitleLine</code>。</li>
             <li>兜底：LLM 调用失败或返回结构不完整时，使用 <code>config/fallback_copy.json</code>，并同样写入缓存。</li>
           </ul>
         </div>
@@ -666,11 +666,11 @@
           <p>媒体处理硬依赖，用于 probe、抽帧、多段拼接、变速、转场、字幕烧录、混音和导出。字幕需要带 drawtext/libfreetype 的 ffmpeg-full。</p>
         </div>
         <div class="card">
-          <strong>豆包 Vision</strong>
+          <strong>MiniMax-M3 Vision</strong>
           <p>通过火山引擎 OpenAI-compatible chat completions 接口理解关键帧，输出菜品名、食材、动作、视觉风格和适合钩子。</p>
         </div>
         <div class="card">
-          <strong>DeepSeek</strong>
+          <strong>MiniMax-M3</strong>
           <p>用于生成套餐专属字幕文案。输出 1 句钩子、3 句卖点、1 句 CTA，每句多个候选，并缓存到本地。</p>
         </div>
         <div class="card">
@@ -845,5 +845,6 @@ RUN_E2E=1 pytest tests/e2e -v -s</code></pre>
       </ul>
     </section>
   </main>
+  <script src="dy-cut-series-nav.js" defer></script>
 </body>
 </html>

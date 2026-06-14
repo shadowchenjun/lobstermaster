@@ -385,7 +385,7 @@
   <main class="page">
     <header class="hero">
       <div>
-        <div class="eyebrow"><span class="dot"></span> Phase 1 实验链路 · beatmix · 2026-06-13</div>
+        <div class="eyebrow"><span class="dot"></span> Phase 1 实验链路 · beatmix · 更新于 2026-06-14</div>
         <h1>口播 BGM 卡点混剪实验流程说明</h1>
         <p>
           新方案把传统“素材填满时长、BGM 贴上去”的做法反过来：
@@ -395,10 +395,10 @@
       </div>
       <aside class="status-board">
         <h2>当前实现状态</h2>
-        <div class="metric"><b>1</b><span>独立命令：<code>python -m src.orchestrator beatmix</code></span></div>
+        <div class="metric"><b>3</b><span>子命令已上线：<code>beatmix tag / score / mix</code></span></div>
         <div class="metric"><b>6</b><span>差异化 fingerprint 维度，控制同 BGM 多条视频不撞</span></div>
-        <div class="metric"><b>10</b><span>默认每条 BGM 产出条数，由 <code>--keep</code> 控制</span></div>
-        <div class="metric"><b>1</b><span>素材自动打标模块已存在：<code>src/beatmix/tagging.py</code></span></div>
+        <div class="metric"><b>1080×1920</b><span>默认 9:16 满屏输出，<code>--workers</code> 并行渲染</span></div>
+        <div class="metric"><b>A–X</b><span>素材质量分级淘汰：<code>src/beatmix/quality.py</code></span></div>
       </aside>
     </header>
 
@@ -469,8 +469,8 @@
           <tr>
             <td><code>input/material/tags.json</code></td>
             <td>每条正文素材的 <code>category</code>、<code>dish</code>、<code>is_bspot</code>。</td>
-            <td>设计上应由 VLM 自动初标 + 人工校正。</td>
-            <td>自动打标模块已实现；当前主 <code>beatmix</code> 命令仍只读取该文件。</td>
+            <td>由 VLM 自动初标 + 人工校正,并含 <code>quality</code>(A–X 评分)。</td>
+            <td><code>beatmix tag</code> 生成、<code>beatmix score</code> 补 quality;出片时按 <code>use_policy</code> 取舍。</td>
           </tr>
           <tr>
             <td><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code></td>
@@ -538,7 +538,7 @@
 
       <div class="lane">
         <div class="lane-title"><code>src/orchestrator.py</code></div>
-        <div class="lane-body">注册 <code>beatmix</code> 子命令。命令参数为 <code>--bgm</code>、<code>--keep</code>、<code>--settings</code>。调用 <code>run_beatmix(args.bgm, settings, n_keep=args.keep)</code>。</div>
+        <div class="lane-body">注册 <code>beatmix tag / score / mix</code> 三个子命令(及兼容旧 <code>--bgm</code>)。<code>mix</code> 调 <code>run_beatmix(args.bgm, settings, n_keep, material_dir, workers)</code>。</div>
       </div>
       <div class="lane">
         <div class="lane-title"><code>src/beatmix/runner.py</code></div>
@@ -550,7 +550,7 @@
       </div>
       <div class="lane">
         <div class="lane-title"><code>src/beatmix/materials.py</code></div>
-        <div class="lane-body">负责读取 <code>input/material/tags.json</code>，供主 <code>beatmix</code> 编排链路使用。</div>
+        <div class="lane-body">读取 <code>input/material/&lt;week&gt;/tags.json</code>(含 category/dish/quality),供编排链路使用。质量评分逻辑在 <code>src/beatmix/quality.py</code>。</div>
       </div>
       <div class="lane">
         <div class="lane-title"><code>src/beatmix/tagging.py</code></div>
@@ -570,12 +570,19 @@
       </div>
 
       <div class="code-card" style="margin-top: 18px;">
-<pre>python -m src.orchestrator beatmix --bgm bgm_core_01 --keep 10
+<pre># 1) 素材 VLM 打标 → tags.json
+python -m src.orchestrator beatmix tag   --dir input/material/2026-W24
+# 2) 素材质量评分(A–X,写回 tags.json + 报告)
+python -m src.orchestrator beatmix score --dir input/material/2026-W24 --workers 4
+# 3) 出片(默认 1080×1920,并行渲染)
+python -m src.orchestrator beatmix mix   --bgm bgm_core_01 --keep 10 \
+    --material-dir input/material/2026-W24 --workers 4
+# 兼容旧用法:python -m src.orchestrator beatmix --bgm bgm_core_01 --keep 10
 
 # 输出
 output/beatmix/&lt;bgm_id&gt;/
   &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.mp4
-  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.plan.json</pre>
+  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.plan.json  # 卡点明细 + fingerprint</pre>
       </div>
     </section>
 
@@ -590,27 +597,22 @@ output/beatmix/&lt;bgm_id&gt;/
       <div class="grid-3">
         <div class="card">
           <span class="tag green">已实现</span>
-          <h3>beatmix 主链路</h3>
-          <p>命令入口、voicemap 读取、tags 读取、LLM 编排、fallback、去重、SegmentPlan 适配、渲染输出都已接入。</p>
+          <h3>beatmix 主链路 + 声画同步</h3>
+          <p>命令入口、voicemap 读取、LLM 编排(每槽 3–5 候选)、fallback、去重、SegmentPlan 适配、并行渲染都已接入。<code>render_adapter</code> 按完整 voicemap 平铺,「输出时间轴 == BGM 时间轴」,修复了开头 prepend 导致的整体偏移。</p>
         </div>
         <div class="card">
-          <span class="tag green">已实现</span>
-          <h3>ASR 生成 voicemap 的模块</h3>
-          <p><code>src/beatmix/asr.py</code> 已有转写和 kind 标注函数，但还不是一个可直接调用的 orchestrator 子命令。</p>
+          <span class="tag green">已命令化</span>
+          <h3>素材 VLM 打标 + 质量评分</h3>
+          <p><code>beatmix tag</code> 扫描/抽帧/VLM 打标写 <code>tags.json</code>;<code>beatmix score</code>(<code>src/beatmix/quality.py</code>)给素材 A–X 分级与 <code>use_policy</code>,出片时高分优先、X 档淘汰。均有单测。</p>
         </div>
         <div class="card">
-          <span class="tag green">已实现模块</span>
-          <h3>material 自动 VLM 打标</h3>
-          <p><code>src/beatmix/tagging.py</code> 已实现扫描、抽帧、VLM prompt、结果规范化、保留人工改动和写入 <code>tags.json</code>；对应单测已覆盖。</p>
-        </div>
-        <div class="card">
-          <span class="tag red">待接线</span>
-          <h3>material 自动 VLM 打标</h3>
-          <p>当前 <code>src/orchestrator.py</code> 还没有暴露单独的 <code>beatmix-tag-materials</code> 子命令；如需从命令行直接触发，下一步应把 <code>tag_materials_dir</code> 接入 CLI。</p>
+          <span class="tag amber">半命令化</span>
+          <h3>ASR 生成 voicemap</h3>
+          <p><code>src/beatmix/asr.py</code> 的 DashScope paraformer 转写 + 词级时间戳聚合 + LLM 标 kind 已可用,但**仍走一次性脚本**(无 <code>voicemap</code> 子命令)。产物人工校正后入库。</p>
         </div>
       </div>
       <div class="callout">
-        <strong>建议下一个小迭代：</strong>把已实现的 <code>tag_materials_dir</code> 注册为 <code>python -m src.orchestrator beatmix-tag-materials</code>，让协作者无需写 Python 调用即可生成可人工校正的 <code>tags.json</code>。
+        <strong>下一步可选迭代:</strong>把 <code>transcribe_to_voicemap</code> 也注册为 <code>beatmix voicemap --bgm xxx --audio xxx</code>,让两个离线准备步骤(voicemap / tag+score)全部命令化;以及在 <code>fill_slots</code> 给 dish 槽位引入候选随机,突破「dish 固定→同 BGM 只产 1 条」的去重瓶颈。
       </div>
     </section>
 
@@ -629,8 +631,8 @@ output/beatmix/&lt;bgm_id&gt;/
             <li><code>cache/bgm/bgm_index.json</code> 中存在目标 <code>bgm_id</code>。</li>
             <li><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code> 已人工校正时间和文字。</li>
             <li><code>input/starter/</code> 至少有 1 条 mp4，最好 10 条以上。</li>
-            <li><code>input/material/</code> 有正文素材，且 <code>tags.json</code> 文件名完全匹配。</li>
-            <li><code>config/settings.yaml</code> 里的 LLM API 可用。</li>
+            <li><code>input/material/&lt;week&gt;/</code> 有正文素材;先 <code>beatmix tag</code> 再 <code>beatmix score</code> 生成 <code>tags.json</code>(含 quality)。</li>
+            <li><code>.env</code> 的 MiniMax(LLM/VLM)与 DashScope(ASR)key 可用;<code>uv pip install -e ".[asr]"</code>。</li>
           </ul>
         </div>
         <div class="card">
@@ -647,9 +649,10 @@ output/beatmix/&lt;bgm_id&gt;/
       <div class="foot">
         来源：<code>docs/superpowers/specs/2026-06-13-口播BGM卡点混剪-design.md</code>、
         <code>docs/superpowers/plans/2026-06-13-口播BGM卡点混剪.md</code>、
-        <code>src/beatmix/*</code>、<code>src/orchestrator.py</code>。本说明页反映当前代码状态：自动打标模块已实现，但主 CLI 接线仍需确认或补齐。
+        <code>src/beatmix/*</code>、<code>src/orchestrator.py</code>、<code>docs/beatmix运行说明.md</code>。本说明页反映 2026-06-14 代码状态:tag/score/mix 三个子命令已上线,声画同步已修复,质量评分已接入;仅 voicemap 生成仍走脚本。
       </div>
     </section>
   </main>
+  <script src="dy-cut-series-nav.js" defer></script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
+import { DY_CUT_ACCESS_COOKIE, isProtectedDyCutPath, verifyAccessToken } from '@/lib/dyCutAccess'
 import { getArticle, getArticles } from '@/lib/mdx'
 
 const CATEGORY = 'aicoding'
@@ -30,6 +32,17 @@ export default async function ArticlePage({
   const { slug } = await params
   const article = getArticle(CATEGORY, slug)
   if (!article) notFound()
+
+  const articlePath = `/aicoding/${slug}`
+  if (isProtectedDyCutPath(articlePath)) {
+    const cookieStore = await cookies()
+    const token = cookieStore.get(DY_CUT_ACCESS_COOKIE)?.value
+    if (!verifyAccessToken(token)) {
+      const returnTo = article.directUrl ?? articlePath
+      redirect(`/aicoding/dy-cut-access?returnTo=${encodeURIComponent(returnTo)}`)
+    }
+  }
+
   if (article.directUrl) redirect(article.directUrl)
 
   return (

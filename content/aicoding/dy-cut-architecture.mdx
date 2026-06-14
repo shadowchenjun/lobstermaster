@@ -1,0 +1,25 @@
+---
+title: "dy-cut 系统架构图：run / beatmix / inspiration"
+date: "2026-06-14"
+category: "aicoding"
+coverEmoji: "🏗️"
+tags: ["dy-cut", "系统架构", "AI混剪", "Pipeline", "ffmpeg", "AIcoding"]
+summary: "dy-cut 抖音餐饮外卖视频 AI 混剪系统的三线架构图：主批处理 run 链路、beatmix 口播 BGM 卡点链路、inspiration 拍摄灵感链路，以及它们各自的输入资产、缓存、输出和 AI 服务。"
+directUrl: "/dy-cut-architecture.html"
+---
+
+## 架构图概要
+
+这张架构图把 dy-cut 的三条关键链路放到同一张系统地图里，适合快速理解批量出片、口播卡点和拍摄灵感生成之间的关系。
+
+重点覆盖：
+
+- 主流程：Ingest、Frame、Understand、Copy、Select、Render、Export。
+- beatmix：Voicemap、Material Tag、Quality Score、Slot Fill、Dedup、Render Adapter。
+- inspiration：Source、Download、Analyze、Aggregate、Suggestions、Weekly Report。
+- AI 能力：MiniMax-M3 负责 VLM/LLM，DashScope 负责 beatmix 口播 ASR。
+- 媒体处理：本地 ffmpeg / ffprobe 完成抽帧、代理文件、拼接、字幕、BGM 和导出。
+- 数据资产：`input/raw`、`input/material`、`input/inspiration`、`cache/bgm`、`scratch`、`cache`、`output` 等关键文件如何流转。
+- 复审闭环：Gradio 工作台、重生成队列、输出 manifest 和费用报告。
+
+完整视觉版系统架构图请看跳转后的页面。

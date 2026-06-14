@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>6/11 批量素材质量评估报告</title>
+  <style>
+    :root {
+      --ink:#18212f; --muted:#637083; --line:#d8dee8; --bg:#f6f7f9;
+      --good:#18724d; --mid:#aa6a10; --bad:#b42318; --card:#fff;
+    }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+    header { background:#19202b; color:white; padding:42px 48px 34px; }
+    header h1 { margin:0 0 10px; font-size:34px; letter-spacing:0; }
+    header p { margin:0; color:#c8d1de; max-width:980px; line-height:1.7; }
+    main { max-width:1160px; margin:0 auto; padding:28px 28px 64px; }
+    section { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:24px; margin:18px 0; }
+    h2 { margin:0 0 14px; font-size:22px; }
+    h3 { margin:22px 0 10px; font-size:17px; }
+    p, li { line-height:1.72; }
+    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:18px; }
+    .metric { border:1px solid var(--line); border-radius:8px; padding:16px; background:#fbfcfe; }
+    .metric strong { display:block; font-size:28px; }
+    .metric span { color:var(--muted); font-size:13px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .chart-row { display:grid; grid-template-columns:112px 1fr; align-items:center; gap:12px; margin:9px 0; }
+    .chart-row b { font-size:13px; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar { position:relative; height:24px; background:#eef2f7; border-radius:6px; overflow:hidden; }
+    .bar span { display:block; height:100%; background:#3d6ea8; }
+    .bar.good span { background:var(--good); }
+    .bar.mid span { background:var(--mid); }
+    .bar.bad span { background:var(--bad); }
+    .bar em { position:absolute; left:9px; top:3px; color:#fff; font-style:normal; font-size:12px; text-shadow:0 1px 1px rgba(0,0,0,.35); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:10px; text-align:left; vertical-align:top; }
+    th { color:#475569; background:#f8fafc; }
+    code { font-family:"SFMono-Regular",Consolas,monospace; font-size:12px; }
+    .pill { display:inline-block; min-width:26px; padding:3px 8px; border-radius:999px; color:white; text-align:center; font-weight:700; font-size:12px; }
+    .pill.good { background:var(--good); } .pill.mid { background:var(--mid); } .pill.bad { background:var(--bad); }
+    .note { color:var(--muted); font-size:13px; }
+    .callout { border-left:4px solid #3d6ea8; padding:12px 16px; background:#f5f8fc; border-radius:6px; }
+    @media (max-width:860px) { .summary,.grid { grid-template-columns:1fr; } header { padding:28px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>6/11 批量素材质量评估报告</h1>
+  <p>基于 <code>input/material/2026-W24/tags.json</code> 的 231 条已打分素材,评估其对 beatmix 口播卡点混剪的可用性,并给出下一轮拍摄建议。</p>
+</header>
+<main>
+  <section>
+    <h2>Executive Summary</h2>
+    <ul>
+      <li><strong>素材库可用但质量偏弱。</strong>当前没有 A 类素材,B 类只有 15 条(6.5%),C/D 合计 216 条(93.5%),说明可用于混剪的素材不少,但真正能做强钩子和关键卡点的片段不足。</li>
+      <li><strong>主要短板不是品类数量,而是拍摄方式。</strong>高频负面来自静态重复、后厨脏乱、构图差、光线弱、缺少翻烤/撒料/夹起等动作。这会让算法把大量素材降到 fallback/review。</li>
+      <li><strong>后续拍摄应从“记录烤炉”转为“制造可剪瞬间”。</strong>每个菜品至少补拍近景油光、动作高点、干净成品、包装/价格信息四类镜头,并控制背景卫生和主体占比。</li>
+      <li><strong>短期出片策略应保守。</strong>mix 默认只应优先使用 B 类和少量 C 类;D 类素材先人工复审,不要直接进入批量成片。</li>
+    </ul>
+    <div class="summary">
+      <div class="metric"><strong>231</strong><span>本批已评分素材</span></div>
+      <div class="metric"><strong>15</strong><span>B 类可优先/正常使用</span></div>
+      <div class="metric"><strong>111</strong><span>C 类兜底候选</span></div>
+      <div class="metric"><strong>105</strong><span>D 类需复审</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>质量分布显示:没有强钩子素材,A 类缺口明显</h2>
+    <p><strong>最高分只有 78 分,没有 A 类。</strong>这意味着当前素材足以支撑基础混剪,但很难稳定产出开头 3 秒就抓人的爆款质感。B 类素材应被优先用于口播中的菜品核心槽位,C 类作为补位,D 类需要人工确认后再放行。</p>
+    <div class="grid">
+      <div><h3>按 tier 分布</h3><div class='chart-row'><b>A</b><div class="bar good"><span style="width:0.0%"></span><em>0 (0.0%)</em></div></div>
+<div class='chart-row'><b>B</b><div class="bar good"><span style="width:13.513513513513514%"></span><em>15 (6.5%)</em></div></div>
+<div class='chart-row'><b>C</b><div class="bar mid"><span style="width:100.0%"></span><em>111 (48.1%)</em></div></div>
+<div class='chart-row'><b>D</b><div class="bar bad"><span style="width:94.5945945945946%"></span><em>105 (45.5%)</em></div></div>
+<div class='chart-row'><b>X</b><div class="bar bad"><span style="width:0.0%"></span><em>0 (0.0%)</em></div></div></div>
+      <div><h3>按具体分数分布</h3><div class='chart-row'><b>18</b><div class="bar mid"><span style="width:2.3255813953488373%"></span><em>1</em></div></div>
+<div class='chart-row'><b>28</b><div class="bar mid"><span style="width:4.651162790697675%"></span><em>2</em></div></div>
+<div class='chart-row'><b>32</b><div class="bar mid"><span style="width:13.953488372093023%"></span><em>6</em></div></div>
+<div class='chart-row'><b>35</b><div class="bar mid"><span style="width:32.55813953488372%"></span><em>14</em></div></div>
+<div class='chart-row'><b>38</b><div class="bar mid"><span style="width:65.11627906976744%"></span><em>28</em></div></div>
+<div class='chart-row'><b>42</b><div class="bar mid"><span style="width:79.06976744186046%"></span><em>34</em></div></div>
+<div class='chart-row'><b>45</b><div class="bar mid"><span style="width:11.627906976744185%"></span><em>5</em></div></div>
+<div class='chart-row'><b>48</b><div class="bar mid"><span style="width:34.883720930232556%"></span><em>15</em></div></div>
+<div class='chart-row'><b>52</b><div class="bar mid"><span style="width:100.0%"></span><em>43</em></div></div>
+<div class='chart-row'><b>55</b><div class="bar mid"><span style="width:6.976744186046512%"></span><em>3</em></div></div>
+<div class='chart-row'><b>58</b><div class="bar mid"><span style="width:39.53488372093023%"></span><em>17</em></div></div>
+<div class='chart-row'><b>60</b><div class="bar mid"><span style="width:11.627906976744185%"></span><em>5</em></div></div>
+<div class='chart-row'><b>62</b><div class="bar mid"><span style="width:88.37209302325581%"></span><em>38</em></div></div>
+<div class='chart-row'><b>68</b><div class="bar mid"><span style="width:11.627906976744185%"></span><em>5</em></div></div>
+<div class='chart-row'><b>72</b><div class="bar mid"><span style="width:27.906976744186046%"></span><em>12</em></div></div>
+<div class='chart-row'><b>78</b><div class="bar mid"><span style="width:6.976744186046512%"></span><em>3</em></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>低分主要由拍摄环境和镜头信息量拉低</h2>
+    <p><strong>大量素材被判为 review,不是因为菜品本身不能卖,而是画面暴露了太多后厨和静态问题。</strong>评分文本反复出现脏乱、重复、构图差、无动作、过暗等关键词。下一轮优化拍摄 SOP 的收益会大于继续盲目扩充同类素材。</p>
+    <div class='chart-row'><b>环境脏乱/卫生感差</b><div class="bar bad"><span style="width:100.0%"></span><em>190 (82.3%)</em></div></div>
+<div class='chart-row'><b>静态重复/无动作</b><div class="bar bad"><span style="width:95.78947368421052%"></span><em>182 (78.8%)</em></div></div>
+<div class='chart-row'><b>构图差/主体不突出</b><div class="bar bad"><span style="width:87.89473684210526%"></span><em>167 (72.3%)</em></div></div>
+<div class='chart-row'><b>过暗/光线差</b><div class="bar bad"><span style="width:63.1578947368421%"></span><em>120 (51.9%)</em></div></div>
+<div class='chart-row'><b>敏感品牌/杂物入镜</b><div class="bar bad"><span style="width:31.05263157894737%"></span><em>59 (25.5%)</em></div></div>
+<div class='chart-row'><b>食欲感不足/烤糊风险</b><div class="bar bad"><span style="width:27.89473684210526%"></span><em>53 (22.9%)</em></div></div>
+<div class='chart-row'><b>品类/信息不匹配</b><div class="bar bad"><span style="width:4.2105263157894735%"></span><em>8 (3.5%)</em></div></div>
+  </section>
+
+  <section>
+    <h2>品类覆盖需要和质量一起看</h2>
+    <p><strong>品类多不等于可剪素材多。</strong>某些类目虽然数量不少,但 review 占比高;饮品、价格牌、包装/配送等转化类素材也需要补齐,否则口播里的饮品/价格/filler 槽位会缺少高质量匹配画面。</p>
+    <div class="grid">
+      <div><h3>品类数量</h3><div class='chart-row'><b>烤串</b><div class="bar "><span style="width:100.0%"></span><em>132 (57.1%)</em></div></div>
+<div class='chart-row'><b>主菜</b><div class="bar "><span style="width:59.84848484848485%"></span><em>79 (34.2%)</em></div></div>
+<div class='chart-row'><b>饮品</b><div class="bar "><span style="width:7.575757575757576%"></span><em>10 (4.3%)</em></div></div>
+<div class='chart-row'><b>蘸料特写</b><div class="bar "><span style="width:3.0303030303030303%"></span><em>4 (1.7%)</em></div></div>
+<div class='chart-row'><b>出餐动作</b><div class="bar "><span style="width:3.0303030303030303%"></span><em>4 (1.7%)</em></div></div>
+<div class='chart-row'><b>配菜</b><div class="bar "><span style="width:0.7575757575757576%"></span><em>1 (0.4%)</em></div></div>
+<div class='chart-row'><b>空镜</b><div class="bar "><span style="width:0.7575757575757576%"></span><em>1 (0.4%)</em></div></div></div>
+      <div>
+        <h3>品类质量概览</h3>
+        <table><thead><tr><th>品类</th><th>数量</th><th>均分</th><th>B 及以上</th><th>复审</th></tr></thead><tbody><tr><td>烤串</td><td>132</td><td>49.9</td><td>5 (3.8%)</td><td>63 (47.7%)</td></tr>
+<tr><td>主菜</td><td>79</td><td>51.1</td><td>8 (10.1%)</td><td>36 (45.6%)</td></tr>
+<tr><td>饮品</td><td>10</td><td>45.1</td><td>0 (0.0%)</td><td>5 (50.0%)</td></tr>
+<tr><td>蘸料特写</td><td>4</td><td>70.0</td><td>2 (50.0%)</td><td>0 (0.0%)</td></tr>
+<tr><td>出餐动作</td><td>4</td><td>59.0</td><td>0 (0.0%)</td><td>0 (0.0%)</td></tr>
+<tr><td>配菜</td><td>1</td><td>58.0</td><td>0 (0.0%)</td><td>0 (0.0%)</td></tr>
+<tr><td>空镜</td><td>1</td><td>18.0</td><td>0 (0.0%)</td><td>1 (100.0%)</td></tr></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Top 10 可作为下一轮混剪优先素材</h2>
+    <p><strong>Top 10 集中在烤羊腿、烤羊排、烤牛排、烤排骨和撒料特写。</strong>这些素材更适合进入 dish 槽位或做局部强节奏片段,但最高分仍只有 78,说明还缺少真正的近景爆点和更干净的商业化呈现。</p>
+    <table><thead><tr><th>素材</th><th>品类</th><th>菜品</th><th>分数</th><th>等级</th><th>正向理由</th><th>主要风险</th></tr></thead><tbody><tr><td><code>VID_20260610_232204.mp4</code></td><td>主菜</td><td>烤羊腿</td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>主菜主体清晰,两根大块羊腿骨肉饱满,体量大、视觉；撒葱花动作有动态和节奏感,辛香料粉末增加食欲感；骨节处外露,呈现真实手撕啃食的&#x27;大口吃肉&#x27;暗示,</td><td>背景为白瓷砖+金属台+沥水筐,后厨出餐环境略显凌；底部多次出现沾有油渍的红色针织手套,卫生观感扣分；构图偏俯拍斜放,主体未居中,左上角留白区域较大,</td></tr>
+<tr><td><code>VID_20260610_221340.mp4</code></td><td>蘸料特写</td><td>烤串撒料</td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>食欲感强,辣椒面颜色饱和、颗粒感清晰,串品红亮诱；动作能量好,撒料动作连贯,粉末飞溅有动感；反差明显,生串vs满盆蘸料形成视觉冲击</td><td>画面边缘可见烤糊肉串(左上角),略有脏乱感；灶台背景油渍较多,环境不够干净；构图略有倾斜,手持拍摄稳定性一般</td></tr>
+<tr><td><code>VID_20260610_213900.mp4</code></td><td>蘸料特写</td><td></td><td><strong>78</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:辣椒面红色调饱和,撒料瞬间颗粒飞溅视觉；动作能量好:勺子倾倒辣椒面+肉串转动的连续动作有；独特性:撒料式蘸料手法在街头烧烤中具有差异化记忆</td><td>构图偏乱:背景出现调料瓶、铁盆、铁架等多元素分散；脏乱感:操作台面油渍、散落辣椒残渣明显,部分观众；肉串半成品状态:生肉+大量红辣椒面遮盖,成品完成</td></tr>
+<tr><td><code>VID_20260611_000143.mp4</code></td><td>主菜</td><td>烧烤拼盘</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:四盘烧烤色泽红亮、撒料清晰可见,搭配生；独特性高:西瓜饮品桶+多种烧烤拼盘的组合有辨识度；转化价值好:菜品量大丰盛,适合外卖拼盘套餐展示,</td><td>构图较差:俯拍角度导致人物手臂/手部多次入镜(左；敏感信息:背景桌上疑似有纸币/现金露出,存在平台；轻微重复感:5帧画面几乎无变化,镜头几乎静止,缺</td></tr>
+<tr><td><code>VID_20260610_235701.mp4</code></td><td>主菜</td><td>烤羊腿</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:羊腿表面香料颗粒清晰、红棕色焦香色泽诱；构图饱满:羊腿占画面主体,配生菜摆盘有层次感；清晰度高:近景细节(肉质纤维、骨节、香料碎)可见</td><td>重复感严重:5帧几乎完全一致,无可用动作/剪辑点；构图抖动:画面轻微偏移且裁切不一致；背景杂乱:左上角人物腿部/衣物入镜,右侧饮品碗分</td></tr>
+<tr><td><code>VID_20260610_235051.mp4</code></td><td>主菜</td><td>烤羊排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:烤羊排色泽焦褐油亮,撒料颗粒清晰可见,；菜品丰富度高:包含羊排、带骨肉、肋排、羊肉串等多；清晰度尚可:主食材细节(肉质纹理、辣椒碎)可辨</td><td>画面变化过大:5帧之间镜头持续平移下摇,导致构图；构图差:整桌菜(西瓜、饮料瓶、果汁)杂乱入镜,主；背景敏感信息:多品牌饮料瓶(水蜜桃汁、风味饮品)</td></tr>
+<tr><td><code>VID_20260610_231719.mp4</code></td><td>烤串</td><td>烤羊排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感：羊肉烤至金黄焦香,油脂光泽明显,色面诱人；动作能量：钳子夹持羊排翻面/夹起,形成完整动作弧；清晰度:画面主体对焦清晰,细节(焦化层、骨边)可</td><td>脏乱:台面油渍、辣椒碎屑较多,背景烤网油污明显,；构图:主体偏左下,背景网架+瓷砖墙杂乱,广告感弱；重复感:全程在夹/翻同一块羊排,动作单一,缺少切</td></tr>
+<tr><td><code>VID_20260610_222606.mp4</code></td><td>主菜</td><td>烤牛排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强,红橙色香料裹层色泽饱满,视觉冲击力好；动作能量:第二帧有夹子夹起牛排下落的动态瞬间,适；画面清晰度尚可,牛排表面颗粒/焦化纹理可见</td><td>背景杂乱:铁网、烤架、调料盆、裸露手套挤占画面,；烤制痕迹较重,边角发黑有&#x27;烤糊&#x27;观感,可能引发卫；画面过暗,白平衡偏冷,牛排颜色偏暗红而非鲜亮</td></tr>
+<tr><td><code>VID_20260610_222222.mp4</code></td><td>主菜</td><td>烤牛排</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:牛排焦褐色外壳+油脂光泽+鲜红辣椒粉撒；动作能量突出:撒料的颗粒坠落轨迹清晰可辨,慢动作；画面清晰稳定:5帧构图基本一致,主体居中,焦距稳</td><td>背景杂物较多:铁丝网、墙体、电话号码(18848；构图略有倾斜:网格背景占据画面过多,主体牛排未处；重复感风险:5帧均为同一撒料动作的不同阶段,如全</td></tr>
+<tr><td><code>VID_20260610_222138.mp4</code></td><td>烤串</td><td>烤排骨</td><td><strong>72</strong></td><td><span class='pill good'>B</span></td><td>食欲感强:排骨表面金黄泛油,撒料瞬间粉红色香料如；动作能量足:连续撒粉动作形成动态画面,有粉尘飘落；构图有层次:前景排骨+中景烤架+背景铁丝网,纵深</td><td>背景瓷砖油渍明显,墙面脏乱,卫生观感差；底部烤箱文字&#x27;天博科&#x27;及电话号码暴露敏感/店铺信；5帧画面构图高度重复,镜头几乎静止,缺乏剪辑节奏</td></tr></tbody></table>
+  </section>
+
+  <section>
+    <h2>下一轮拍摄建议:按“可剪瞬间”组织素材</h2>
+    <div class="callout">
+      <strong>目标:</strong> 把素材从“后厨记录”升级成“可直接卡口播的商业片段”。每条素材应有明确主体、干净背景、动作高点和适配槽位。
+    </div>
+    <h3>1. 每个菜品补齐 5 类镜头</h3>
+    <ul>
+      <li><strong>食欲近景:</strong> 油光、焦边、汁水、热气、撒料落下,主体占画面 60% 以上。</li>
+      <li><strong>动作高点:</strong> 翻串、刷酱、撒孜然、夹起、切开、开盖、装盒,每个动作单独拍 2-3 秒。</li>
+      <li><strong>干净成品:</strong> 白盘/牛皮纸/外卖盒里的成品,背景少,不要露脏炉、油墙、杂物。</li>
+      <li><strong>转化信息:</strong> 价格牌、套餐全景、包装袋、外卖盒、配送到手,给 filler/价格口播用。</li>
+      <li><strong>品类补位:</strong> 饮品、蘸料、配菜、空镜要独立拍,不要被主菜和杂物抢画面。</li>
+    </ul>
+    <h3>2. 现场布置先减法</h3>
+    <ul>
+      <li>拍摄前清理台面、油渍墙面、调料盆、纸箱、灭火器、品牌瓶等干扰物。</li>
+      <li>尽量避开后厨脏墙和油烟机,用干净桌面/成品区/包装区承接镜头。</li>
+      <li>不要让脏手套、刷子残渣、油污烤架长时间占据画面。</li>
+    </ul>
+    <h3>3. 镜头语言要服务混剪</h3>
+    <ul>
+      <li>每条素材只表达一个动作或一个主体,避免同一条里从饮品跳到烤肉再跳到环境。</li>
+      <li>减少 5 秒静态俯拍;改成 0.5 秒起势 + 1 秒动作 + 0.5 秒结果。</li>
+      <li>竖屏稳定拍摄,主体居中,避免竹签/手套/锅具遮挡主体。</li>
+      <li>给热菜加暖光和侧光,让油光、焦边、热气可见。</li>
+    </ul>
+    <h3>4. 入库标准建议</h3>
+    <ul>
+      <li>B 类以上素材优先入 `prefer`,用于 dish/intro 关键槽位。</li>
+      <li>C 类作为 fallback,只在素材不足时使用。</li>
+      <li>D 类先人工复审,可以保留但不要默认进片。</li>
+      <li>VLM 失败兜底的 60 分素材建议单独复跑或人工复核。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>复审清单说明</h2>
+    <p><strong>105 条素材进入 review。</strong>这不代表要删除,而是建议先人工看一遍,决定是否改分、改标签、保留作特殊槽位,或从默认素材池隔离。</p>
+    <table><thead><tr><th>素材</th><th>品类</th><th>菜品</th><th>分数</th><th>等级</th><th>正向理由</th><th>主要风险</th></tr></thead><tbody><tr><td><code>VID_20260610_211057.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>食材色泽红亮、油润,有一定食欲感；画面清晰,烤串细节可见</td><td>5帧画面几乎完全静止重复,无动作能量,严重重复感；构图单调,始终是同一俯拍角度,缺乏变化；背景瓷砖油污明显,台面脏乱,卫生感差</td></tr>
+<tr><td><code>VID_20260610_211146.mp4</code></td><td>烤串</td><td>烤肉串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>肉串色泽红亮油润,有明显食欲感；数量充足、摆拍密集,展示感强；特写清晰,肉粒纹理可见</td><td>5帧画面几乎无变化,严重重复感,无信息增量；缺乏动作/动态(无人翻串、无炙烤过程、无冒油烟雾；构图倾斜,竹签斜出画面,主视觉不够干净</td></tr>
+<tr><td><code>VID_20260610_211239.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>35</strong></td><td><span class='pill bad'>D</span></td><td>烤串色泽红亮、油光明显,具备一定食欲感；构图聚焦串主体,密集排列有视觉冲击；分辨率清晰,颗粒质感可见</td><td>构图差:画面大块面积被脏瓷砖墙面占据,主体偏小且；烤串呈深红/暗红色,疑似过度腌制或偏烤糊状态,观；烤架油渍明显,瓷砖墙面油污脏乱,卫生感差</td></tr>
+<tr><td><code>VID_20260610_211249.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>主体食材(肉串)色彩红亮、油光明显,具备一定食欲；动作能量存在:摊主正在翻转/整理烤串,有持续的手</td><td>构图差:画面倾斜,主体被切到一半,大量背景瓷砖占；脏乱:瓷砖墙面油腻发黑,烤架下方油污明显,烤串下；环境感过重:工业排风扇+沾满油渍的瓷砖+脏手套,</td></tr>
+<tr><td><code>VID_20260610_211313.mp4</code></td><td>烤串</td><td>烤虾</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>食欲感中等,虾身油亮有焦糖色；菜品主体清晰可辨识</td><td>构图差:前景遮挡(调料罐)、背景白瓷砖大面积占画；脏乱:烤架油渍明显,排风罩油垢可见；无动作能量:5帧几乎静止,纯静态摆拍</td></tr>
+<tr><td><code>VID_20260610_211340.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>清晰度尚可,食材形态可见；有烤制过程的动作变化(手套翻动/取放)；串品数量充足,品类较丰富(肉串+腊肠)</td><td>构图差,主体偏离中心且被铁签遮挡,信息不聚焦；脏乱:台面油渍明显,背景墙油腻不洁,卫生观感差；无食欲感:肉串颜色发灰偏生,缺乏焦香/油光/撒料</td></tr>
+<tr><td><code>VID_20260610_211406.mp4</code></td><td>烤串</td><td>烤羊肉串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>羊肉串量大、串型完整,具有堆叠数量感；近距离手持镜头展现串串新鲜油润的红白色泽；5帧间有轻微角度变化,暗示上串/翻烤的动作</td><td>未上烤,仅为生/半熟肉串,缺乏烧烤核心动作(滋滋；背景为不锈钢台面和油渍,环境脏乱,出现油锅残渣,；构图为俯视手持特写,竹签指向杂乱,无菜品成品呈现</td></tr>
+<tr><td><code>VID_20260610_211445.mp4</code></td><td>烤串</td><td>羊肉串</td><td><strong>32</strong></td><td><span class='pill bad'>D</span></td><td>羊肉串肉色红亮,肥瘦相间,油脂感强,具备一定食欲；动作清晰:戴防烫手套的手抓握一把肉串的动作明确,</td><td>构图差:画面偏斜,肉串密集遮挡主体,大量签子交错；环境脏乱:烤炉底部油渍明显,墙面发黄有油污,背景；无信息:5帧画面内容高度重复(同一把串同一动作)</td></tr>
+<tr><td><code>VID_20260610_211605.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>48</strong></td><td><span class='pill bad'>D</span></td><td>主体为烤串,品类明确；肉串表面有油光和焦褐感,具备一定食欲感；动作能量存在(翻串/起串过程)</td><td>环境脏乱:烤架油渍明显,背景墙皮发黑,瓷砖缝油污；构图差:主体偏右,左侧肉串被裁切,画面不平衡；戴红色线手套操作,卫生观感扣分</td></tr>
+<tr><td><code>VID_20260610_211954.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>48</strong></td><td><span class='pill bad'>D</span></td><td>有真实的烤串主体（肉串+大虾串），食材辨识度高；近景展示串的数量和大小，量感突出；色泽偏红亮，有油光和烧烤焦感，能体现一定食欲</td><td>5帧画面几乎完全静止，构图、角度、内容高度重复，；未出现翻串/撒料/冒烟等动态动作，动作能量为零；环境脏乱——烤炉油渍明显、墙面瓷砖有污渍、底部集</td></tr>
+<tr><td><code>VID_20260610_212042.mp4</code></td><td>烤串</td><td>烤肉串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>食物主体明确，烤肉串肉块饱满、色泽有焦糖感；烤串表面油光明显，有一定食欲感</td><td>环境脏乱，油渍明显，墙面污渍、铁网生锈感强；构图差，主体被一次性大把烤串遮挡，画面信息过载；戴有脏污手套直接持串，卫生观感差，影响转化</td></tr>
+<tr><td><code>VID_20260610_212052.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>烤串本体清晰可见,肉质纹理和焦边能辨认；手部动态展示了一把串的动作,有一定能量感；右下角辣椒面/蘸料提供佐餐信息</td><td>构图极差:烤串几乎遮住操作手套,主体被杂乱铁签分；背景脏乱:铁网、油渍台面、积油烤槽全部入镜,卫生；5帧画面几乎无变化,重复感严重,基本是静态持串</td></tr>
+<tr><td><code>VID_20260610_212250.mp4</code></td><td>烤串</td><td>烤鸡翅烤串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>鸡翅色泽油亮、表皮焦糖化明显,具备一定食欲感；动作呈现串烤出锅的展示瞬间,有手部操作动态；画面清晰,主体(鸡翅串)可辨识</td><td>背景为脏污白瓷砖墙+油烟环境,环境观感差,脏乱扣；画面构图被手套、调料盆和铁丝网切碎,主体不突出；整条素材几乎为同一静态持握动作的重复帧,重复感极</td></tr>
+<tr><td><code>VID_20260610_212323.mp4</code></td><td>烤串</td><td>烤羊肉串</td><td><strong>48</strong></td><td><span class='pill bad'>D</span></td><td>羊肉串肉块饱满肥瘦相间,油脂光泽明显有食欲；扇形展示构图有节奏感和视觉冲击；手持展示动作有动感</td><td>几乎全是生肉/半熟状态,缺少炭火炙烤的焦香画面；整体画面偏暗,墙面油污、烤架陈旧显得脏乱；无火焰、无烟、无撒料等关键烹饪动作,转化价值弱</td></tr>
+<tr><td><code>VID_20260610_212340.mp4</code></td><td>烤串</td><td>羊肉串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>羊肉串品相完整,肥瘦相间,油润光泽有食欲感；烤串数量多,握持展示有视觉冲击力</td><td>背景墙污渍明显,灶台油垢可见,整体环境脏乱；戴的劳保手套沾满油渍脏污,严重影响食欲；构图单一重复,5帧画面几乎一致,无信息增量</td></tr>
+<tr><td><code>VID_20260610_212422.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>主体清晰可识别,羊肉串呈扇形展开,数量感强；肉的色泽红润带油光,有一定食欲感；手部动作展示烤串的过程,有动态叙事</td><td>构图差:手套挡视线,画面下半部分大面积被红黑手套；脏乱:背景瓷砖油渍明显,操作台面杂乱,调料罐、抹；主体偏小,烤串位于画面中上,视觉重点不突出</td></tr>
+<tr><td><code>VID_20260610_212510.mp4</code></td><td>烤串</td><td>羊肉串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>羊肉串清晰可辨,串型整齐,肥瘦相间；右下角辣椒粉蘸料盘增加食欲感和佐料信息；画面色彩饱和,肉串红润有光泽,油润感不错</td><td>5帧画面几乎完全一致,重复感极强,无动作能量；构图较差,主体偏左下,右上角出现烤焦发黑的肉串影；烤架油腻、背景白墙有油渍污痕,环境显脏乱</td></tr>
+<tr><td><code>VID_20260610_212614.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>35</strong></td><td><span class='pill bad'>D</span></td><td>主体明确,烤串品类清晰；肉色红润,有一定的食欲感；竹签排列整齐,数量感强,适合展示产品规模</td><td>构图差:视角倾斜、拍到手套入镜且占据右下大量画面；脏乱:烤架下方油渍明显,墙面油污/锈迹,背景网罩；几乎无动作变化,五帧画面几乎静止,缺乏动作能量</td></tr>
+<tr><td><code>VID_20260610_212623.mp4</code></td><td>烤串</td><td>烤串</td><td><strong>42</strong></td><td><span class='pill bad'>D</span></td><td>主体明确:一排整齐的牛肉串正在烤制,商品识别度高；竹签排列有视觉规律,扇形展开有一定构图感；肉块颗粒分明,可见红肉纹理与少量辣椒点缀</td><td>生肉/半生状态,缺乏焦香、油脂滋滋、撒料等关键食；画面脏乱:烤网有大量油渍残渣、底部积水发黄,后墙；构图差:白色瓷砖墙面占上半部分,上方有黑色杂物,</td></tr>
+<tr><td><code>VID_20260610_212647.mp4</code></td><td>烤串</td><td>红柳枝烤肉串</td><td><strong>38</strong></td><td><span class='pill bad'>D</span></td><td>红柳枝独特性强,辨识度高；肉色鲜红,色泽饱和,有一定食欲感；竹签/红柳签排列有视觉冲击,数量感强</td><td>肉处于生/半生状态,未上火烤制,缺乏滋滋冒油的动；5帧画面几乎完全一致,镜头无运动、无变化,重复感；无烹饪动作能量(没有翻串、撒料、火光、油脂滴落)</td></tr></tbody></table>
+    <p class="note">表格仅展示前 20 条复审素材。完整清单见 <code>review_list.json</code>。</p>
+  </section>
+
+  <section>
+    <h2>口径与限制</h2>
+    <p>本报告基于 2026-W24 批次 `tags.json` 中 231 条素材的 VLM 评分结果。评分用于素材调度和复审优先级,不自动删除素材。MiniMax 在本次评分中出现少量 500/JSON 格式重试;失败后兜底为 C 类 60 分的条目应优先人工复核或后续单独重跑。</p>
+  </section>
+</main>
+  <script src="dy-cut-series-nav.js" defer></script>
+</body>
+</html>

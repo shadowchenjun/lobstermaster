@@ -67,7 +67,7 @@
 
 <h2>① 样本与方法</h2>
 <div class="card">
-  <p>对 <code>samples/</code> 下 7 个文件做 md5 去重,得到 <span class="num">5 条独立视频</span>,恰好覆盖餐饮外卖赛道五种主流打法。</p>
+  <p>对 <code>refs/</code> 下 7 个对标文件做 md5 去重,得到 <span class="num">5 条独立视频</span>,恰好覆盖餐饮外卖赛道五种主流打法。</p>
   <p class="muted">分析手段:ffprobe 元数据 · ffmpeg 场景切点检测 · whisper 语音转写 · 频谱通量 BPM 估算 · 逐帧读图</p>
   <table>
     <tr><th>#</th><th>账号 / 品类</th><th>规格 · 时长</th><th>打法定位</th></tr>
@@ -201,10 +201,11 @@
 </div>
 
 <footer>
-  数据来源:samples/ 对标样片 · 完整拆解记录见 findings.md 与 docs/对标视频分析报告.md<br>
+  数据来源:refs/ 对标样片 · 完整拆解记录见 findings.md 与 docs/对标视频分析报告.md<br>
   抖音餐饮外卖视频 AI 混剪项目 · 2026-06-10
 </footer>
 
 </div>
+  <script src="dy-cut-series-nav.js" defer></script>
 </body>
 </html>

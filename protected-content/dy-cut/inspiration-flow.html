@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拍摄灵感 / 创意挖掘流程说明 · inspiration</title>
+<style>
+  :root{
+    --ink:#171512; --muted:#6c6258; --paper:#f7f2ea; --panel:#fffaf2;
+    --line:#d9cbbc; --charcoal:#292520; --green:#1f7a5b; --red:#b2432f;
+    --gold:#b9822c; --blue:#2e5f8d; --shadow:0 18px 42px rgba(41,37,32,.12);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;color:var(--ink);
+    background:
+      linear-gradient(90deg,rgba(41,37,32,.045) 1px,transparent 1px) 0 0/48px 48px,
+      linear-gradient(0deg,rgba(41,37,32,.035) 1px,transparent 1px) 0 0/48px 48px,
+      radial-gradient(circle at 18% 8%,rgba(46,95,141,.14),transparent 28%),
+      radial-gradient(circle at 82% 12%,rgba(185,130,44,.13),transparent 30%),
+      var(--paper);
+    font-family:"Avenir Next","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  a{color:inherit}
+  .page{width:min(1180px,calc(100% - 36px));margin:0 auto;padding:28px 0 64px}
+  .hero{display:grid;grid-template-columns:minmax(0,1.1fr) 360px;gap:34px;align-items:end;
+    padding:44px 0 34px;border-bottom:2px solid var(--charcoal)}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 12px;
+    border:1px solid var(--charcoal);background:var(--panel);font-size:13px;font-weight:700;
+    margin-bottom:24px;box-shadow:4px 4px 0 var(--charcoal)}
+  .dot{width:9px;height:9px;background:var(--blue);border-radius:50%;display:inline-block}
+  h1{font-family:Georgia,"Songti SC",serif;font-size:clamp(40px,6.4vw,78px);line-height:.98;
+    margin:0 0 22px;max-width:850px}
+  .hero p{font-size:20px;line-height:1.65;color:var(--muted);max-width:760px;margin:0}
+  .status-board{background:var(--charcoal);color:#fff8ec;padding:22px;border-radius:6px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .status-board::before{content:"";position:absolute;inset:0;
+    background:linear-gradient(135deg,transparent 0 72%,rgba(46,95,141,.34) 72% 100%);pointer-events:none}
+  .status-board h2{position:relative;margin:0 0 18px;font-size:17px}
+  .metric{position:relative;display:grid;grid-template-columns:92px 1fr;gap:14px;padding:13px 0;
+    border-top:1px solid rgba(255,248,236,.2);align-items:center}
+  .metric b{font-family:Georgia,serif;font-size:26px;color:var(--gold)}
+  .metric span{font-size:13px;line-height:1.5;color:#e9dcc8}
+  .nav{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 8px}
+  .nav a{border:1px solid var(--charcoal);background:var(--panel);padding:7px 13px;font-size:13px;
+    font-weight:600;text-decoration:none;box-shadow:2px 2px 0 var(--charcoal)}
+  .nav a:hover{background:var(--charcoal);color:#fff8ec}
+  section{padding:46px 0;border-bottom:1px solid var(--line)}
+  .section-head{display:grid;grid-template-columns:120px 1fr;gap:22px;margin-bottom:26px;align-items:start}
+  .kicker{font-family:Georgia,serif;font-size:14px;color:var(--muted);font-weight:700;
+    border-top:3px solid var(--charcoal);padding-top:8px}
+  h2{font-family:Georgia,"Songti SC",serif;font-size:clamp(26px,3.4vw,40px);margin:0 0 8px;line-height:1.1}
+  h3{margin:0 0 8px;font-size:18px}
+  .lead{color:var(--muted);font-size:16px;line-height:1.6;margin:0;max-width:760px}
+  p{line-height:1.65}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;
+    box-shadow:var(--shadow)}
+  .card ul{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.7;font-size:14.5px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-bottom:10px}
+  .tag.green{background:rgba(31,122,91,.14);color:var(--green)}
+  .tag.gold{background:rgba(185,130,44,.16);color:var(--gold)}
+  .tag.blue{background:rgba(46,95,141,.15);color:var(--blue)}
+  .tag.red{background:rgba(178,67,47,.14);color:var(--red)}
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
+  .step{background:var(--panel);border:1px solid var(--charcoal);border-radius:8px;padding:16px 14px;
+    box-shadow:3px 3px 0 var(--charcoal);position:relative}
+  .step .n{font-family:Georgia,serif;font-size:13px;color:var(--blue);font-weight:700}
+  .step h4{margin:4px 0 6px;font-size:15px}
+  .step code{font-size:12px;color:var(--muted)}
+  .step p{font-size:13px;line-height:1.55;color:var(--muted);margin:6px 0 0}
+  .lane{display:grid;grid-template-columns:230px 1fr;gap:16px;padding:13px 0;border-top:1px solid var(--line)}
+  .lane-title code{font-size:13.5px}
+  .lane-body{color:var(--muted);font-size:14.5px;line-height:1.6}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+  th{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .road{display:grid;gap:10px;margin-top:6px}
+  .road .row{display:grid;grid-template-columns:64px 150px 1fr 90px;gap:14px;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+  .road .lv{font-family:Georgia,serif;font-weight:700;font-size:20px;color:var(--charcoal)}
+  .road .nm{font-weight:700}
+  .road .ds{color:var(--muted);font-size:14px;line-height:1.55}
+  .callout{margin-top:18px;background:#fff;border-left:4px solid var(--gold);border-radius:6px;
+    padding:16px 18px;box-shadow:var(--shadow);font-size:15px;line-height:1.6}
+  .code-card{background:var(--charcoal);color:#f4ead6;border-radius:8px;padding:18px 20px;
+    box-shadow:var(--shadow);overflow:auto}
+  .code-card pre{margin:0;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;line-height:1.65;white-space:pre}
+  .foot{color:var(--muted);font-size:13px;line-height:1.7;padding-top:22px}
+  @media(max-width:900px){.hero,.section-head{grid-template-columns:1fr}.grid-2,.grid-3{grid-template-columns:1fr}
+    .flow{grid-template-columns:1fr 1fr}.road .row{grid-template-columns:48px 1fr;row-gap:6px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Phase 1 · inspiration · 拍摄灵感 / 创意挖掘 · 2026-06-14</div>
+      <h1>拆解爆款，反推创意</h1>
+      <p>
+        inspiration 不生产视频，而是产出一份每周「拍摄灵感报告」：
+        把抖音餐饮外卖的对标爆款逐条拆成视觉与内容因子，提炼规律，
+        再落成针对你每个套餐的、可执行的拍摄建议。
+        当前是<strong>竞品拆解（reactive）</strong>，方向是<strong>AI agent 自主发掘 + 爆款溯源（proactive）</strong>。
+      </p>
+    </div>
+    <aside class="status-board">
+      <h2>当前实现状态</h2>
+      <div class="metric"><b>5</b><span>流水线步骤：抓取 → 下载 → 分析 → 聚合 → 建议</span></div>
+      <div class="metric"><b>2</b><span>分析层：VLM 视觉/剪辑 + LLM 内容/情绪</span></div>
+      <div class="metric"><b>1/周</b><span>产出 <code>output/inspiration/&lt;week&gt;.html</code></span></div>
+      <div class="metric"><b>L0→L4</b><span>从竞品拆解到自主创意 agent 的演进路线</span></div>
+    </aside>
+  </header>
+
+  <nav class="nav" aria-label="页面导航">
+    <a href="#source">创意来源</a>
+    <a href="#flow">五步流程</a>
+    <a href="#dims">拆解维度</a>
+    <a href="#code">代码映射</a>
+    <a href="#road">演进路线</a>
+    <a href="#run">如何运行</a>
+  </nav>
+
+  <section id="source">
+    <div class="section-head">
+      <div class="kicker">01 · Source</div>
+      <div><h2>创意从哪来：现在 vs 未来</h2>
+        <p class="lead">关键认知：现在是“别人已经火了我来拆”，未来是“agent 主动去发掘并溯源为什么火”。</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <span class="tag green">现在 · reactive</span>
+        <h3>竞品拆解</h3>
+        <p>按固定关键词抓取/导入抖音餐饮外卖爆款 → 逐条 VLM+LLM 拆解视觉与内容 → 聚合本周规律 → 落到你套餐上的拍摄清单。创意来源是“已经火的视频”。</p>
+      </div>
+      <div class="card">
+        <span class="tag blue">未来 · proactive</span>
+        <h3>AI agent 自主发掘 + 溯源</h3>
+        <p>由 agent 自主浏览同类视频、<strong>主动</strong>提出创意；尤其面向<strong>素材拍摄</strong>——做<strong>爆款特质溯源追踪</strong>（某条为什么火 → 拆到镜头/钩子/节奏/选品/发布时机的可复用因子），为<strong>拍摄与发布</strong>两端给建议。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="section-head">
+      <div class="kicker">02 · Pipeline</div>
+      <div><h2>五步流水线</h2>
+        <p class="lead"><code>src/inspiration/</code>，命令 <code>python -m src.orchestrator inspire --week 2026-W24</code>。</p></div>
+    </div>
+    <div class="flow">
+      <div class="step"><div class="n">01</div><h4>抓取</h4><code>scraper.py</code>
+        <p>按关键词抓抖音(TikTokScraper，反爬时静默跳过)或读本地 metadata；播放量过滤 + 去重。</p></div>
+      <div class="step"><div class="n">02</div><h4>下载</h4><code>downloader.py</code>
+        <p>yt-dlp 下载到 cache，已存在则跳过。</p></div>
+      <div class="step"><div class="n">03</div><h4>分析</h4><code>analyzer.py</code>
+        <p>抽帧(1fps) → VLM 出视觉/剪辑层 + LLM 出内容层 → VideoAnalysis(缓存)。</p></div>
+      <div class="step"><div class="n">04</div><h4>聚合规律</h4><code>reporter.py</code>
+        <p>全部分析喂 LLM → top 钩子 / 主导切镜区间 / 景别组合 / 情绪分布。</p></div>
+      <div class="step"><div class="n">05</div><h4>拍摄建议</h4><code>reporter.py</code>
+        <p>逐套餐 3–5 条可执行建议(景别/运镜/时长/文案) → 渲染 HTML 报告。</p></div>
+    </div>
+  </section>
+
+  <section id="dims">
+    <div class="section-head">
+      <div class="kicker">03 · What we extract</div>
+      <div><h2>单条视频拆解维度</h2>
+        <p class="lead"><code>VideoAnalysis</code>：两层因子,是“爆款溯源”的原材料。</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <span class="tag gold">视觉 / 剪辑层 · VLM</span>
+        <ul>
+          <li><code>shot_types</code> 景别序列</li>
+          <li><code>camera_moves</code> 运镜</li>
+          <li><code>lighting_style</code> 光线风格</li>
+          <li><code>avg_cut_sec</code> 平均切镜时长</li>
+          <li><code>transition_types</code> 转场</li>
+          <li><code>bgm_tempo</code> BGM 节奏</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag red">内容 / 情绪层 · LLM</span>
+        <ul>
+          <li><code>hook_text</code> 开头钩子</li>
+          <li><code>selling_points</code> 卖点</li>
+          <li><code>cta_text</code> 行动号召</li>
+          <li><code>emotion_arc</code> 情绪弧:食欲冲击 / 信任建立 / 价格锚定 / 探店猎奇</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="code">
+    <div class="section-head">
+      <div class="kicker">04 · Code map</div>
+      <div><h2>代码映射</h2><p class="lead">模块与职责一一对应,方便接手与扩展。</p></div>
+    </div>
+    <div class="lane"><div class="lane-title"><code>scraper.py</code></div>
+      <div class="lane-body">TikTokScraper(在线抓取 + UA 轮换 + 反爬静默跳过) / LocalImporter(读 <code>input/inspiration/metadata.json</code>)。</div></div>
+    <div class="lane"><div class="lane-title"><code>downloader.py</code></div>
+      <div class="lane-body">yt-dlp 下载,缓存命中跳过。</div></div>
+    <div class="lane"><div class="lane-title"><code>analyzer.py</code></div>
+      <div class="lane-body">抽帧 + VLM 视觉分析 + LLM 内容分析,结果缓存 <code>cache/inspiration/analysis/&lt;id&gt;.json</code>(resume 复用)。</div></div>
+    <div class="lane"><div class="lane-title"><code>reporter.py</code></div>
+      <div class="lane-body"><code>aggregate_patterns</code> 聚合规律 + <code>generate_shooting_suggestions</code> 逐套餐建议 + <code>render_html</code> 出报告。</div></div>
+    <div class="lane"><div class="lane-title"><code>scheduler.py</code></div>
+      <div class="lane-body">每周一 8 点定时(<code>schedule_day/hour</code>),也内嵌在 Gradio 复审 UI 启动时一起跑。</div></div>
+  </section>
+
+  <section id="road">
+    <div class="section-head">
+      <div class="kicker">05 · Roadmap</div>
+      <div><h2>从“竞品拆解”到“自主创意 agent”</h2>
+        <p class="lead">未来:agent 自主巡航、爆款溯源、拍摄+发布双向建议,最终形成数据回流闭环。</p></div>
+    </div>
+    <div class="road">
+      <div class="row"><div class="lv">L0</div><div class="nm">竞品拆解<br><span class="tag green" style="margin:4px 0 0">现在</span></div>
+        <div class="ds">给定关键词,被动抓取 → 拆解 → 周报建议。创意源自“已经火的视频”。</div><div class="tag green">已实现</div></div>
+      <div class="row"><div class="lv">L1</div><div class="nm">主动发掘</div>
+        <div class="ds">agent 自主扩展关键词/账号/话题,持续巡航抖音外卖同类内容,而非固定关键词。</div><div class="tag blue">规划中</div></div>
+      <div class="row"><div class="lv">L2</div><div class="nm">爆款特质溯源</div>
+        <div class="ds">对“为什么火”做因子归因:钩子 × 选品 × 节奏 × 画面 × 发布时机,沉淀可复用「爆款因子库」。</div><div class="tag blue">规划中</div></div>
+      <div class="row"><div class="lv">L3</div><div class="nm">拍摄 / 发布双向建议</div>
+        <div class="ds">不止“拍什么”,还给“何时发、配什么文案/话题、A/B 哪个钩子”,并回流投放数据校正建议。</div><div class="tag blue">规划中</div></div>
+      <div class="row"><div class="lv">L4</div><div class="nm">闭环</div>
+        <div class="ds">灵感 → beatmix/run 出片 → 投放 → 数据回流 → 更新因子库 → 下一轮灵感,自我强化。</div><div class="tag gold">远期</div></div>
+    </div>
+    <div class="callout">
+      <strong>落地抓手:</strong>L1 先把 <code>scraper</code> 从固定关键词升级为 agent 自主选题;
+      L2 在 <code>VideoAnalysis</code> 上加“爆款因子”标注 + 跨周聚类溯源;
+      L3 把 <code>generate_shooting_suggestions</code> 扩成“拍摄 + 发布”双 prompt,并接入投放回流数据。
+    </div>
+  </section>
+
+  <section id="run">
+    <div class="section-head">
+      <div class="kicker">06 · Run</div>
+      <div><h2>如何运行</h2><p class="lead">在线抓取被反爬时,用 <code>--scraper local</code> 手工塞对标视频。</p></div>
+    </div>
+    <div class="code-card">
+<pre>python -m src.orchestrator inspire --week 2026-W24 [--scraper local|tiktok] [--force]
+
+# 输入
+config/settings.yaml > inspiration.{keywords, min_plays, weekly_limit, scraper}
+input/inspiration/metadata.json        # local scraper 的对标视频元数据
+
+# 输出
+output/inspiration/&lt;week&gt;.html         # 每周拍摄灵感报告
+cache/inspiration/analysis/&lt;id&gt;.json   # 单条分析缓存(删除才会重跑该条 VLM/LLM)</pre>
+    </div>
+    <div class="foot">
+      来源:<code>docs/superpowers/specs/2026-06-12-inspiration-design.md</code>、
+      <code>docs/superpowers/plans/2026-06-12-inspiration-implementation.md</code>、
+      <code>src/inspiration/*</code>、<code>docs/inspiration运行说明.md</code>。
+      VLM/LLM 均走 MiniMax-M3。本页反映 2026-06-14 代码状态。
+    </div>
+  </section>
+</main>
+  <script src="dy-cut-series-nav.js" defer></script>
+</body>
+</html>

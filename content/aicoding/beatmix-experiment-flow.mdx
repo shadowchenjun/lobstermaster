@@ -1,10 +1,10 @@
 ---
 title: "dy-cut beatmix：口播 BGM 卡点混剪实验流程"
-date: "2026-06-13"
+date: "2026-06-14"
 category: "aicoding"
 coverEmoji: "🎧"
-tags: ["dy-cut", "beatmix", "AI混剪", "VLM", "LLM", "AIcoding"]
-summary: "一次真实 AIcoding 实践：在抖音餐饮外卖视频混剪系统里，把“选片填时长、BGM 叠加”的旧链路反过来，改成以口播 BGM 为骨架，让素材按菜品、价格、包装、配送等语义槽位卡点。"
+tags: ["dy-cut", "beatmix", "AI混剪", "VLM", "质量评分", "AIcoding"]
+summary: "一次真实 AIcoding 实践：beatmix 已从概念实验推进到可运行链路，支持 tag / score / mix 三类子命令、DashScope 口播 ASR、MiniMax-M3 槽位编排、素材质量评分、category_hint、历史 plan 去重和并行渲染。"
 directUrl: "/beatmix-experiment-flow.html"
 ---
 
@@ -12,14 +12,15 @@ directUrl: "/beatmix-experiment-flow.html"
 
 这篇记录的是 dy-cut 项目里的新版实验流程：`beatmix` 口播 BGM 卡点混剪。
 
-它不是老的批量跑片链路，而是一条独立实验线：先把口播 BGM 转成带时间戳的 `voicemap`，再让正文素材按 `category / dish / is_bspot` 标签匹配到对应槽位，最终实现“念到猪排就切猪排，念到配送就切包装/出餐”的声画同步。
+它不是老的批量跑片链路，而是一条独立实验线：先把口播 BGM 转成带时间戳的 `voicemap`，再让正文素材按 `category / dish / is_bspot / quality` 标签匹配到对应槽位，最终实现“念到猪排就切猪排，念到配送就切包装/出餐”的声画同步。
 
 完整说明页包含：
 
 - 旧 `run` 流程和新 `beatmix` 流程的差异
 - `input/starter`、`input/material/tags.json`、`config/bgm_voicemap` 的输入结构
-- VLM 自动素材打标、LLM 槽位编排、确定性兜底、差异化去重的代码映射
-- 当前已实现能力与仍需 CLI 接线的部分
+- `python -m src.orchestrator beatmix tag / score / mix` 三段命令
+- VLM 自动素材打标、质量评分、LLM 槽位编排、确定性兜底、历史 plan 去重的代码映射
+- 1080×1920 输出、质量软淘汰、并行渲染和 `--material-dir` 参数
 - 给协作者的运行前检查和验收标准
 
 点击文章卡片会直接打开完整 HTML 说明页。

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dy-cut 系统架构图 · run / beatmix / inspiration</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #0f1117; color: #e2e8f0; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 28px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 48px; }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 13px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: #475569; margin: 0 0 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: #1e293b; }
+
+  /* ── Cards ── */
+  .card {
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .card-title { font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 12px; letter-spacing: .05em; text-transform: uppercase; }
+
+  /* ── Pipeline ── */
+  .pipeline { display: flex; align-items: stretch; gap: 0; margin-bottom: 56px; overflow-x: auto; padding-bottom: 8px; }
+  .stage {
+    flex: 1; min-width: 110px;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 10px; padding: 16px 12px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; position: relative;
+    transition: border-color .2s, transform .15s;
+    cursor: default;
+  }
+  .stage:hover { border-color: #6366f1; transform: translateY(-2px); }
+  .stage .icon { font-size: 28px; margin-bottom: 8px; }
+  .stage .name { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+  .stage .file { font-size: 10px; color: #64748b; font-family: monospace; }
+  .stage .desc { font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.4; }
+  .arrow {
+    display: flex; align-items: center; padding: 0 4px;
+    color: #475569; font-size: 18px; flex-shrink: 0; align-self: center;
+  }
+
+  /* Stage colors */
+  .stage.ingest   { border-top: 3px solid #3b82f6; }
+  .stage.frame    { border-top: 3px solid #8b5cf6; }
+  .stage.understand { border-top: 3px solid #ec4899; }
+  .stage.copy     { border-top: 3px solid #f59e0b; }
+  .stage.select   { border-top: 3px solid #10b981; }
+  .stage.render   { border-top: 3px solid #ef4444; }
+  .stage.export   { border-top: 3px solid #06b6d4; }
+  .stage.beatmix  { border-top: 3px solid #22c55e; }
+  .stage.inspire  { border-top: 3px solid #a855f7; }
+
+  .lane-note {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin: -28px 0 32px;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .lane-note code {
+    color: #e2e8f0;
+    background: #0f1117;
+    border: 1px solid #1e293b;
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-family: monospace;
+  }
+
+  /* ── Two-col grid ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 56px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* ── Config block ── */
+  .config-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+  .config-card {
+    flex: 1; min-width: 180px;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 10px; padding: 16px;
+  }
+  .config-card h4 { font-size: 12px; font-weight: 700; color: #6366f1; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
+  .config-card .kv { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #0f1117; }
+  .config-card .kv:last-child { border-bottom: none; }
+  .config-card .kv span:first-child { color: #94a3b8; font-size: 11px; }
+  .config-card .kv span:last-child { color: #e2e8f0; font-size: 11px; font-weight: 600; font-family: monospace; }
+
+  /* ── Review flow ── */
+  .review-flow { display: flex; gap: 0; align-items: stretch; margin-bottom: 56px; flex-wrap: wrap; }
+  .rf-step {
+    flex: 1; min-width: 130px;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 10px; padding: 16px 14px; text-align: center;
+  }
+  .rf-step .icon { font-size: 24px; margin-bottom: 6px; }
+  .rf-step .name { font-size: 12px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+  .rf-step .desc { font-size: 11px; color: #64748b; line-height: 1.4; }
+  .rf-arrow { display: flex; align-items: center; color: #334155; font-size: 20px; padding: 0 4px; align-self: center; }
+
+  /* ── Template table ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #0f1117; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: left; }
+  tbody tr { border-bottom: 1px solid #1e293b; }
+  tbody tr:hover { background: #1e293b55; }
+  tbody td { padding: 10px 14px; font-size: 12px; color: #cbd5e1; vertical-align: middle; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .tag-blue  { background: #1e40af33; color: #93c5fd; }
+  .tag-purple{ background: #6d28d933; color: #c4b5fd; }
+  .tag-green { background: #065f4633; color: #6ee7b7; }
+  .tag-orange{ background: #92400e33; color: #fcd34d; }
+  .tag-rose  { background: #9f123933; color: #fda4af; }
+
+  /* ── Data flow diagram ── */
+  .dataflow { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px 24px; margin-bottom: 56px; }
+  .df-row { display: flex; align-items: center; gap: 0; margin-bottom: 16px; }
+  .df-row:last-child { margin-bottom: 0; }
+  .df-node {
+    background: #0f1117; border: 1px solid #334155;
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 11px; white-space: nowrap;
+  }
+  .df-node .label { color: #94a3b8; }
+  .df-node .value { color: #e2e8f0; font-weight: 600; font-family: monospace; font-size: 10px; }
+  .df-line { flex: 1; height: 1px; background: #334155; position: relative; margin: 0 8px; }
+  .df-line::after { content: '▶'; position: absolute; right: -6px; top: -8px; color: #475569; font-size: 12px; }
+  .df-label { font-size: 10px; color: #475569; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+  /* ── API block ── */
+  .api-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 56px; }
+  .api-card {
+    flex: 1; min-width: 200px;
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px;
+  }
+  .api-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .api-card .usage { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+  .api-card .cost { font-size: 11px; }
+  .api-card .cost span { color: #fbbf24; font-weight: 600; }
+  .api-doubao h4 { color: #60a5fa; }
+  .api-deepseek h4 { color: #34d399; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── Status badges ── */
+  .status { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .s-queued     { background: #1e3a5f; color: #93c5fd; }
+  .s-processing { background: #451a03; color: #fcd34d; }
+  .s-done       { background: #052e16; color: #86efac; }
+  .s-failed     { background: #450a0a; color: #fca5a5; }
+  .s-pending    { background: #1e1b4b; color: #c4b5fd; }
+  .s-passed     { background: #052e16; color: #86efac; }
+  .s-rejected   { background: #451a03; color: #fcd34d; }
+  .s-discarded  { background: #1e293b; color: #64748b; }
+
+  hr { border: none; border-top: 1px solid #1e293b; margin: 0 0 48px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>🎬 dy-cut 系统架构</h1>
+  <p class="subtitle">抖音餐饮外卖视频 AI 混剪系统 · run / beatmix / inspiration · Phase 1 · v0.1.0</p>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">主批处理流水线</div>
+
+  <div class="pipeline">
+    <div class="stage ingest">
+      <div class="icon">📥</div>
+      <div class="name">Ingest</div>
+      <div class="file">ingest.py</div>
+      <div class="desc">原始视频代理化<br>1080×1920 / 30fps<br>生成 phash 去重</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage frame">
+      <div class="icon">🖼</div>
+      <div class="name">Frame</div>
+      <div class="file">frame.py</div>
+      <div class="desc">每秒抽 1 帧<br>存入 scratch/frames</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage understand">
+      <div class="icon">🧠</div>
+      <div class="name">Understand</div>
+      <div class="file">understand.py</div>
+      <div class="desc">MiniMax-M3 VLM 识别<br>菜品 / 动作 / 风格<br>生成语义向量</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage copy">
+      <div class="icon">✍️</div>
+      <div class="name">Copy</div>
+      <div class="file">copy.py</div>
+      <div class="desc">MiniMax-M3 LLM<br>生成字幕文案<br>支持 extra_requirements</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage select">
+      <div class="icon">🎯</div>
+      <div class="name">Select</div>
+      <div class="file">select.py</div>
+      <div class="desc">7 维差异引擎<br>钩子打分排序<br>xfade 时长填充</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage render">
+      <div class="icon">🎨</div>
+      <div class="name">Render</div>
+      <div class="file">render.py</div>
+      <div class="desc">ffmpeg 拼接<br>调色 + 字幕烧录<br>BGM 混音</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage export">
+      <div class="icon">📤</div>
+      <div class="name">Export</div>
+      <div class="file">export.py</div>
+      <div class="desc">命名输出文件<br>写 manifest<br>更新 diff_index</div>
+    </div>
+  </div>
+
+  <div class="lane-note">
+    <b style="color:#e2e8f0;">命令：</b><code>python -m src.orchestrator run --week 2026-W24</code>。
+    主链路负责稳定批量出片：把原始素材代理化、抽帧、理解、生成字幕、差异化选片、ffmpeg 渲染并进入复审。
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">beatmix 口播 BGM 卡点链路</div>
+
+  <div class="pipeline">
+    <div class="stage beatmix">
+      <div class="icon">🗣</div>
+      <div class="name">Voicemap</div>
+      <div class="file">asr.py</div>
+      <div class="desc">DashScope ASR<br>词级时间戳<br>LLM 标 kind</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">🏷</div>
+      <div class="name">Material Tag</div>
+      <div class="file">tagging.py</div>
+      <div class="desc">VLM 打标<br>category / dish<br>is_bspot</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">📊</div>
+      <div class="name">Quality Score</div>
+      <div class="file">quality.py</div>
+      <div class="desc">A/B/C/D/X<br>soft reject<br>review list</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">🧩</div>
+      <div class="name">Slot Fill</div>
+      <div class="file">assembler.py</div>
+      <div class="desc">LLM 候选<br>category_hint<br>质量加权兜底</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">🧬</div>
+      <div class="name">Dedup</div>
+      <div class="file">dedup.py</div>
+      <div class="desc">历史 plan 读取<br>D2 / D4 去重<br>避免重复出片</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">🎛</div>
+      <div class="name">Render Adapter</div>
+      <div class="file">render_adapter.py</div>
+      <div class="desc">BeatMixPlan<br>转 SegmentPlan<br>平铺 BGM 时间轴</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage beatmix">
+      <div class="icon">📼</div>
+      <div class="name">Output</div>
+      <div class="file">runner.py</div>
+      <div class="desc">1080×1920<br>并行渲染<br>mp4 + plan.json</div>
+    </div>
+  </div>
+
+  <div class="lane-note">
+    <b style="color:#e2e8f0;">命令：</b>
+    <code>python -m src.orchestrator beatmix tag --dir input/material/2026-W24</code> ·
+    <code>beatmix score --dir input/material/2026-W24 --workers 4</code> ·
+    <code>beatmix mix --bgm bgm_core_01 --material-dir input/material/2026-W24 --workers 4</code>。
+    beatmix 不追求固定 15 秒模板，而是让画面严格贴住口播 BGM 的槽位。
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">inspiration 拍摄灵感 / 创意挖掘链路</div>
+
+  <div class="pipeline">
+    <div class="stage inspire">
+      <div class="icon">🔎</div>
+      <div class="name">Source</div>
+      <div class="file">scraper.py</div>
+      <div class="desc">TikTokScraper<br>或 LocalImporter<br>播放量过滤去重</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage inspire">
+      <div class="icon">⬇️</div>
+      <div class="name">Download</div>
+      <div class="file">downloader.py</div>
+      <div class="desc">yt-dlp<br>缓存命中跳过<br>失败静默降级</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage inspire">
+      <div class="icon">👁</div>
+      <div class="name">Analyze</div>
+      <div class="file">analyzer.py</div>
+      <div class="desc">1fps 抽帧<br>VLM 视觉剪辑<br>LLM 内容情绪</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage inspire">
+      <div class="icon">🧠</div>
+      <div class="name">Aggregate</div>
+      <div class="file">reporter.py</div>
+      <div class="desc">Top hooks<br>切镜区间<br>景别 / 情绪分布</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage inspire">
+      <div class="icon">📝</div>
+      <div class="name">Suggestions</div>
+      <div class="file">reporter.py</div>
+      <div class="desc">逐套餐建议<br>景别 / 运镜<br>时长 / 文案</div>
+    </div>
+    <div class="arrow">›</div>
+    <div class="stage inspire">
+      <div class="icon">📄</div>
+      <div class="name">Weekly Report</div>
+      <div class="file">scheduler.py</div>
+      <div class="desc">每周报告<br>可发给拍摄运营<br>L0→L4 演进</div>
+    </div>
+  </div>
+
+  <div class="lane-note">
+    <b style="color:#e2e8f0;">命令：</b><code>python -m src.orchestrator inspire --week 2026-W24 --scraper local|tiktok --force</code>。
+    inspiration 不直接生产视频，而是把爆款拆解成拍摄建议；远期闭环是「灵感 → run/beatmix 出片 → 投放数据 → 更新因子库」。
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">数据流向</div>
+
+  <div class="dataflow" style="margin-bottom:56px;">
+    <div style="display:grid;grid-template-columns:1fr 2px 1fr 2px 1fr;gap:0;align-items:start;">
+
+      <!-- INPUT -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;">输入</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="df-node"><div class="label">原始素材</div><div class="value">input/raw/**/*.mp4</div></div>
+          <div class="df-node"><div class="label">套餐目录</div><div class="value">catalog/combos.json</div></div>
+          <div class="df-node"><div class="label">BGM 库</div><div class="value">cache/bgm/bgm_index.json</div></div>
+          <div class="df-node"><div class="label">模板配置</div><div class="value">config/templates/T0X.yaml</div></div>
+          <div class="df-node"><div class="label">口播槽位</div><div class="value">config/bgm_voicemap/*.json</div></div>
+          <div class="df-node"><div class="label">卡点素材</div><div class="value">input/material/&lt;week&gt;/*.mp4</div></div>
+          <div class="df-node"><div class="label">灵感来源</div><div class="value">input/inspiration/metadata.json</div></div>
+        </div>
+      </div>
+
+      <!-- divider -->
+      <div style="background:#334155;margin:32px 16px 0;"></div>
+
+      <!-- CACHE / SCRATCH -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;">中间缓存</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="df-node"><div class="label">代理素材</div><div class="value">cache/proxy/*.mp4</div></div>
+          <div class="df-node"><div class="label">帧图片</div><div class="value">scratch/frames/{id}/frame_*.jpg</div></div>
+          <div class="df-node"><div class="label">语义特征</div><div class="value">scratch/features/{id}.json</div></div>
+          <div class="df-node"><div class="label">字幕缓存</div><div class="value">cache/copy/{combo}_{tmpl}.json</div></div>
+          <div class="df-node"><div class="label">Clip Manifest</div><div class="value">scratch/clip_manifest.jsonl</div></div>
+          <div class="df-node"><div class="label">差异索引</div><div class="value">cache/diff_index.jsonl</div></div>
+          <div class="df-node"><div class="label">素材标签</div><div class="value">input/material/&lt;week&gt;/tags.json</div></div>
+          <div class="df-node"><div class="label">质量帧缓存</div><div class="value">cache/beatmix_quality_frames/</div></div>
+          <div class="df-node"><div class="label">灵感分析缓存</div><div class="value">cache/inspiration/analysis/*.json</div></div>
+        </div>
+      </div>
+
+      <!-- divider -->
+      <div style="background:#334155;margin:32px 16px 0;"></div>
+
+      <!-- OUTPUT -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;">输出</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="df-node"><div class="label">成片</div><div class="value">output/{combo}/{combo}_{T}_{bgm}_{sha8}.mp4</div></div>
+          <div class="df-node"><div class="label">输出 Manifest</div><div class="value">output/output_manifest.jsonl</div></div>
+          <div class="df-node"><div class="label">复审队列</div><div class="value">cache/review_requests.jsonl</div></div>
+          <div class="df-node"><div class="label">费用报告</div><div class="value">logs/cost_{week}.json</div></div>
+          <div class="df-node"><div class="label">beatmix 成片</div><div class="value">output/beatmix/{bgm_id}/*.mp4</div></div>
+          <div class="df-node"><div class="label">卡点计划</div><div class="value">output/beatmix/{bgm_id}/*.plan.json</div></div>
+          <div class="df-node"><div class="label">素材质检报告</div><div class="value">output/material_quality/&lt;week&gt;/</div></div>
+          <div class="df-node"><div class="label">灵感周报</div><div class="value">output/inspiration/&lt;week&gt;.html</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">5 套模板配置</div>
+
+  <div class="card" style="margin-bottom:56px;">
+    <table>
+      <thead>
+        <tr>
+          <th>模板</th>
+          <th>风格</th>
+          <th>切片时长</th>
+          <th>转场</th>
+          <th>调色</th>
+          <th>BGM 池</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-blue">T01</span> 极速食欲冲击</td>
+          <td>快节奏爆款</td>
+          <td>0.6 – 1.0 s</td>
+          <td>slide_lr · flash_white</td>
+          <td>饱和度 ×1.15</td>
+          <td>bgm_01 / 03 / 知烤</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">T02</span> 慢镜特写强调</td>
+          <td>0.85x 慢放诱惑</td>
+          <td>0.5 – 2.0 s</td>
+          <td>zoom · flash_white</td>
+          <td>饱和度 ×1.20</td>
+          <td>知烤</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">T03</span> 出锅过程流</td>
+          <td>制作过程叙事</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-orange">T04</span> 价格钩子前置</td>
+          <td>价格冲击开头</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-rose">T05</span> 套餐豪华感</td>
+          <td>高端质感</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+          <td>–</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">复审 & 重生成流程</div>
+
+  <div class="review-flow" style="margin-bottom:24px;">
+    <div class="rf-step">
+      <div class="icon">📋</div>
+      <div class="name">批量生成完成</div>
+      <div class="desc">5套餐 × 5模板<br>review_status: pending</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #6366f1;">
+      <div class="icon">🖥</div>
+      <div class="name">复审 UI</div>
+      <div class="desc">Gradio 7860 端口<br>视频预览 + 字幕编辑</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #f59e0b;">
+      <div class="icon">⚙️</div>
+      <div class="name">参数调整</div>
+      <div class="desc">prompt 自然语言<br>seg_min / seg_max<br>transition_dur / type</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #10b981;">
+      <div class="icon">📥</div>
+      <div class="name">加入队列</div>
+      <div class="desc">写入 review_requests<br>.jsonl</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #ec4899;">
+      <div class="icon">⏱</div>
+      <div class="name">Daemon 线程</div>
+      <div class="desc">每 5 分钟轮询<br>queue_worker.py</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #3b82f6;">
+      <div class="icon">🔄</div>
+      <div class="name">重新渲染</div>
+      <div class="desc">LLM 解释 prompt<br>3层参数合并<br>select→render→export</div>
+    </div>
+    <div class="rf-arrow">›</div>
+    <div class="rf-step" style="border-top:3px solid #06b6d4;">
+      <div class="icon">✅</div>
+      <div class="name">回到待审</div>
+      <div class="desc">新视频 pending<br>可再次复审</div>
+    </div>
+  </div>
+
+  <!-- 参数优先级 -->
+  <div class="card" style="margin-bottom:56px;">
+    <div class="card-title">参数合并优先级（低 → 高）</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="background:#0f1117;border:1px solid #334155;border-radius:8px;padding:12px 18px;text-align:center;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">① 模板 YAML 默认值</div>
+        <div style="font-size:12px;color:#94a3b8;font-family:monospace;">tempo.segment_min_sec<br>transitions[0].type</div>
+      </div>
+      <div style="color:#334155;font-size:20px;">‹‹</div>
+      <div style="background:#0f1117;border:1px solid #f59e0b44;border-radius:8px;padding:12px 18px;text-align:center;">
+        <div style="font-size:11px;color:#f59e0b;margin-bottom:4px;">② LLM 解释 prompt</div>
+        <div style="font-size:12px;color:#94a3b8;font-family:monospace;">DeepSeek 输出的<br>参数 delta dict</div>
+      </div>
+      <div style="color:#334155;font-size:20px;">‹‹</div>
+      <div style="background:#0f1117;border:1px solid #6366f144;border-radius:8px;padding:12px 18px;text-align:center;">
+        <div style="font-size:11px;color:#818cf8;margin-bottom:4px;">③ UI 滑块直接覆盖（最高）</div>
+        <div style="font-size:12px;color:#94a3b8;font-family:monospace;">param_overrides<br>写入 JSONL</div>
+      </div>
+      <div style="color:#334155;font-size:20px;">›</div>
+      <div style="background:#052e1644;border:1px solid #10b98144;border-radius:8px;padding:12px 18px;text-align:center;">
+        <div style="font-size:11px;color:#10b981;margin-bottom:4px;">最终合并参数</div>
+        <div style="font-size:12px;color:#94a3b8;font-family:monospace;">传入 select + render</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">队列请求状态机</div>
+
+  <div class="card" style="margin-bottom:56px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span class="status s-queued">queued</span>
+      <span style="color:#334155;font-size:13px;">→</span>
+      <span class="status s-processing">processing</span>
+      <span style="color:#334155;font-size:13px;">→</span>
+      <span class="status s-done">done</span>
+      <span style="color:#334155;font-size:13px;margin-left:8px;">或</span>
+      <span class="status s-failed">failed</span>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="font-size:11px;color:#64748b;"><span class="status s-queued" style="margin-right:6px;">queued</span>已提交，等待 worker 轮询</div>
+      <div style="font-size:11px;color:#64748b;"><span class="status s-processing" style="margin-right:6px;">processing</span>worker 已取出，正在渲染</div>
+      <div style="font-size:11px;color:#64748b;"><span class="status s-done" style="margin-right:6px;">done</span>渲染成功，新视频写入 output</div>
+      <div style="font-size:11px;color:#64748b;"><span class="status s-failed" style="margin-right:6px;">failed</span>渲染异常，error 字段有详情</div>
+    </div>
+
+    <div style="margin-top:20px;border-top:1px solid #0f1117;padding-top:16px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">复审结果状态</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:11px;color:#64748b;"><span class="status s-pending" style="margin-right:6px;">pending</span>待复审</div>
+        <div style="font-size:11px;color:#64748b;"><span class="status s-passed" style="margin-right:6px;">passed</span>通过，可发布</div>
+        <div style="font-size:11px;color:#64748b;"><span class="status s-rejected" style="margin-right:6px;">rejected</span>打回重生成</div>
+        <div style="font-size:11px;color:#64748b;"><span class="status s-discarded" style="margin-right:6px;">discarded</span>丢弃</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">AI 服务 & 费用</div>
+
+  <div class="api-row" style="margin-bottom:56px;">
+    <div class="api-card api-doubao">
+      <h4>🤖 MiniMax-M3 VLM (Understand 阶段)</h4>
+      <div class="usage">每个 clip 抽帧后调用一次，识别菜品、动作、视觉风格、钩子适配度</div>
+      <div class="cost">单次费用：<span>¥0.005 / clip</span></div>
+    </div>
+    <div class="api-card api-deepseek">
+      <h4>🧪 MiniMax-M3 LLM (Copy + Queue Worker)</h4>
+      <div class="usage" style="margin-bottom:6px;">
+        <b style="color:#e2e8f0;">Copy 阶段：</b>每个 combo × 模板生成字幕文案（有 cache 则跳过）<br>
+        <b style="color:#e2e8f0;">beatmix：</b>槽位候选编排、ASR kind 标注<br>
+        <b style="color:#e2e8f0;">inspiration：</b>爆款规律聚合、逐套餐拍摄建议<br>
+        <b style="color:#e2e8f0;">Queue Worker：</b>解释复审 prompt → 视频参数 delta
+      </div>
+      <div class="cost">单次费用：<span>¥0.001 / call</span></div>
+    </div>
+    <div class="api-card" style="border-color:#4c1d95;">
+      <h4 style="color:#c4b5fd;">🎙 DashScope ASR (beatmix Voicemap)</h4>
+      <div class="usage">离线生成口播 BGM 的词级时间戳，再由 LLM 标注 intro / dish / filler 等槽位。</div>
+      <div class="cost">产物：<span>config/bgm_voicemap/{bgm_id}.json</span></div>
+    </div>
+    <div class="api-card" style="border-color:#1e3a5f;">
+      <h4 style="color:#64748b;">📊 7维差异化引擎</h4>
+      <div class="usage">本地无 API 费用。对每批次候选做 diff 打分，确保每次出片与历史不同</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;">
+        <div style="font-size:10px;color:#64748b;">D1 首帧 clip</div>
+        <div style="font-size:10px;color:#64748b;">D2 片段序列</div>
+        <div style="font-size:10px;color:#64748b;">D3 BGM</div>
+        <div style="font-size:10px;color:#64748b;">D4 转场类型</div>
+        <div style="font-size:10px;color:#64748b;">D5 语义标签</div>
+        <div style="font-size:10px;color:#64748b;">D6 调色种子</div>
+        <div style="font-size:10px;color:#64748b;">D7 时长曲线</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-title">关键配置参数</div>
+
+  <div class="config-row">
+    <div class="config-card">
+      <h4>视频规格</h4>
+      <div class="kv"><span>分辨率</span><span>1080 × 1920</span></div>
+      <div class="kv"><span>帧率</span><span>30 fps</span></div>
+      <div class="kv"><span>时长</span><span>15.0 s</span></div>
+      <div class="kv"><span>码率</span><span>8M</span></div>
+      <div class="kv"><span>音频</span><span>192k AAC</span></div>
+    </div>
+    <div class="config-card">
+      <h4>差异化引擎</h4>
+      <div class="kv"><span>历史窗口 K</span><span>10</span></div>
+      <div class="kv"><span>候选采样 N</span><span>20</span></div>
+      <div class="kv"><span>最低 diff 分</span><span>0.45</span></div>
+      <div class="kv"><span>fallback_top_k</span><span>3</span></div>
+    </div>
+    <div class="config-card">
+      <h4>并发限制</h4>
+      <div class="kv"><span>ffmpeg 并发</span><span>4</span></div>
+      <div class="kv"><span>API 并发</span><span>8</span></div>
+      <div class="kv"><span>beatmix workers</span><span>4</span></div>
+      <div class="kv"><span>重生成间隔</span><span>5 min</span></div>
+    </div>
+    <div class="config-card">
+      <h4>费用预警</h4>
+      <div class="kv"><span>VLM / clip</span><span>¥ 0.005</span></div>
+      <div class="kv"><span>LLM / call</span><span>¥ 0.001</span></div>
+      <div class="kv"><span>批次 VLM 上限</span><span>¥ 15</span></div>
+      <div class="kv"><span>周度上限</span><span>¥ 50</span></div>
+    </div>
+    <div class="config-card">
+      <h4>inspiration</h4>
+      <div class="kv"><span>scraper</span><span>local / tiktok</span></div>
+      <div class="kv"><span>关键词</span><span>settings.yaml</span></div>
+      <div class="kv"><span>播放门槛</span><span>min_plays</span></div>
+      <div class="kv"><span>周上限</span><span>weekly_limit</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:60px;padding-top:24px;border-top:1px solid #1e293b;font-size:11px;color:#334155;text-align:center;">
+    dy-cut v0.1.0 · 更新架构视图 2026-06-14 · 参考 docs/architecture.html、docs/beatmix_experiment_flow.html、docs/inspiration_flow.html
+  </div>
+
+</div>
+  <script src="dy-cut-series-nav.js" defer></script>
+</body>
+</html>

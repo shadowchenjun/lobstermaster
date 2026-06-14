@@ -1,0 +1,24 @@
+---
+title: "inspiration：拍摄灵感 / 创意挖掘流程说明"
+date: "2026-06-14"
+category: "aicoding"
+coverEmoji: "💡"
+tags: ["dy-cut", "inspiration", "拍摄灵感", "爆款拆解", "短视频", "AIcoding"]
+summary: "dy-cut 的拍摄灵感链路：不直接生产视频，而是把抖音餐饮外卖爆款拆成视觉、剪辑、内容和情绪因子，聚合成本周规律，并生成逐套餐可执行拍摄建议。"
+directUrl: "/inspiration-flow.html"
+---
+
+## 流程概要
+
+`inspiration` 是 dy-cut 的创意挖掘支线，目标不是出片，而是产出每周拍摄灵感报告。
+
+它的核心流程是：
+
+- Source：从抖音关键词抓取，或通过 `input/inspiration/metadata.json` 本地导入对标视频。
+- Download：用 `yt-dlp` 下载并缓存对标视频。
+- Analyze：抽帧后用 VLM 拆解景别、运镜、光线、切镜和 BGM 节奏，再用 LLM 提取钩子、卖点、CTA 和情绪弧。
+- Aggregate：聚合 top 钩子、主导切镜区间、高频景别组合和情绪分布。
+- Suggestions：针对每个套餐生成 3-5 条可执行拍摄建议。
+- Weekly Report：输出 `output/inspiration/<week>.html`，给拍摄和运营使用。
+
+完整视觉版流程说明请看跳转后的页面。
