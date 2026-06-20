@@ -290,7 +290,8 @@
     <b style="color:#e2e8f0;">命令：</b>
     <code>python -m src.orchestrator beatmix tag --dir input/material/2026-W24</code> ·
     <code>beatmix score --dir input/material/2026-W24 --workers 4</code> ·
-    <code>beatmix mix --bgm bgm_core_01 --material-dir input/material/2026-W24 --workers 4</code>。
+    <code>beatmix mix --bgm bgm_core_01 --starter-dir input/starter_all/ --from-db --workers 4 --dedup</code>
+    （旧兼容：<code>--material-dir input/material/2026-W24</code>）。
     beatmix 不追求固定 15 秒模板，而是让画面严格贴住口播 BGM 的槽位。
   </div>
 
@@ -362,6 +363,9 @@
           <div class="df-node"><div class="label">模板配置</div><div class="value">config/templates/T0X.yaml</div></div>
           <div class="df-node"><div class="label">口播槽位</div><div class="value">config/bgm_voicemap/*.json</div></div>
           <div class="df-node"><div class="label">卡点素材</div><div class="value">input/material/&lt;week&gt;/*.mp4</div></div>
+          <div class="df-node"><div class="label">开头钩子池</div><div class="value">input/starter_all/（begin+starter 合并）</div></div>
+          <div class="df-node"><div class="label">素材库 DB</div><div class="value">cache/material_library.db（跨 batch）</div></div>
+          <div class="df-node"><div class="label">PiP 素材</div><div class="value">input/pip/（视觉扰动可选叠层）</div></div>
           <div class="df-node"><div class="label">灵感来源</div><div class="value">input/inspiration/metadata.json</div></div>
         </div>
       </div>
@@ -380,6 +384,7 @@
           <div class="df-node"><div class="label">Clip Manifest</div><div class="value">scratch/clip_manifest.jsonl</div></div>
           <div class="df-node"><div class="label">差异索引</div><div class="value">cache/diff_index.jsonl</div></div>
           <div class="df-node"><div class="label">素材标签</div><div class="value">input/material/&lt;week&gt;/tags.json</div></div>
+          <div class="df-node"><div class="label">素材库 DB</div><div class="value">cache/material_library.db（跨 batch SQLite）</div></div>
           <div class="df-node"><div class="label">质量帧缓存</div><div class="value">cache/beatmix_quality_frames/</div></div>
           <div class="df-node"><div class="label">灵感分析缓存</div><div class="value">cache/inspiration/analysis/*.json</div></div>
         </div>
@@ -398,6 +403,7 @@
           <div class="df-node"><div class="label">费用报告</div><div class="value">logs/cost_{week}.json</div></div>
           <div class="df-node"><div class="label">beatmix 成片</div><div class="value">output/beatmix/{bgm_id}/*.mp4</div></div>
           <div class="df-node"><div class="label">卡点计划</div><div class="value">output/beatmix/{bgm_id}/*.plan.json</div></div>
+          <div class="df-node"><div class="label">视觉扰动版</div><div class="value">output/beatmix/{bgm_id}-dedup/（--dedup）</div></div>
           <div class="df-node"><div class="label">素材质检报告</div><div class="value">output/material_quality/&lt;week&gt;/</div></div>
           <div class="df-node"><div class="label">灵感周报</div><div class="value">output/inspiration/&lt;week&gt;.html</div></div>
         </div>

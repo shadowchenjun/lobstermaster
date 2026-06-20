@@ -385,7 +385,7 @@
   <main class="page">
     <header class="hero">
       <div>
-        <div class="eyebrow"><span class="dot"></span> Phase 1 实验链路 · beatmix · 更新于 2026-06-14</div>
+        <div class="eyebrow"><span class="dot"></span> Phase 1 实验链路 · beatmix · 更新于 2026-06-20</div>
         <h1>口播 BGM 卡点混剪实验流程说明</h1>
         <p>
           新方案把传统“素材填满时长、BGM 贴上去”的做法反过来：
@@ -395,17 +395,19 @@
       </div>
       <aside class="status-board">
         <h2>当前实现状态</h2>
-        <div class="metric"><b>3</b><span>子命令已上线：<code>beatmix tag / score / mix</code></span></div>
-        <div class="metric"><b>6</b><span>差异化 fingerprint 维度，控制同 BGM 多条视频不撞</span></div>
-        <div class="metric"><b>1080×1920</b><span>默认 9:16 满屏输出，<code>--workers</code> 并行渲染</span></div>
-        <div class="metric"><b>A–X</b><span>素材质量分级淘汰：<code>src/beatmix/quality.py</code></span></div>
+        <div class="metric"><b>6</b><span>子命令已上线：<code>tag / score / mix / db-sync / prepare / asr</code></span></div>
+        <div class="metric"><b>1,097</b><span>条素材已入本地 SQLite 库，跨 5 个 batch；<code>--from-db</code> 一键全量加载</span></div>
+        <div class="metric"><b>6 层</b><span>视觉扰动去重：scale · crop · 亮度对比度 · 翻转 · 旋转 · PiP（<code>--dedup</code>）</span></div>
+        <div class="metric"><b>A–X</b><span>素材质量分级；B+C 级 775 条默认可用，D 级可人工升档</span></div>
       </aside>
     </header>
 
     <nav class="nav" aria-label="页面导航">
       <a href="#why">方案变化</a>
       <a href="#inputs">输入资产</a>
+      <a href="#db">素材 DB</a>
       <a href="#flow">运行流程</a>
+      <a href="#dedup">视觉去重</a>
       <a href="#code">代码映射</a>
       <a href="#status">现状与缺口</a>
       <a href="#handoff">协作交接</a>
@@ -461,28 +463,52 @@
             <td>已读取，<code>runner.py</code> 用随机种子选择。</td>
           </tr>
           <tr>
-            <td><code>input/material/</code></td>
-            <td>正文卡点素材，文件名必须能被 tags.json 引用。</td>
-            <td>人工放入，后续可接素材库。</td>
-            <td>已读取素材时长，用于中心裁剪。</td>
+            <td><code>input/begin/</code></td>
+            <td>新批次开头素材（门头、环境、强钩子），与 <code>starter/</code> 合并后扩大开头池。</td>
+            <td>人工放入；无需标签。</td>
+            <td>合并到 <code>input/starter_all/</code> 通过软链使用。</td>
           </tr>
           <tr>
-            <td><code>input/material/tags.json</code></td>
-            <td>每条正文素材的 <code>category</code>、<code>dish</code>、<code>is_bspot</code>。</td>
-            <td>由 VLM 自动初标 + 人工校正,并含 <code>quality</code>(A–X 评分)。</td>
-            <td><code>beatmix tag</code> 生成、<code>beatmix score</code> 补 quality;出片时按 <code>use_policy</code> 取舍。</td>
+            <td><code>input/starter_all/</code></td>
+            <td><code>input/begin/</code> + <code>input/starter/</code> 合并目录（软链），当前共 28 条开头素材。</td>
+            <td>执行 <code>mkdir -p input/starter_all &amp;&amp; ln -sfn …</code> 一次性建立。</td>
+            <td><code>--starter-dir input/starter_all/</code> 指定使用；推荐固定用此目录。</td>
+          </tr>
+          <tr>
+            <td><code>input/material/&lt;week&gt;/</code></td>
+            <td>正文卡点素材（按周分目录）。可软链到原始素材：<code>ln -sfn raw/2026-W24 input/material/2026-W24</code>。</td>
+            <td>人工放入，后续通过 <code>beatmix prepare</code> 全流水线处理。</td>
+            <td>通过 <code>beatmix tag / score / db-sync</code> 逐步入库；<code>--from-db</code> 模式下不再直接读取。</td>
+          </tr>
+          <tr>
+            <td><code>input/material/&lt;week&gt;/tags.json</code></td>
+            <td>每条正文素材的 <code>category</code>、<code>dish</code>、<code>is_bspot</code> 及 <code>quality</code>(A–X 评分)。</td>
+            <td>由 VLM 自动初标 + 人工校正。</td>
+            <td><code>beatmix tag</code> 生成、<code>beatmix score</code> 补 quality；<code>beatmix db-sync</code> 同步到 SQLite。</td>
+          </tr>
+          <tr>
+            <td><code>cache/material_library.db</code></td>
+            <td>SQLite 素材库，跨全部 batch 聚合。字段含 <code>file_path</code>（绝对路径）、<code>category</code>、<code>use_policy</code>、<code>tier</code> 等。</td>
+            <td>由 <code>beatmix db-sync --dir …</code> 写入；<code>--from-db</code> 出片时读取。</td>
+            <td>当前已入库 <strong>1,097 条</strong>（5 个 batch）；B+C 级 775 条默认可用；D/X 级排除。</td>
           </tr>
           <tr>
             <td><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code></td>
             <td>BGM 口播槽位表：时间、文字、kind。</td>
             <td>ASR 离线转写 + LLM 初分 kind + 人工校正。</td>
-            <td>已读取；<code>asr.py</code> 有离线生成能力，但未挂 CLI。</td>
+            <td>已读取；<code>beatmix asr</code> CLI 已上线。</td>
           </tr>
           <tr>
             <td><code>cache/bgm/bgm_index.json</code></td>
             <td>BGM id 到真实音频路径的索引。</td>
             <td>人工维护或由导入工具维护。</td>
             <td>已读取；<code>--bgm</code> 必须能在这里找到。</td>
+          </tr>
+          <tr>
+            <td><code>input/pip/</code></td>
+            <td>PiP 叠加素材（低透明度覆盖层，用于视觉去重）。</td>
+            <td>人工放入，建议放 2–5 条店铺/Logo 短片。</td>
+            <td>当前为空，<code>--dedup</code> 时自动降级为纯视觉扰动（不报错）。</td>
           </tr>
         </tbody>
       </table>
@@ -504,26 +530,131 @@
       </div>
     </section>
 
-    <section id="flow">
+    <section id="db">
       <div class="section-head">
-        <div class="kicker">03 · Pipeline</div>
+        <div class="kicker">02b · Material DB</div>
         <div>
-          <h2>一条 beatmix 视频如何生成</h2>
-          <p class="lead">当前实现是“读输入 → LLM 编排 → 代码兜底 → 去重筛选 → 转成 SegmentPlan → ffmpeg 渲染”。</p>
+          <h2>本地 SQLite 素材库：跨 batch 统一管理</h2>
+          <p class="lead">过去每次出片只能读单周的 <code>tags.json</code>；现在所有 batch 入库 SQLite，<code>--from-db</code> 一次性加载全量素材，素材池更大、饮品/蘸料特写覆盖更充分。</p>
         </div>
       </div>
 
-      <div class="flow">
-        <div class="step"><b>1</b><strong>读取 BGM 槽位</strong><span>从 <code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code> 读取口播时间轴，过滤掉 intro。</span></div>
-        <div class="step"><b>2</b><strong>读取素材标签</strong><span>读取 <code>input/material/tags.json</code>，把素材变成可被 LLM 选择的清单。</span></div>
-        <div class="step"><b>3</b><strong>LLM 一次编排</strong><span>把所有槽位和所有素材一次性发给 LLM，返回 slot_idx 到 clip 的映射。</span></div>
-        <div class="step"><b>4</b><strong>确定性兜底</strong><span>LLM 选错、重复或缺失时，按菜品/空镜/万能素材补齐，避免黑屏。</span></div>
-        <div class="step"><b>5</b><strong>差异化去重</strong><span>采样 30 个候选，按 D1-D6 fingerprint 选出不撞的 Top-N。</span></div>
-        <div class="step"><b>6</b><strong>渲染输出</strong><span>转成现有 SegmentPlan，复用 render + ffmpeg，输出 mp4 和 plan.json。</span></div>
+      <div class="grid-2">
+        <div class="card">
+          <span class="tag green">当前库存</span>
+          <h3>1,097 条素材 · 5 个 batch</h3>
+          <table style="margin-top:10px;box-shadow:none;border-radius:4px;">
+            <thead><tr><th>类别</th><th>B 级可用</th><th>含 C 级</th></tr></thead>
+            <tbody>
+              <tr><td>主菜</td><td>187</td><td>610</td></tr>
+              <tr><td>烤串</td><td>88</td><td>399</td></tr>
+              <tr><td>出餐动作</td><td>10</td><td>46</td></tr>
+              <tr><td>饮品</td><td>3</td><td>35</td></tr>
+              <tr><td>蘸料特写</td><td>2</td><td>4</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px;"><strong>注：</strong>使用 <code>--from-db</code> 时自动加载 B+C 级（共 775 条），排除 D 级 <code>review</code> 和 X 级 <code>reject</code>。</p>
+        </div>
+        <div class="card">
+          <span class="tag blue">工作流</span>
+          <h3>素材入库 → 出片全流程</h3>
+          <div class="code-card" style="margin-top:10px;">
+<pre># ① 全流水线一键处理（推荐）
+python -m src.orchestrator beatmix prepare \
+    --dir input/material/2026-W26
+
+# 等同于依次跑：
+# beatmix tag    → 打标 category/dish/is_bspot
+# beatmix score  → 质量评分 A–X
+# beatmix viscluster → 视觉相似聚类（可选）
+# beatmix db-sync  → 写入 SQLite
+
+# ② 检查库存
+python3 -c "
+import sqlite3; c = sqlite3.connect('cache/material_library.db')
+print(c.execute('SELECT batch,count(*) FROM materials GROUP BY batch').fetchall())
+"</pre>
+          </div>
+        </div>
       </div>
 
       <div class="callout">
-        <strong>关键业务判断：</strong>开头素材是“黄金 2 秒豁免区”，不参与口播语义匹配；后续正文素材才严格按口播槽位时长卡点。
+        <strong>use_policy 分级：</strong>
+        <code>preferred</code>（A 级）→ 最优先；<code>normal</code>（B 级）→ 默认可用；<code>fallback</code>（C 级）→ 含 <code>--from-db</code> 时一并加载；<code>review</code>（D 级）→ 待人工复审，出片时排除；<code>reject</code>（X 级）→ 永久淘汰。
+        D 级素材可在 <code>tags.json</code> 手动改 <code>use_policy</code> 后重新 <code>db-sync</code> 升档。
+      </div>
+    </section>
+
+    <section id=”flow”>
+      <div class=”section-head”>
+        <div class=”kicker”>03 · Pipeline</div>
+        <div>
+          <h2>一条 beatmix 视频如何生成</h2>
+          <p class=”lead”>完整链路：读槽位 → 加载素材（db 或 tags.json）→ LLM 编排 → 兜底 → fingerprint 去重 → 渲染 → 视觉扰动（可选）。</p>
+        </div>
+      </div>
+
+      <div class=”flow” style=”grid-template-columns: repeat(7, minmax(110px, 1fr));”>
+        <div class=”step”><b>1</b><strong>读取 BGM 槽位</strong><span>从 <code>bgm_voicemap/&lt;bgm_id&gt;.json</code> 读取口播时间轴，过滤掉 intro。</span></div>
+        <div class=”step”><b>2</b><strong>加载素材</strong><span><code>--from-db</code>：从 SQLite 跨 batch 加载 775 条（B+C 级）<br>默认：读单周 <code>tags.json</code>。</span></div>
+        <div class=”step”><b>3</b><strong>LLM 一次编排</strong><span>把所有槽位和素材清单一次性发给 LLM，返回每槽 3–5 候选 + score。</span></div>
+        <div class=”step”><b>4</b><strong>确定性兜底</strong><span>LLM 选错/重复/缺失时，按菜品 → 空镜 → 万能素材逐层补齐，绝不黑屏。</span></div>
+        <div class=”step”><b>5</b><strong>fingerprint 去重</strong><span>采样 30 候选，D2（全序列）+ D4（主菜序列）不撞历史，选 Top-N。</span></div>
+        <div class=”step”><b>6</b><strong>渲染输出</strong><span>转成 SegmentPlan，ffmpeg 输出 mp4 + plan.json（含卡点明细）。</span></div>
+        <div class=”step”><b>7</b><strong>视觉扰动<br><small style=”color:var(--green)”>--dedup</small></strong><span>6 层 ffmpeg 滤镜改变平台视觉指纹，输出到 <code>&lt;bgm_id&gt;-dedup/</code>。</span></div>
+      </div>
+
+      <div class=”callout”>
+        <strong>关键业务判断：</strong>开头素材（<code>input/starter_all/</code>）是”黄金 2 秒豁免区”，不参与口播语义匹配，由随机种子从开头池随机取；后续正文素材严格按口播槽位时长卡点。
+      </div>
+    </section>
+
+    <section id=”dedup”>
+      <div class=”section-head”>
+        <div class=”kicker”>03b · Visual Dedup</div>
+        <div>
+          <h2>视觉扰动去重：改变平台视觉指纹</h2>
+          <p class=”lead”><code>--dedup</code> 对产出的 mp4 做单次 ffmpeg 处理，6 层扰动叠加，参数由文件名 hash 确定性生成——同一文件每次结果一致，不同账号传不同 <code>visual_seed</code> 可得到差异版本。</p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>扰动层</th><th>参数范围（默认）</th><th>作用</th><th>状态</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>scale 放大</strong></td><td>×1.01 ~ ×1.02</td><td>轻微放大，改变像素位置分布</td><td>✅ 已启用</td></tr>
+          <tr><td><strong>crop 微裁剪</strong></td><td>1% ~ 3%</td><td>放大后裁回原分辨率，改变边缘像素</td><td>✅ 已启用</td></tr>
+          <tr><td><strong>亮度 / 对比度</strong></td><td>brightness ±5，contrast 0.95–1.05</td><td>整体色调微调，改变色彩指纹</td><td>✅ 已启用</td></tr>
+          <tr><td><strong>水平翻转</strong></td><td>50% 概率（需 <code>allow_flip=True</code>）</td><td>镜像画面，彻底改变构图指纹</td><td>✅ 已启用</td></tr>
+          <tr><td><strong>旋转</strong></td><td>1° ~ 2°，可为负值</td><td>轻微旋转后 scale 归位，改变帧对齐</td><td>✅ 已启用</td></tr>
+          <tr><td><strong>PiP 叠加</strong></td><td>opacity 2%，volume 2%</td><td>低透明度覆盖另一视频，改变深层特征</td><td>⚠️ 降级：<code>input/pip/</code> 暂无素材</td></tr>
+        </tbody>
+      </table>
+
+      <div class=”grid-2” style=”margin-top:18px;”>
+        <div class=”code-card”>
+<pre># 出片同时生成去重版（推荐）
+python -m src.orchestrator beatmix mix \
+    --bgm bgm_core_01 --keep 10 \
+    --starter-dir input/starter_all/ \
+    --from-db --workers 4 --dedup
+
+# 产物结构：
+output/beatmix/bgm_core_01/          ← 10 条原版
+output/beatmix/bgm_core_01-dedup/    ← 对目录内所有 mp4 去重
+
+# 不同账号传不同 visual_seed（在 config/dedup/video_dedup.yaml 配置）：
+# processing:
+#   visual_seed: 1    ← 账号 B
+#   visual_seed: 2    ← 账号 C</pre>
+        </div>
+        <div class=”card”>
+          <span class=”tag blue”>去重产物数量说明</span>
+          <h3>为什么去重版比原版多？</h3>
+          <p><code>--dedup</code> 扫描的是整个 <code>&lt;bgm_id&gt;/</code> 目录（含历史原版），而非只有本次新产的 10 条。首次运行会对所有已有原版补生成去重版；后续重复运行时，已有去重版会被跳过（<code>overwrite: false</code>）。</p>
+          <p>如需多个 seed 变体（如 10 条原版 × 3 seed = 30 条去重版），可传不同 <code>visual_seed</code> 分批运行到不同子目录。</p>
+        </div>
       </div>
     </section>
 
@@ -538,51 +669,65 @@
 
       <div class="lane">
         <div class="lane-title"><code>src/orchestrator.py</code></div>
-        <div class="lane-body">注册 <code>beatmix tag / score / mix</code> 三个子命令(及兼容旧 <code>--bgm</code>)。<code>mix</code> 调 <code>run_beatmix(args.bgm, settings, n_keep, material_dir, workers)</code>。</div>
+        <div class="lane-body">注册 <code>beatmix tag / score / mix / db-sync / prepare / asr / viscluster</code> 七个子命令。<code>mix</code> 新增 <code>--from-db</code>（SQLite 素材库模式）和 <code>--dedup</code>（视觉扰动）参数。</div>
       </div>
       <div class="lane">
         <div class="lane-title"><code>src/beatmix/runner.py</code></div>
-        <div class="lane-body">实验流程主编排：读取 voicemap、materials、starter；构建 LLM prompt；采样候选；去重；探测素材时长；渲染；写 <code>.plan.json</code>。</div>
+        <div class="lane-body">实验流程主编排。新增 <code>db_path</code> 参数：不为 None 时调 <code>load_all_materials(db_path)</code> 取跨 batch 素材，用 <code>clip_path_map</code>（绝对路径字典）定位源文件；同时透传给 <code>_render_plans</code> → <code>to_segment_plan</code>。<code>dedup=True</code> 时在渲染完成后调 <code>_dedup_outputs</code>。</div>
       </div>
       <div class="lane">
-        <div class="lane-title"><code>src/beatmix/asr.py</code></div>
-        <div class="lane-body">口播 BGM 的离线转写工具：ASR 得到词/短句时间戳，再用 LLM 给短句标 <code>intro</code>、<code>dish</code>、<code>filler</code>，最终形成 voicemap。</div>
+        <div class="lane-title"><code>src/beatmix/db.py</code></div>
+        <div class="lane-body">SQLite 素材库存储层（单张宽表 <code>materials</code>）。<code>sync_from_tags</code> 把 tags.json 批量 upsert；<code>load_materials(batch)</code> 读单批次；<code>load_all_materials(db_path)</code> 跨全部 batch 加载，返回 <code>(list[MaterialTag], clip_path_map)</code>，<code>include_review=False</code> 时排除 D/X 级。</div>
       </div>
       <div class="lane">
-        <div class="lane-title"><code>src/beatmix/materials.py</code></div>
-        <div class="lane-body">读取 <code>input/material/&lt;week&gt;/tags.json</code>(含 category/dish/quality),供编排链路使用。质量评分逻辑在 <code>src/beatmix/quality.py</code>。</div>
-      </div>
-      <div class="lane">
-        <div class="lane-title"><code>src/beatmix/tagging.py</code></div>
-        <div class="lane-body">素材 VLM 自动打标模块：扫描 <code>input/material</code> 下的视频，抽取若干帧，调用注入的 VLM 函数生成 <code>category</code>、<code>dish</code>、<code>is_bspot</code>，写入 <code>tags.json</code>；已存在的素材标签会跳过，保留人工校正。</div>
-      </div>
-      <div class="lane">
-        <div class="lane-title"><code>src/beatmix/assembler.py</code></div>
-        <div class="lane-body">槽位填充与兜底：LLM 选择有效则采用；无效则按 food/filler 类别、<code>is_bspot</code>、任意未用素材逐层兜底。</div>
-      </div>
-      <div class="lane">
-        <div class="lane-title"><code>src/beatmix/dedup.py</code></div>
-        <div class="lane-body">D1-D6 指纹和去重。硬约束确保整体序列和菜品序列不重复，软距离控制开头、集合、filler、类别首选差异。</div>
+        <div class="lane-title"><code>src/beatmix/video_processor.py</code></div>
+        <div class="lane-body">视觉扰动去重核心。<code>DedupeTemplate</code> 定义 6 层扰动参数（YAML 驱动）；<code>build_visual_params</code> 用文件名 hash 确定性生成参数；<code>build_video_filter</code> 组装 ffmpeg vf 字符串；<code>process_video</code> 单次 ffmpeg 调用完成编码；<code>load_dedup_template</code> 读 <code>config/dedup/video_dedup.yaml</code>（可按 bgm_id 覆盖）。</div>
       </div>
       <div class="lane">
         <div class="lane-title"><code>src/beatmix/render_adapter.py</code></div>
-        <div class="lane-body">把 BeatMixPlan 转成老渲染器能吃的 SegmentPlan。每个正文素材按槽位时长做中心裁剪。</div>
+        <div class="lane-body">把 BeatMixPlan 转成 SegmentPlan。新增 <code>clip_path_map</code> 参数：非 intro 槽优先用 map 里的绝对路径作为 <code>clip_id</code>，从而在 <code>--from-db</code> 模式下无需 <code>material_dir</code>。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/asr.py</code></div>
+        <div class="lane-body">口播 BGM 离线转写：DashScope paraformer 词级时间戳 → LLM 标 <code>intro/dish/filler</code> → voicemap JSON。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/materials.py</code></div>
+        <div class="lane-body">读取 <code>tags.json</code>（单周模式），供非 db 模式使用。质量评分在 <code>src/beatmix/quality.py</code>；<code>is_usable(m, include_fallback=True)</code> 控制 C 级是否可用。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/assembler.py</code></div>
+        <div class="lane-body">槽位填充与兜底：LLM Top-K 带权采样 → 按类别/is_bspot/duplicate_group 逐层降级，始终绝不空槽。</div>
+      </div>
+      <div class="lane">
+        <div class="lane-title"><code>src/beatmix/dedup.py</code></div>
+        <div class="lane-body">D1-D6 fingerprint 去重（内容层）：D2 全序列 + D4 主菜序列硬约束，确保同 BGM 多条视频不撞。与 <code>video_processor.py</code> 的视觉去重互补：前者是内容不重复，后者是视觉指纹不重复。</div>
       </div>
 
       <div class="code-card" style="margin-top: 18px;">
-<pre># 1) 素材 VLM 打标 → tags.json
-python -m src.orchestrator beatmix tag   --dir input/material/2026-W24
-# 2) 素材质量评分(A–X,写回 tags.json + 报告)
-python -m src.orchestrator beatmix score --dir input/material/2026-W24 --workers 4
-# 3) 出片(默认 1080×1920,并行渲染)
-python -m src.orchestrator beatmix mix   --bgm bgm_core_01 --keep 10 \
-    --material-dir input/material/2026-W24 --workers 4
-# 兼容旧用法:python -m src.orchestrator beatmix --bgm bgm_core_01 --keep 10
+<pre># ──── 新素材入库 ────────────────────────────────────────────
+# 方式 A：全流水线一键
+python -m src.orchestrator beatmix prepare --dir input/material/2026-W26
 
-# 输出
-output/beatmix/&lt;bgm_id&gt;/
-  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.mp4
-  &lt;bgm_id&gt;_&lt;variant_seed&gt;_&lt;fingerprint&gt;.plan.json  # 卡点明细 + fingerprint</pre>
+# 方式 B：分步（可在任意步骤插入人工校正）
+python -m src.orchestrator beatmix tag     --dir input/material/2026-W26
+python -m src.orchestrator beatmix score   --dir input/material/2026-W26 --workers 4
+python -m src.orchestrator beatmix db-sync --dir input/material/2026-W26
+
+# ──── 出片（推荐：from-db + dedup）────────────────────────
+python -m src.orchestrator beatmix mix \
+    --bgm bgm_core_01 --keep 10 \
+    --starter-dir input/starter_all/ \
+    --from-db --workers 4 --dedup
+
+# ──── 旧用法（仍兼容）──────────────────────────────────────
+python -m src.orchestrator beatmix mix \
+    --bgm bgm_core_01 --keep 10 \
+    --material-dir input/material/2026-W24 --workers 4
+
+# ──── 产物结构 ───────────────────────────────────────────────
+# output/beatmix/bgm_core_01/           ← N 条原版 mp4 + plan.json
+# output/beatmix/bgm_core_01-dedup/     ← 对应去重版（视觉扰动后）</pre>
       </div>
     </section>
 
@@ -598,21 +743,36 @@ output/beatmix/&lt;bgm_id&gt;/
         <div class="card">
           <span class="tag green">已实现</span>
           <h3>beatmix 主链路 + 声画同步</h3>
-          <p>命令入口、voicemap 读取、LLM 编排(每槽 3–5 候选)、fallback、去重、SegmentPlan 适配、并行渲染都已接入。<code>render_adapter</code> 按完整 voicemap 平铺,「输出时间轴 == BGM 时间轴」,修复了开头 prepend 导致的整体偏移。</p>
+          <p>命令入口、voicemap 读取、LLM 编排(每槽 3–5 候选)、fallback、去重、SegmentPlan 适配、并行渲染。<code>render_adapter</code> 按完整 voicemap 平铺,「输出时间轴 == BGM 时间轴」。</p>
+        </div>
+        <div class="card">
+          <span class="tag green">已实现</span>
+          <h3>SQLite 素材库 + <code>--from-db</code></h3>
+          <p><code>beatmix db-sync</code> 把 tags.json 批量 upsert 到 <code>cache/material_library.db</code>；<code>beatmix prepare</code> 一键全流水线（tag→score→viscluster→db-sync）；<code>mix --from-db</code> 跨 5 个 batch 加载 775 条 B+C 级素材，<code>file_path</code> 绝对路径定位源文件，不依赖 <code>material_dir</code>。</p>
+        </div>
+        <div class="card">
+          <span class="tag green">已实现</span>
+          <h3>视觉扰动去重 <code>--dedup</code></h3>
+          <p>6 层 ffmpeg 滤镜（scale/crop/eq/hflip/rotate/PiP），参数由文件名 hash 确定性生成。<code>visual_seed</code> 支持多账号差异化。当前 PiP 降级（<code>input/pip/</code> 为空）；放入视频素材后自动激活。</p>
         </div>
         <div class="card">
           <span class="tag green">已命令化</span>
           <h3>素材 VLM 打标 + 质量评分</h3>
-          <p><code>beatmix tag</code> 扫描/抽帧/VLM 打标写 <code>tags.json</code>;<code>beatmix score</code>(<code>src/beatmix/quality.py</code>)给素材 A–X 分级与 <code>use_policy</code>,出片时高分优先、X 档淘汰。均有单测。</p>
+          <p><code>beatmix tag</code> 扫描/抽帧/VLM 打标写 <code>tags.json</code>；<code>beatmix score</code> 给素材 A–X 分级与 <code>use_policy</code>，出片时高分优先、X 档淘汰。均有单测。</p>
         </div>
         <div class="card">
-          <span class="tag amber">半命令化</span>
+          <span class="tag green">已命令化</span>
           <h3>ASR 生成 voicemap</h3>
-          <p><code>src/beatmix/asr.py</code> 的 DashScope paraformer 转写 + 词级时间戳聚合 + LLM 标 kind 已可用,但**仍走一次性脚本**(无 <code>voicemap</code> 子命令)。产物人工校正后入库。</p>
+          <p><code>beatmix asr</code> CLI 已上线：DashScope paraformer 转写 + 词级时间戳聚合 + LLM 标 <code>intro/dish/filler</code>，产出 voicemap JSON，人工校正后入库。</p>
+        </div>
+        <div class="card">
+          <span class="tag amber">待完善</span>
+          <h3>PiP 去重层 + 多变体出片</h3>
+          <p>PiP 叠加因 <code>input/pip/</code> 空而降级，放入 2–5 条店铺短片即可激活。<br>多 seed 变体（10 条 × N seed = N×10 条去重版）目前需手动多次传不同 <code>visual_seed</code>；可新增 <code>--dedup-variants N</code> 参数一次完成。</p>
         </div>
       </div>
       <div class="callout">
-        <strong>下一步可选迭代:</strong>把 <code>transcribe_to_voicemap</code> 也注册为 <code>beatmix voicemap --bgm xxx --audio xxx</code>,让两个离线准备步骤(voicemap / tag+score)全部命令化;以及在 <code>fill_slots</code> 给 dish 槽位引入候选随机,突破「dish 固定→同 BGM 只产 1 条」的去重瓶颈。
+        <strong>下一步可选迭代：</strong>① <code>input/pip/</code> 放入店铺/Logo 短片，激活 PiP 第 6 层扰动；② 新增 <code>--dedup-variants N</code> 参数，一次对每条原版产 N 个 seed 变体（10 原版 × 3 = 30 去重版）；③ D 级素材人工复审升档后 <code>db-sync --force</code> 写回，扩充可用素材池。
       </div>
     </section>
 
@@ -630,9 +790,10 @@ output/beatmix/&lt;bgm_id&gt;/
           <ul>
             <li><code>cache/bgm/bgm_index.json</code> 中存在目标 <code>bgm_id</code>。</li>
             <li><code>config/bgm_voicemap/&lt;bgm_id&gt;.json</code> 已人工校正时间和文字。</li>
-            <li><code>input/starter/</code> 至少有 1 条 mp4，最好 10 条以上。</li>
-            <li><code>input/material/&lt;week&gt;/</code> 有正文素材;先 <code>beatmix tag</code> 再 <code>beatmix score</code> 生成 <code>tags.json</code>(含 quality)。</li>
-            <li><code>.env</code> 的 MiniMax(LLM/VLM)与 DashScope(ASR)key 可用;<code>uv pip install -e ".[asr]"</code>。</li>
+            <li><code>input/starter_all/</code> 已建立（合并 <code>begin/</code> + <code>starter/</code>），至少 10 条 mp4。</li>
+            <li>素材已入库：<code>beatmix prepare --dir input/material/&lt;week&gt;</code>（或单步 tag → score → db-sync）。</li>
+            <li><code>cache/material_library.db</code> 存在（<code>--from-db</code> 必需）；可用 <code>sqlite3 cache/material_library.db "select batch,count(*) from materials group by batch"</code> 检查。</li>
+            <li><code>.env</code> 的 MiniMax(LLM/VLM)与 DashScope(ASR) key 可用；<code>uv pip install -e ".[asr]"</code>。</li>
           </ul>
         </div>
         <div class="card">
@@ -641,18 +802,18 @@ output/beatmix/&lt;bgm_id&gt;/
             <li>输出目录有 mp4 和对应 <code>.plan.json</code>。</li>
             <li>口播念到菜品时，画面主体是对应菜品或近似类目。</li>
             <li>价格、包装、配送类口播不黑屏，能用价格牌/空镜/出餐动作承接。</li>
-            <li>同一 BGM 的多条成片不出现完全相同的正文素材序列。</li>
+            <li>同一 BGM 的多条成片不出现完全相同的正文素材序列（fingerprint D2/D4 互不撞）。</li>
+            <li><code>--dedup</code> 产物在 <code>&lt;bgm_id&gt;-dedup/</code> 目录，每条原版对应一条视觉扰动版。</li>
             <li>素材不足时允许少产，但不为了凑数放宽硬约束。</li>
           </ul>
         </div>
       </div>
       <div class="foot">
         来源：<code>docs/superpowers/specs/2026-06-13-口播BGM卡点混剪-design.md</code>、
-        <code>docs/superpowers/plans/2026-06-13-口播BGM卡点混剪.md</code>、
-        <code>src/beatmix/*</code>、<code>src/orchestrator.py</code>、<code>docs/beatmix运行说明.md</code>。本说明页反映 2026-06-14 代码状态:tag/score/mix 三个子命令已上线,声画同步已修复,质量评分已接入;仅 voicemap 生成仍走脚本。
+        <code>src/beatmix/{runner,db,video_processor,render_adapter}.py</code>、<code>src/orchestrator.py</code>、<code>docs/beatmix运行说明.md</code>。
+        本说明页反映 <strong>2026-06-20</strong> 代码状态：SQLite 素材库（<code>--from-db</code>）、视觉扰动去重（<code>--dedup</code>）、starter 开头池合并（<code>input/starter_all/</code>）均已上线；PiP 去重层待放入素材后激活。
       </div>
     </section>
   </main>
-  <script src="dy-cut-series-nav.js" defer></script>
 </body>
 </html>
