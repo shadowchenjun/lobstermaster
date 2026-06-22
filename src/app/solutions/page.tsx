@@ -20,6 +20,7 @@ interface Feature {
 
 interface Project {
   id: string
+  hidden?: boolean
   emoji: string
   tag: string
   tagColor: string
@@ -158,6 +159,7 @@ const projects: Project[] = [
   },
   {
     id: 'tangyuan',
+    hidden: true,
     emoji: '🌾',
     tag: '农文旅数字化',
     tagColor: 'text-amber-700 bg-amber-100',
@@ -332,7 +334,7 @@ export default function SolutionsPage() {
         </p>
         {/* jump links */}
         <div className="mt-6 flex flex-wrap gap-3">
-          {projects.map((p) => (
+          {projects.filter((p) => !p.hidden).map((p) => (
             <a
               key={p.id}
               href={`#${p.id}`}
@@ -346,7 +348,7 @@ export default function SolutionsPage() {
 
       {/* project sections */}
       <div className="space-y-10">
-        {projects.map((project, i) => (
+        {projects.filter((p) => !p.hidden).map((project, i) => (
           <ProjectSection key={project.id} project={project} index={i} />
         ))}
       </div>
