@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dy-cut 后续 2 周到 1 个月项目计划</title>
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #667085;
+      --line: #d8dee8;
+      --paper: #fbfcfd;
+      --panel: #ffffff;
+      --accent: #c83f2b;
+      --accent-2: #0f766e;
+      --accent-3: #7c3aed;
+      --soft-red: #fff1ee;
+      --soft-teal: #eaf8f5;
+      --soft-violet: #f3efff;
+      --soft-gray: #f3f5f8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100vw - 40px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 420px;
+      display: grid;
+      align-content: center;
+      padding: 64px 0 54px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 46px;
+      line-height: 1.12;
+      margin: 0 0 18px;
+      letter-spacing: 0;
+      max-width: 880px;
+    }
+
+    .lead {
+      max-width: 840px;
+      color: var(--muted);
+      font-size: 18px;
+      margin: 0;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    nav a {
+      color: var(--ink);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 7px 11px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    main { padding: 34px 0 72px; }
+
+    section {
+      padding: 34px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      font-size: 28px;
+      margin: 0 0 14px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 22px 0 8px;
+    }
+
+    p { margin: 8px 0; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .card h3 { margin-top: 0; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .red { background: var(--soft-red); color: var(--accent); }
+    .teal { background: var(--soft-teal); color: var(--accent-2); }
+    .violet { background: var(--soft-violet); color: var(--accent-3); }
+    .gray { background: var(--soft-gray); color: #344054; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 20px 0 8px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 108px;
+    }
+
+    .step b {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 13px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7f9fb;
+      font-weight: 700;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    code {
+      background: #eef1f5;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--soft-red);
+      padding: 14px 16px;
+      margin: 18px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    footer {
+      padding: 28px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .wrap { width: min(100vw - 28px, 1120px); }
+      h1 { font-size: 34px; }
+      .grid, .two-col, .flow {
+        grid-template-columns: 1fr;
+      }
+      .hero { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="eyebrow">dy-cut Roadmap · 2026-06-25</div>
+      <h1>未来 2 周到 1 个月：素材、成片、投放、评估、拍摄指导闭环</h1>
+      <p class="lead">
+        目标是把当前可批量出片的 dy-cut/beatmix，升级为可沉淀资产、可复盘投放、
+        可持续优化剪辑效果的内容生产系统。
+        素材库调度 → beatmix 质量闭环 → 复审成片闭环，这三项做完，系统就从“能批量生成”进入“可持续生产高质量视频”的阶段。
+      </p>
+    </div>
+    <div class="wrap">
+      <nav>
+        <a href="#flow">闭环架构</a>
+        <a href="#milestones">里程碑</a>
+        <a href="#materials">素材库</a>
+        <a href="#videos">成片库</a>
+        <a href="#inspiration">灵感系统</a>
+        <a href="#effects">效果插件</a>
+        <a href="#deliverables">交付</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="flow">
+      <h2>闭环架构</h2>
+      <p>新版系统的主线不再只是生成视频，而是把每一次拍摄、剪辑、审核、投放和复盘都沉淀为可查询的数据。</p>
+      <div class="callout">
+        <strong>阶段判断：</strong>素材库调度 → beatmix 质量闭环 → 复审成片闭环。这三项完成后，系统就从“能批量生成”进入“可持续生产高质量视频”的阶段。
+      </div>
+      <div class="flow">
+        <div class="step"><b>爆款/灵感采集</b>行业视频分析，提炼钩子、镜头结构、卖点和音频风格。</div>
+        <div class="step"><b>素材清洗入库</b>去暗水印、人工精剪、VLM 打标、质量评分、聚类。</div>
+        <div class="step"><b>生成与复审</b>beatmix/run 按素材库调度出片，人工审核并记录原因。</div>
+        <div class="step"><b>投放与指标</b>记录使用状态、发布时间、播放、互动、订单和 GMV。</div>
+        <div class="step"><b>AI 评估指导</b>总结高低表现原因，反哺拍摄脚本和效果插件。</div>
+      </div>
+    </section>
+
+    <section id="milestones">
+      <h2>时间安排</h2>
+      <table>
+        <thead>
+          <tr><th>时间</th><th>建设重点</th><th>可验收交付</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>第 1 周</td>
+            <td>PG 素材库主路径打通</td>
+            <td>schema、导入器、精剪标记、查询接口、beatmix 可从 PG 读素材</td>
+          </tr>
+          <tr>
+            <td>第 2 周</td>
+            <td>beatmix 调度升级 + 轻量插件接入</td>
+            <td>PG 成为 beatmix 推荐主读路径；强开头和最佳窗口插件接入</td>
+          </tr>
+          <tr>
+            <td>第 3 周</td>
+            <td>成片库、投放库与复审闭环</td>
+            <td>成片入库、审核写回、CSV 投放数据导入、基础评估报告</td>
+          </tr>
+          <tr>
+            <td>第 4 周</td>
+            <td>灵感因子、拍摄指导与插件扩展</td>
+            <td>爆款因子、拍摄缺口、插件注册表、AI 周报与优化建议</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="materials">
+      <h2>主线一：精剪素材库</h2>
+      <p>把素材从文件夹和 tags.json 升级为长期可调度资产，核心是 PostgreSQL 主库加兼容双写。</p>
+      <div class="grid">
+        <div class="card">
+          <span class="tag red">数据表</span>
+          <h3>raw_assets</h3>
+          <p>保存原始素材路径、来源、hash、分辨率、时长、采集批次。</p>
+        </div>
+        <div class="card">
+          <span class="tag teal">精剪</span>
+          <h3>curated_clips</h3>
+          <p>保存人工挑选后的可用片段，包含起止时间、shot_type、intro_power 和人工备注。</p>
+        </div>
+        <div class="card">
+          <span class="tag violet">评分</span>
+          <h3>clip_quality</h3>
+          <p>沉淀质量分、A/B/C/D/X、best_window、重复组和复审状态。</p>
+        </div>
+        <div class="card">
+          <span class="tag gray">调度</span>
+          <h3>beatmix from PG</h3>
+          <p>后续 `beatmix mix` 默认从 PostgreSQL 调度素材，tags.json 逐渐退为导入/导出格式。</p>
+        </div>
+      </div>
+      <div class="callout">
+        两周内优先完成 schema、导入器、精剪标记和 best_window 渲染优先，不急着一次性替换全部 SQLite/JSON 路径。
+      </div>
+    </section>
+
+    <section id="videos">
+      <h2>主线二：成片投放库</h2>
+      <p>每条成片都要成为可追踪资产，包含来源、计划、审核、投放和指标。</p>
+      <table>
+        <thead>
+          <tr><th>表</th><th>职责</th><th>关键字段</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>videos</code></td>
+            <td>记录成片资产</td>
+            <td>pipeline、bgm_id、template_id、output_path、plan_json_path、fingerprint</td>
+          </tr>
+          <tr>
+            <td><code>video_review</code></td>
+            <td>记录人工审核</td>
+            <td>review_status、review_reason、human_note、reviewed_at</td>
+          </tr>
+          <tr>
+            <td><code>video_publish</code></td>
+            <td>记录投放使用</td>
+            <td>account、platform、publish_status、publish_time、douyin_url</td>
+          </tr>
+          <tr>
+            <td><code>video_metrics</code></td>
+            <td>记录投放结果</td>
+            <td>views、likes、comments、shares、orders、gmv、ctr、cvr</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="inspiration">
+      <h2>主线三：灵感系统升级</h2>
+      <p>灵感系统未来承担三个职责：爆款提炼、素材输入、拍摄指导。</p>
+      <div class="two-col">
+        <div class="card">
+          <span class="tag red">爆款因子</span>
+          <h3>从案例提炼结构</h3>
+          <ul>
+            <li>hook_type：食物特写、价格冲击、过程动作、地域表达</li>
+            <li>shot_pattern：开头特写、POV 进店、价格再菜品、反应再食物</li>
+            <li>selling_point：价格、分量、口味、新鲜、便利、地方特色</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag teal">拍摄指导</span>
+          <h3>从缺口反推拍摄</h3>
+          <ul>
+            <li>某 BGM 长期缺饮品/价格牌/包装镜头</li>
+            <li>高转化成片常用镜头在素材库不足</li>
+            <li>开头钩子弱，需补热气、拉丝、爆汁、开盖</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="effects">
+      <h2>主线四：效果提升插件化</h2>
+      <p>各类剪辑软件和爆款案例里学到的技巧，不直接写死在流程里，而是沉淀成可配置插件。</p>
+      <table>
+        <thead>
+          <tr><th>插件</th><th>阶段</th><th>作用</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>strong_intro_selector</code></td><td>select</td><td>强开头优先，使用 intro_power</td></tr>
+          <tr><td><code>best_window_crop</code></td><td>render</td><td>优先使用人工精剪或 VLM 推荐窗口</td></tr>
+          <tr><td><code>shot_diversity_guard</code></td><td>select</td><td>避免连续同类镜头</td></tr>
+          <tr><td><code>lut_food_style</code></td><td>render</td><td>按品类应用餐饮调色</td></tr>
+          <tr><td><code>audio_ducking</code></td><td>audio</td><td>人声出现时压低 BGM</td></tr>
+          <tr><td><code>visual_dedup_pip</code></td><td>postprocess</td><td>PiP 和视觉扰动去重</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="deliverables">
+      <h2>两周与一个月交付边界</h2>
+      <div class="grid">
+        <div class="card">
+          <span class="tag red">两周最小版本</span>
+          <ul>
+            <li>PostgreSQL schema 和 pg-sync</li>
+            <li>PG 素材库成为 beatmix 推荐主读路径，跑通 <code>beatmix mix --from-pg</code></li>
+            <li>精剪素材标记和 best_window/curation 渲染优先</li>
+            <li>先接入 2 个插件：strong_intro_selector、best_window_crop</li>
+            <li>成片库 videos/video_review 最小入库</li>
+            <li>基础周报：素材缺口、审核原因、插件使用效果</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag teal">一个月完整版本</span>
+          <ul>
+            <li>PG 素材库成为 beatmix 默认主读路径</li>
+            <li>精剪、评分、聚类、best_window、shot_type、intro_power 进入调度</li>
+            <li>成片生成、审核、投放、指标闭环，支持 CSV 导入</li>
+            <li>爆款因子和拍摄缺口报告</li>
+            <li>首批 3-5 个效果插件接入 beatmix</li>
+            <li>AI 周报给出拍摄、插件启停和流程优化建议</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      对应执行版文档：<code>docs/plans/2026-06-25-closed-loop-roadmap.md</code>
+    </div>
+  </footer>
+</body>
+</html>

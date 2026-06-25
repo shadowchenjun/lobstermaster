@@ -55,6 +55,13 @@ export const dyCutSeries = [
     desc: '比较真实素材混剪主链路和 HTML 动效层的分工，梳理后续融合方向。',
     phase: 'compare',
   },
+  {
+    href: '/closed-loop-roadmap.html',
+    title: '素材-视频-投放闭环路线图',
+    kicker: '09 · 闭环路线图',
+    desc: '把 PG 素材库、beatmix 质量闭环、复审成片库、投放评估、拍摄指导和效果插件串成下一阶段路线。',
+    phase: 'roadmap',
+  },
 ]
 
 export type DyCutSeriesItem = (typeof dyCutSeries)[number]

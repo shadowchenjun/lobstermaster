@@ -13,6 +13,7 @@ export const protectedDyCutPaths = [
   '/aicoding/material-quality-full-report',
   '/aicoding/beatmix-experiment-flow',
   '/aicoding/dy-cut-vs-html-video-study-summary',
+  '/aicoding/closed-loop-roadmap',
   '/douyin-takeout-ai-remix-share.html',
   '/dy-cut-architecture.html',
   '/dy-cut-team-onboarding.html',
@@ -21,6 +22,7 @@ export const protectedDyCutPaths = [
   '/material-quality-full-report.html',
   '/beatmix-experiment-flow.html',
   '/dy-cut-vs-html-video-study-summary.html',
+  '/closed-loop-roadmap.html',
 ]
 
 export function normalizePhone(value: string) {
