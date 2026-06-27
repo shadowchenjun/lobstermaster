@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supabase 能力说明：与 PostgreSQL 的关系和差异 | LobsterMaster</title>
+  <meta name="description" content="面向产品和技术团队的 Supabase 能力说明：它和 PostgreSQL 的关系、核心服务、Edge Functions、Realtime、RLS、Storage、安全边界与选型建议。">
+  <style>
+    :root {
+      --ink: #141414;
+      --muted: #5f646d;
+      --paper: #fbfaf7;
+      --panel: #ffffff;
+      --line: #dedbd2;
+      --line-strong: #bcb6a8;
+      --accent: #0f8f70;
+      --accent-dark: #075f4b;
+      --blue: #1c5f93;
+      --gold: #a56b12;
+      --rose: #a33f4b;
+      --shadow: 0 18px 50px rgba(30, 28, 22, .09);
+      --radius: 10px;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(20,20,20,.035) 1px, transparent 1px) 0 0 / 42px 42px,
+        linear-gradient(180deg, rgba(20,20,20,.025) 1px, transparent 1px) 0 0 / 42px 42px,
+        var(--paper);
+      font-family: "Noto Serif SC", "Songti SC", "STSong", Georgia, serif;
+      line-height: 1.72;
+    }
+
+    a {
+      color: var(--accent-dark);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+    }
+
+    .site-shell {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(20, 20, 20, .1);
+      background: rgba(251, 250, 247, .92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--ink);
+      border-radius: 6px;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .hero {
+      padding: 72px 0 38px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(320px, .82fr);
+      gap: 34px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .72);
+      border-radius: 999px;
+      color: var(--accent-dark);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(15, 143, 112, .13);
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 22px 0 20px;
+      font-size: clamp(40px, 7vw, 86px);
+      line-height: .96;
+      letter-spacing: 0;
+    }
+
+    .hero-lead {
+      max-width: 760px;
+      margin: 0;
+      color: #343840;
+      font-size: clamp(18px, 2.1vw, 24px);
+      line-height: 1.62;
+    }
+
+    .hero-aside {
+      padding: 24px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-aside h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .hero-aside p {
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+
+    .formula {
+      display: grid;
+      gap: 8px;
+      margin: 18px 0 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+    }
+
+    .formula span {
+      padding: 10px 12px;
+      border-left: 4px solid var(--accent);
+      background: #f1f7f4;
+    }
+
+    .toc {
+      margin: 28px 0 44px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .toc a {
+      padding: 8px 11px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .64);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    section {
+      padding: 54px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    .section-kicker {
+      color: var(--accent-dark);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 21px;
+      line-height: 1.35;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .78);
+    }
+
+    .card strong {
+      color: var(--ink);
+    }
+
+    .number {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 14px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .compare {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+    }
+
+    .compare th,
+    .compare td {
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .compare th {
+      background: #ece7dc;
+      font-weight: 850;
+    }
+
+    .compare tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 9px;
+      color: var(--accent-dark);
+      border: 1px solid rgba(15, 143, 112, .24);
+      background: rgba(15, 143, 112, .08);
+      border-radius: 999px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .7);
+      border-radius: var(--radius);
+    }
+
+    .flow-label {
+      font-weight: 850;
+      color: var(--accent-dark);
+    }
+
+    .code {
+      margin: 14px 0 0;
+      padding: 16px;
+      overflow: auto;
+      color: #f7f2e9;
+      background: #171714;
+      border-radius: var(--radius);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre;
+    }
+
+    .callout {
+      padding: 22px;
+      border: 1px solid #d5b77d;
+      border-radius: var(--radius);
+      background: #fff8e8;
+    }
+
+    .callout h3 {
+      color: #7c4b08;
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .decision .card {
+      background: var(--panel);
+    }
+
+    .footer-note {
+      padding: 34px 0 52px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .section-head,
+      .grid-2,
+      .grid-3,
+      .decision {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 44px;
+      }
+
+      .flow-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="site-shell topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">L</div>
+        <span>LobsterMaster 技术笔记</span>
+      </div>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#relationship">关系</a>
+        <a href="#capabilities">能力</a>
+        <a href="#edge">Edge Functions</a>
+        <a href="#security">安全</a>
+        <a href="#choice">选型</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="site-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">Supabase / PostgreSQL / Backend-as-a-Service</div>
+            <h1 id="page-title">Supabase 到底解决什么问题？</h1>
+            <p class="hero-lead">
+              Supabase 不是 PostgreSQL 的替代品，而是围绕 PostgreSQL 组装出来的一套后端开发平台。它把数据库、登录认证、自动 API、文件存储、实时推送、边缘函数和权限策略放到同一个产品里，帮助团队更快搭出可上线的应用后端。
+            </p>
+          </div>
+          <aside class="hero-aside" aria-label="核心结论">
+            <h2>核心结论</h2>
+            <p>
+              PostgreSQL 是数据库引擎；Supabase 是以 PostgreSQL 为核心的云服务和开源后端平台。
+            </p>
+            <div class="formula" aria-label="Supabase 组成公式">
+              <span>Supabase = 托管 PostgreSQL</span>
+              <span>+ Auth + 自动 API + Storage</span>
+              <span>+ Realtime + Edge Functions + RLS</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <nav class="toc" aria-label="目录">
+        <a href="#relationship">一家公司、开源项目，还是 SaaS？</a>
+        <a href="#compare">和 PostgreSQL 的区别</a>
+        <a href="#capabilities">核心能力</a>
+        <a href="#edge">Edge Functions</a>
+        <a href="#rls">RLS</a>
+        <a href="#realtime">Realtime</a>
+        <a href="#security">密钥与 service_role</a>
+        <a href="#choice">怎么选</a>
+      </nav>
+
+      <section id="relationship">
+        <div class="section-head">
+          <div class="section-kicker">Definition</div>
+          <h2>Supabase 同时是公司、开源项目和 SaaS 服务。</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Supabase Inc.</h3>
+            <p class="muted">运营 Supabase 官方产品的公司。你在 supabase.com 创建项目，用的是它提供的官方云服务。</p>
+          </div>
+          <div class="card">
+            <h3>Supabase 开源项目</h3>
+            <p class="muted">围绕 PostgreSQL、Auth、Realtime、Storage、API 网关等组件构建的开源后端平台。</p>
+          </div>
+          <div class="card">
+            <h3>Supabase Cloud</h3>
+            <p class="muted">官方托管 SaaS。数据库、认证、函数、存储、日志、备份和控制台由 Supabase 官方维护。</p>
+          </div>
+          <div class="card">
+            <h3>第三方托管 Supabase</h3>
+            <p class="muted">阿里云、百度云等厂商可以基于开源 Supabase 做自己的托管版本，运行在各自云基础设施上。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="compare">
+        <div class="section-head">
+          <div class="section-kicker">Compare</div>
+          <h2>PostgreSQL 是数据库；Supabase 是一套后端服务。</h2>
+        </div>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>对比项</th>
+              <th>PostgreSQL</th>
+              <th>Supabase</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>本质</td>
+              <td>关系型数据库引擎</td>
+              <td>以 PostgreSQL 为核心的后端即服务平台</td>
+            </tr>
+            <tr>
+              <td>数据能力</td>
+              <td>SQL、事务、索引、视图、函数、触发器、权限</td>
+              <td>完整继承 PostgreSQL 能力，并加上控制台、托管、API 和集成服务</td>
+            </tr>
+            <tr>
+              <td>用户登录</td>
+              <td>需要自己实现认证系统</td>
+              <td>内置 Auth、JWT、Session、OAuth、邮箱验证等</td>
+            </tr>
+            <tr>
+              <td>前端 API</td>
+              <td>通常需要自己写后端接口</td>
+              <td>可以自动暴露 REST API，也可通过 SDK 直接访问</td>
+            </tr>
+            <tr>
+              <td>文件存储</td>
+              <td>不是核心职责</td>
+              <td>内置 Storage，适合图片、附件、私有文件和 signed URL</td>
+            </tr>
+            <tr>
+              <td>实时能力</td>
+              <td>可用底层机制实现，但前端接入成本高</td>
+              <td>内置 Realtime，可订阅表变化、在线状态和广播事件</td>
+            </tr>
+            <tr>
+              <td>运维</td>
+              <td>自建时要自己负责部署、备份、扩容、监控</td>
+              <td>官方云或第三方云托管，降低运维负担</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="capabilities">
+        <div class="section-head">
+          <div class="section-kicker">Capabilities</div>
+          <h2>Supabase 的核心能力可以理解为一组后端积木。</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="number">1</div>
+            <h3>Database</h3>
+            <p class="muted">托管 PostgreSQL。适合业务数据、复杂查询、事务、索引、扩展和 SQL 权限控制。</p>
+          </div>
+          <div class="card">
+            <div class="number">2</div>
+            <h3>Auth</h3>
+            <p class="muted">用户注册、登录、OAuth、JWT、Session 管理。前端应用不用从零写认证。</p>
+          </div>
+          <div class="card">
+            <div class="number">3</div>
+            <h3>Auto API</h3>
+            <p class="muted">把表和视图自动变成 API。配合 RLS 后，前端可以安全访问授权数据。</p>
+          </div>
+          <div class="card">
+            <div class="number">4</div>
+            <h3>Storage</h3>
+            <p class="muted">存头像、图片、附件、视频、私有文件。可配合权限策略和 signed URL 使用。</p>
+          </div>
+          <div class="card">
+            <div class="number">5</div>
+            <h3>Realtime</h3>
+            <p class="muted">把数据库变化、在线状态或临时事件推送给客户端，减少轮询。</p>
+          </div>
+          <div class="card">
+            <div class="number">6</div>
+            <h3>Edge Functions</h3>
+            <p class="muted">运行后端逻辑，保护 API Key，处理 webhook、AI 调用、支付回调和定时任务入口。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="edge">
+        <div class="section-head">
+          <div class="section-kicker">Edge Functions</div>
+          <h2>Edge Functions 是 Supabase 里的轻量后端层。</h2>
+        </div>
+        <div class="grid-2">
+          <div>
+            <p>
+              Edge Functions 适合处理不能放在前端、也不应该塞进数据库函数的逻辑。典型用途包括调用第三方 API、保护密钥、支付 webhook、AI 接口封装、后台任务入口和复杂业务校验。
+            </p>
+            <div class="flow">
+              <div class="flow-row">
+                <div class="flow-label">AI 接口</div>
+                <div>前端请求 Edge Function，Function 使用服务端密钥调用模型，再返回结果。API Key 不进入浏览器。</div>
+              </div>
+              <div class="flow-row">
+                <div class="flow-label">支付回调</div>
+                <div>支付平台回调 Edge Function，Function 验签后用服务端权限更新订单状态。</div>
+              </div>
+              <div class="flow-row">
+                <div class="flow-label">后台任务</div>
+                <div>配合 Cron 触发清理、同步、日报、用量统计等系统任务。</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>和 PostgreSQL Function 的区别</h3>
+            <table class="compare">
+              <tbody>
+                <tr>
+                  <td><strong>Edge Functions</strong></td>
+                  <td>适合网络请求、第三方服务、webhook、AI、业务 API。</td>
+                </tr>
+                <tr>
+                  <td><strong>PostgreSQL Function</strong></td>
+                  <td>适合数据库内部计算、触发器、数据校验、聚合和事务内逻辑。</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="code">前端 -> Edge Function -> 第三方 API / 数据库
+数据库变化 -> PostgreSQL Trigger -> 数据库内部动作</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rls">
+        <div class="section-head">
+          <div class="section-kicker">RLS</div>
+          <h2>RLS 是数据库级别的行权限控制。</h2>
+        </div>
+        <div class="grid-2">
+          <div>
+            <p>
+              RLS 是 Row Level Security，中文通常叫行级安全。它控制的不是“用户能不能访问一张表”，而是“用户能访问表里的哪些行”。
+            </p>
+            <p>
+              在 Supabase 里这很重要，因为前端可能直接通过 SDK 查询表。权限不能只靠前端隐藏按钮，必须落到数据库层。
+            </p>
+          </div>
+          <div class="card">
+            <h3>典型策略</h3>
+            <div class="code">create policy "Users can view own orders"
+on orders
+for select
+to authenticated
+using (
+  auth.uid() = user_id
+);</div>
+            <p class="muted">含义：登录用户只能看到 user_id 等于自己 uid 的订单。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="realtime">
+        <div class="section-head">
+          <div class="section-kicker">Realtime</div>
+          <h2>Realtime 不是触发器；它负责把变化推送出去。</h2>
+        </div>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>Realtime</th>
+              <th>Trigger</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>主要目的</td>
+              <td>通知客户端数据变了</td>
+              <td>数据库内部自动执行逻辑</td>
+            </tr>
+            <tr>
+              <td>典型用途</td>
+              <td>聊天、通知、实时看板、协作、在线状态</td>
+              <td>写审计日志、维护统计字段、校验数据、触发内部处理</td>
+            </tr>
+            <tr>
+              <td>运行位置</td>
+              <td>Realtime 服务和客户端订阅</td>
+              <td>PostgreSQL 数据库内部</td>
+            </tr>
+            <tr>
+              <td>是否主动改库</td>
+              <td>通常不改，只推送</td>
+              <td>经常会改</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="code">支付 webhook 更新 orders.status = paid
+Trigger 写入 order_events
+Realtime 推送 order_events 给前端
+用户页面立即显示「支付成功」</div>
+      </section>
+
+      <section id="security">
+        <div class="section-head">
+          <div class="section-kicker">Security</div>
+          <h2>Key 可以放 Edge Functions，但 service_role 必须克制使用。</h2>
+        </div>
+        <div class="grid-2">
+          <div class="callout">
+            <h3>推荐边界</h3>
+            <p>AI、支付、第三方平台的 API Key 放在 Edge Function 的 Secrets 里是正确方向。浏览器用户看不到这些环境变量。</p>
+            <p>真正的风险不是“Key 放在服务端”，而是 Function 入口没有鉴权、webhook 没有验签、日志泄露密钥，或者滥用 service_role。</p>
+          </div>
+          <div class="card">
+            <h3>service_role 适合什么场景</h3>
+            <p><span class="badge">支付 webhook</span> 验签后更新订单为 paid。</p>
+            <p><span class="badge">后台任务</span> 清理过期订单、统计用量、生成报表。</p>
+            <p><span class="badge">管理员操作</span> 封禁用户、审核内容、调整套餐。</p>
+            <p><span class="badge">跨用户聚合</span> 后台查看全站订单、GMV、用量排行。</p>
+            <p><span class="badge">Auth Admin</span> 创建/删除用户、修改 app_metadata。</p>
+          </div>
+        </div>
+        <div class="code">普通用户操作：JWT + RLS
+系统后台操作：Edge Function + 鉴权/验签 + service_role
+原则：能让 RLS 安全完成的操作，就不要用 service_role。</div>
+      </section>
+
+      <section id="choice">
+        <div class="section-head">
+          <div class="section-kicker">Decision</div>
+          <h2>怎么选：PostgreSQL、Supabase Cloud、第三方托管或自托管。</h2>
+        </div>
+        <div class="decision">
+          <div class="card">
+            <h3>只用 PostgreSQL</h3>
+            <p class="muted">你已有成熟后端团队，只需要稳定数据库，并希望认证、接口、文件和任务系统都自己掌控。</p>
+          </div>
+          <div class="card">
+            <h3>Supabase Cloud</h3>
+            <p class="muted">想最快上线，跟官方文档一致，减少运维，把精力放在产品和业务逻辑上。</p>
+          </div>
+          <div class="card">
+            <h3>国内云托管 Supabase</h3>
+            <p class="muted">项目需要国内网络、合规、采购流程或和现有阿里云/百度云资源集成。</p>
+          </div>
+          <div class="card">
+            <h3>自托管 Supabase</h3>
+            <p class="muted">团队有运维能力，需要完全控制部署、网络、数据、安全策略和成本结构。</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div class="section-kicker">Summary</div>
+          <h2>给技术负责人看的最终判断。</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Supabase 的优势</h3>
+            <p class="muted">它把应用早期最常见的后端问题打包好了：数据库、登录、权限、文件、实时、函数、控制台。对 MVP、内部系统、AI 应用和中小型 SaaS 很有效。</p>
+          </div>
+          <div class="card">
+            <h3>Supabase 的边界</h3>
+            <p class="muted">它不是让你不用懂数据库。真正进入生产后，仍然要认真设计表结构、索引、RLS、审计、备份、成本和权限边界。</p>
+          </div>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer class="site-shell footer-note">
+    <p>本文面向 LobsterMaster 官网知识内容发布。产品定价、配额和具体托管形态会随 Supabase 官方及云厂商策略变化，正式采购或架构落地前应以官方文档和当前控制台为准。</p>
+  </footer>
+</body>
+</html>
