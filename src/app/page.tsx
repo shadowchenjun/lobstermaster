@@ -78,6 +78,12 @@ export default function HomePage() {
           >
             查看 Skills
           </Link>
+          <Link
+            href="/resume"
+            className="px-6 py-3 bg-navy text-white font-semibold rounded-full hover:bg-slate-800 transition"
+          >
+            查看简历
+          </Link>
         </div>
       </section>
 

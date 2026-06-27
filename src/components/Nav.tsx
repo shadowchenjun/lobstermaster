@@ -9,6 +9,7 @@ const links = [
   { href: '/others-stones', label: '🪨 他山之石' },
   { href: '/skills', label: 'Skills市场' },
   { href: '/solutions', label: '解决方案' },
+  { href: '/resume', label: '简历' },
 ]
 
 export default function Nav() {
