@@ -20,6 +20,7 @@ const phaseTone: Record<string, string> = {
   beatmix: 'border-rose-200 bg-rose-50 text-rose-700',
   compare: 'border-violet-200 bg-violet-50 text-violet-700',
   roadmap: 'border-orange-200 bg-orange-50 text-orange-700',
+  publish: 'border-lime-200 bg-lime-50 text-lime-700',
 }
 
 export default async function DyCutSeriesPage() {

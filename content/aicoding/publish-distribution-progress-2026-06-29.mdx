@@ -1,0 +1,24 @@
+---
+title: "dy-cut 发布分发策略与开发进展"
+date: "2026-06-29"
+category: "aicoding"
+coverEmoji: "🚚"
+tags: ["dy-cut", "beatmix", "发布分发", "账号矩阵", "PostgreSQL", "AIcoding"]
+summary: "基于当前代码库复盘 dy-cut beatmix 从单 BGM 出片升级到多账号整日跑批的实现：账号 round-robin 分发、publish.json 元数据、按账号去重、PG 素材源接入和 ffmpeg 稳定性优化。"
+directUrl: "/publish-distribution-progress-2026-06-29.html"
+---
+
+## 开发进展概要
+
+这篇记录 dy-cut 在 2026-06-29 这轮发布分发能力上的工程推进。
+
+重点包括：
+
+- `beatmix daily` 如何按「账号数 × 每账号目标条数」反推每个 BGM 的出片数量。
+- `account_offset` 如何让不同账号在不同 BGM 中错位拿片，降低账号间内容趋同。
+- `output/publish/<account>/<date>/` 与 `.publish.json` 如何承载账号、日期、seed 和指纹元数据。
+- `dedup-publish` 如何对已归档账号目录补跑视觉扰动。
+- PostgreSQL 素材源如何通过 `--from-pg` 接入现有账号分发 workflow，同时保留 SQLite 和 `tags.json` 兼容路径。
+- 本轮对竖屏/时长字段、渲染超时和硬件编码链路的稳定性修正。
+
+完整视觉版页面会直接打开。

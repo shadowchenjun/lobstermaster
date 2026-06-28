@@ -62,6 +62,13 @@ export const dyCutSeries = [
     desc: '把 PG 素材库、beatmix 质量闭环、复审成片库、投放评估、拍摄指导和效果插件串成下一阶段路线。',
     phase: 'roadmap',
   },
+  {
+    href: '/publish-distribution-progress-2026-06-29.html',
+    title: '发布分发策略与开发进展',
+    kicker: '10 · 账号分发',
+    desc: '把 beatmix 从单 BGM 出片推进到多账号整日跑批，梳理 round-robin 分发、PG 素材源、publish.json 和按账号去重。',
+    phase: 'publish',
+  },
 ]
 
 export type DyCutSeriesItem = (typeof dyCutSeries)[number]

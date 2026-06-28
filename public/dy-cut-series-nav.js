@@ -7,7 +7,9 @@
     { href: '/inspiration-flow.html', title: 'inspiration 拍摄灵感', step: '05' },
     { href: '/material-quality-full-report.html', title: '素材质量评估报告', step: '06' },
     { href: '/beatmix-experiment-flow.html', title: 'beatmix 卡点流程', step: '07' },
-    { href: '/dy-cut-vs-html-video-study-summary.html', title: 'dy-cut vs html-video', step: '08' }
+    { href: '/dy-cut-vs-html-video-study-summary.html', title: 'dy-cut vs html-video', step: '08' },
+    { href: '/closed-loop-roadmap.html', title: '素材-视频-投放闭环', step: '09' },
+    { href: '/publish-distribution-progress-2026-06-29.html', title: '发布分发策略与进展', step: '10' }
   ];
 
   var path = window.location.pathname || '';

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dy-cut 发布分发策略与开发进展 · 账号矩阵 / PG 素材库 / 跑批归档 · 2026-06-29</title>
+<style>
+  :root{
+    --ink:#1a1d24; --ink-soft:#4a5160; --line:#e6e3db; --line-soft:#f0ede5;
+    --bg:#faf8f3; --card:#ffffff; --accent:#c2410c; --accent-soft:#fff1e8;
+    --green:#15803d; --green-soft:#ecfdf3; --blue:#1d4ed8; --blue-soft:#eef2ff;
+    --amber:#b45309; --amber-soft:#fffbeb; --code-bg:#1f2430; --code-ink:#e8eaed;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.7;
+    -webkit-font-smoothing:antialiased;font-size:15px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+
+  header{padding:64px 0 38px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin-bottom:14px}
+  h1{font-size:33px;line-height:1.22;letter-spacing:-.01em;font-weight:700;margin-bottom:16px}
+  .lede{font-size:16px;color:var(--ink-soft);max-width:660px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+  .pill{font-family:var(--mono);font-size:12px;padding:4px 11px;border-radius:99px;
+    background:var(--card);border:1px solid var(--line);color:var(--ink-soft)}
+  .pill.hot{background:var(--accent-soft);border-color:#f3d2bf;color:var(--accent)}
+
+  nav.toc{margin:36px 0 8px;padding:20px 24px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 24px}
+  nav.toc a{font-size:13.5px;color:var(--ink-soft);text-decoration:none;padding:3px 0;
+    display:flex;gap:8px;align-items:baseline}
+  nav.toc a:hover{color:var(--accent)}
+  nav.toc .n{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:20px}
+
+  section{padding-top:54px}
+  h2{font-size:23px;font-weight:700;letter-spacing:-.01em;margin-bottom:6px;
+    display:flex;align-items:baseline;gap:12px;scroll-margin-top:24px}
+  h2 .num{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:600}
+  .sub{color:var(--ink-soft);font-size:14.5px;margin-bottom:22px}
+  h3{font-size:16.5px;font-weight:650;margin:30px 0 10px;display:flex;align-items:center;gap:9px}
+  h3 .ic{font-family:var(--mono);font-size:12px;color:#fff;background:var(--accent);
+    width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+  p{margin-bottom:12px;color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink);font-weight:650}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0}
+  .card.accent{border-left:3px solid var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
+    font-weight:600;border-bottom:1.5px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  td code{white-space:nowrap}
+
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:11px;padding:16px 18px;
+    overflow-x:auto;margin:14px 0;font-family:var(--mono);font-size:12.5px;line-height:1.7}
+  pre .c{color:#7d8aa3}
+  pre .k{color:#7ee0c0}
+  pre .s{color:#f3b07a}
+  pre .n{color:#e6a6c8}
+  code{font-family:var(--mono);font-size:.88em;background:var(--line-soft);
+    padding:1.5px 6px;border-radius:5px;color:var(--accent)}
+  pre code{background:none;padding:0;color:inherit}
+
+  ul,ol{margin:8px 0 14px;padding-left:22px}
+  li{margin-bottom:6px;color:var(--ink-soft)}
+
+  /* before/after */
+  .ba{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin:14px 0}
+  @media(max-width:700px){.ba{grid-template-columns:1fr;gap:8px}.ba .arr{display:none}}
+  .ba .box{border-radius:10px;padding:13px 16px;font-size:13.5px}
+  .ba .old{background:#fef2f2;border:1px solid #f6d4d4;color:#9b2c2c}
+  .ba .new{background:var(--green-soft);border:1px solid #c3ecd0;color:var(--green)}
+  .ba .box b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.05em;
+    text-transform:uppercase;margin-bottom:5px;opacity:.7}
+  .ba .arr{font-size:20px;color:var(--accent);font-weight:700}
+
+  .opt{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
+  .opt:last-child{border-bottom:none}
+  .opt .tag{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 10px;border-radius:7px;
+    height:fit-content;white-space:nowrap;flex:none}
+  .opt .body{flex:1}
+  .opt .title{font-weight:650;color:var(--ink);font-size:14.5px;margin-bottom:3px}
+  .opt .desc{font-size:13.5px;color:var(--ink-soft)}
+  .t-enc{background:var(--blue-soft);color:var(--blue)}
+  .t-qual{background:var(--accent-soft);color:var(--accent)}
+  .t-stab{background:var(--green-soft);color:var(--green)}
+  .t-perf{background:var(--amber-soft);color:var(--amber)}
+
+  .callout{background:var(--amber-soft);border:1px solid #f3e3bf;border-radius:11px;
+    padding:14px 18px;margin:16px 0;font-size:14px;color:#7c5a17}
+  .callout strong{color:#6b4d12}
+
+  .stepflow{counter-reset:step;margin:18px 0}
+  .step{display:flex;gap:16px;padding:14px 0;position:relative}
+  .step::before{counter-increment:step;content:counter(step);font-family:var(--mono);font-weight:700;
+    font-size:13px;color:#fff;background:var(--accent);width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:none}
+  .step .t{font-weight:650;color:var(--ink);font-size:14.5px}
+  .step .d{font-size:13.5px;color:var(--ink-soft);margin-top:2px}
+
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--ink-soft);font-family:var(--mono);line-height:1.8}
+
+  .lead-num{font-family:var(--mono);font-weight:700;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">dy-cut · beatmix · 发布分发策略</div>
+  <h1>发布分发策略与开发进展<br>账号矩阵 · PG 素材库 · 跑批归档</h1>
+  <p class="lede">把「生成即分发」从设计落到代码:一条 <code>beatmix daily</code> 命令完成多 BGM × 5 账号的整日跑批,产物直接按账号归档。本文基于当前代码库梳理业务逻辑、分配算法、PG 素材源接入与本轮工程优化。</p>
+  <div class="meta">
+    <span class="pill hot">2026-06-29</span>
+    <span class="pill">5 账号 × 10 条/天 = 50 条</span>
+    <span class="pill">commit cef9b78 / 6d232cd / 2dbf73b / 1ee74b0</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#flow"><span class="n">01</span> 发布流程总览</a>
+  <a href="#biz"><span class="n">02</span> 内部业务改动</a>
+  <a href="#strategy"><span class="n">03</span> 执行策略(分配算法)</a>
+  <a href="#opt"><span class="n">04</span> 优化点</a>
+  <a href="#cli"><span class="n">05</span> 命令与产物</a>
+  <a href="#next"><span class="n">06</span> 下一步</a>
+</nav>
+
+<!-- 01 FLOW -->
+<section id="flow">
+  <h2><span class="num">01</span>发布流程总览</h2>
+  <p class="sub">不做后置分发层 —— 账号分配在生成阶段一次完成,产物直接落账号目录。</p>
+  <div class="stepflow card">
+    <div class="step"><div><div class="t">读账号配置</div><div class="d"><code>config/accounts.yaml</code> → 5 个账号 id(纯分发槽位,无人设)。</div></div></div>
+    <div class="step"><div><div class="t">算总量 & 反推每 BGM keep</div><div class="d">总量 = 账号数 × <code>--target-per-account</code>;按 BGM 数均摊,keep 强制对齐到账号数整数倍。</div></div></div>
+    <div class="step"><div><div class="t">每 BGM 出片 + round-robin 分配</div><div class="d">候选生成 → LLM 编排 → <code>fill_slots</code> 兜底;选中的 N 条按 <code>account_offset</code> 错位轮转分到各账号。</div></div></div>
+    <div class="step"><div><div class="t">直接归档到账号目录</div><div class="d">渲染产物落 <code>output/publish/&lt;账号&gt;/&lt;日期&gt;/</code>,随片写 <code>.publish.json</code>(含 account_id / seed / 指纹)。</div></div></div>
+    <div class="step"><div><div class="t">(可选)按账号补跑视觉扰动去重</div><div class="d"><code>--dedup</code> 对每个账号目录单独跑,写到 <code>&lt;账号&gt;_dedup/&lt;日期&gt;/</code>。</div></div></div>
+  </div>
+</section>
+
+<!-- 02 BIZ -->
+<section id="biz">
+  <h2><span class="num">02</span>内部业务改动</h2>
+  <p class="sub">commit cef9b78 + 6d232cd + 2dbf73b:从「单 BGM 出片到一个目录」升级为「整日跑批按账号分发」,并把远端 PG 主路径合回账号工作流。</p>
+
+  <h3><span class="ic">A</span>新增整日跑批入口 <code>run_daily_batch</code></h3>
+  <p>过去 <code>beatmix mix</code> 一次只跑一个 BGM、产物堆在 <code>output/beatmix/&lt;bgm_id&gt;/</code>,账号分配靠人工挑。现在新增 <code>daily</code> 子命令一条龙:</p>
+  <ul>
+    <li>输入「每账号目标条数」,自动遍历所有有 voicemap 的 BGM,<strong>反推每个 BGM 该出多少条</strong>。</li>
+    <li>每个 BGM 内部仍走原有 <code>run_beatmix</code>(候选→LLM 编排→兜底→去重),只是末端多了账号分配与归档。</li>
+    <li>返回 <code>per_account</code> 实际产出字典,日志逐条打印 <code>plan seed=… → 账号=…</code>。</li>
+  </ul>
+
+  <h3><span class="ic">B</span>账号分配进入渲染层 <code>_render_plans</code></h3>
+  <p>渲染函数新增 <code>account_assignments</code> / <code>publish_date</code> / <code>publish_output_dir</code> 三个参数。每条 plan 渲染时:</p>
+  <pre><span class="c"># 有账号分配时,输出目录改为账号/日期层级</span>
+out_dir = publish_output_dir / account_id / publish_date
+out_path = out_dir / f"<span class="n">{bgm_id}_{seed}_{fingerprint.D2}</span>.mp4"
+
+<span class="c"># 随片落盘的 publish_meta 注入 account_id</span>
+publish_meta["account_id"] = account_assignments[idx]</pre>
+  <p>这样<strong>生成与归档合一</strong>,没有中间搬运脚本,产物天然带账号归属和 <code>.publish.json</code> 元数据。</p>
+
+  <h3><span class="ic">C</span>按账号去重 <code>dedup_publish</code> / <code>dedup-publish</code> 子命令</h3>
+  <p>视觉扰动去重改为<strong>以账号目录为单位</strong>:源 <code>publish/&lt;账号&gt;/&lt;日期&gt;/</code> → 目标 <code>publish/&lt;账号&gt;_dedup/&lt;日期&gt;/</code>。新增独立子命令,可对已出片的目录<strong>事后补跑</strong>,支持 <code>--accounts</code> 只处理指定账号。</p>
+
+  <h3><span class="ic">D</span>PostgreSQL 素材源并入账号工作流(6d232cd / 2dbf73b)</h3>
+  <p>素材层从 SQLite 扩展到 PG:<code>db_pg.py</code> 补齐 <code>query_materials</code> / <code>get_material</code> / <code>get_stats</code> / <code>curated_clips</code> 增删查,并接入 runner 与 orchestrator,使账号跑批可直接以 PG 为素材源(<code>--from-pg</code>)。合并时保留本地账号分发主体,只把远端 PG 主路径和查询能力并入。</p>
+  <p>当前代码的数据源优先级是 <strong>PG &gt; SQLite &gt; tags.json</strong>:<code>--from-pg</code> 优先于 <code>--from-db</code>;SQLite 仍可作为本地兼容路径;没有 DB 参数时回落到素材目录里的 <code>tags.json</code>。</p>
+</section>
+
+<!-- 03 STRATEGY -->
+<section id="strategy">
+  <h2><span class="num">03</span>执行策略(分配算法)</h2>
+  <p class="sub">核心要解决两件事:① 总量怎么均摊到每个 BGM;② 怎么保证 5 个账号拿到的视频互不雷同。</p>
+
+  <h3>3.1 每 BGM keep 的反推</h3>
+  <p>目标:5 账号 × 10 条 = <span class="lead-num">50</span> 条,均摊到所有 BGM,且<strong>每 BGM 的 keep 必须是账号数(5)的整数倍</strong>(否则账号分配不均)。</p>
+  <pre><span class="c"># total_needed = target_per_account × n_accounts</span>
+base_keep = (total_needed // n_bgms // n_accounts) * n_accounts   <span class="c"># 对齐到 5 的倍数</span>
+<span class="k">if</span> base_keep == 0: base_keep = n_accounts                          <span class="c"># 至少每账号 1 条</span>
+k_extra   = (total_needed - base_keep * n_bgms) // n_accounts     <span class="c"># 前 k_extra 个 BGM 多跑一轮</span>
+
+<span class="c"># 例:50 条 / 4 个 BGM / 5 账号</span>
+<span class="c">#   base_keep = (50//4//5)*5 = 10;  k_extra = (50-10*4)//5 = 2</span>
+<span class="c">#   → 前 2 个 BGM 各 keep 15,后 2 个各 keep 10  →  合计 50</span></pre>
+  <p>余数被摊给前 <code>k_extra</code> 个 BGM(每个多出一整轮 = 一组账号),保证总量精确且每账号均分。</p>
+
+  <h3>3.2 账号错位轮转 <code>account_offset</code></h3>
+  <p>同一批内按 <code>round-robin</code> 分配;关键是<strong>每个 BGM 把轮转起点偏移 1</strong>,避免「账号A 永远拿每个 BGM 的第 0 条」这种系统性雷同:</p>
+  <pre><span class="c"># 每条 BGM 的 offset 递增</span>
+offset = bgm_idx % n_accounts
+account = accounts[(i + offset) % n_accounts]   <span class="c"># 第 i 条视频归谁</span></pre>
+  <div class="ba">
+    <div class="box old"><b>错位前</b>账号A 永远拿 seed 最小的那条 → 跨 BGM 风格趋同,平台易判定关联</div>
+    <div class="arr">→</div>
+    <div class="box new"><b>错位后</b>每个 BGM 起点 +1,各账号跨 BGM 拿到不同编号/不同素材编排的视频</div>
+  </div>
+
+  <h3>3.3 硬约束与兜底</h3>
+  <table>
+    <tr><th>约束</th><th>实现</th></tr>
+    <tr><td>同视频不跨账号</td><td>一条 plan 只渲染一次、只归一个账号目录,sha 天然唯一</td></tr>
+    <tr><td>keep 非账号倍数</td><td>日志 <strong>warning</strong> 提示并建议改成最近的整数倍,末尾账号会少一条</td></tr>
+    <tr><td>账号间均匀</td><td>round-robin + offset,<code>per_account</code> 实时累计回执</td></tr>
+  </table>
+</section>
+
+<!-- 04 OPT -->
+<section id="opt">
+  <h2><span class="num">04</span>优化了哪些地方</h2>
+  <p class="sub">跑批量级上来后,围绕画质、性能、稳定性的针对性优化。</p>
+
+  <div class="card">
+    <div class="opt">
+      <span class="tag t-qual">画质</span>
+      <div class="body">
+        <div class="title">竖屏拉伸修复:scale 改 crop 保比例</div>
+        <div class="desc"><code>scale={w}:{h}</code> 直接拉伸会让横屏素材变形。改为 <code>force_original_aspect_ratio=increase + crop</code>,先按比例放大再居中裁切,<strong>画面不变形</strong>。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-enc">编码</span>
+      <div class="body">
+        <div class="title">硬件编码 h264_videotoolbox 替代 libx264</div>
+        <div class="desc">切到 macOS VideoToolbox 硬件编码,批量出片<strong>大幅提速</strong>、降 CPU 占用,适配 50 条/天的吞吐。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-qual">画质</span>
+      <div class="body">
+        <div class="title">竖屏素材过滤 is_portrait + PG 兼容列</div>
+        <div class="desc">SQLite materials 表已有 <code>is_portrait</code> 字段(按 ffprobe 宽高、含 rotate 元数据判定),<code>load_all_materials</code> 自动剔除横屏素材。PG schema 同步补 <code>duration_sec</code> / <code>is_portrait</code> 兼容列,让账号跑批与 PG 素材库共用同一套候选过滤逻辑。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-stab">稳定性</span>
+      <div class="body">
+        <div class="title">历史 plan 写入与 DB 读路径分离</div>
+        <div class="desc">SQLite 路径继续把已出片 plan 写回 <code>mix_plans</code> 供跨次去重;PG 路径聚焦素材读取和运营查询,渲染归档仍靠 <code>.publish.json</code> 保留账号、日期、seed 与指纹。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-stab">稳定性</span>
+      <div class="body">
+        <div class="title">渲染超时 180s → 600s(1ee74b0)</div>
+        <div class="desc">硬件编码长视频偶发超过 3 分钟被误杀,<code>normalize</code> / <code>render_video</code> 超时统一提到 10 分钟。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-perf">性能</span>
+      <div class="body">
+        <div class="title">只 probe 被选中的 opener</div>
+        <div class="desc">starter 池可能很大,改为只对实际入选的 <code>opening_clip</code> 做 ffprobe,跳过未使用的 starter,减少无谓 I/O。</div>
+      </div>
+    </div>
+    <div class="opt">
+      <span class="tag t-perf">整洁</span>
+      <div class="body">
+        <div class="title">清理废弃 voicemap</div>
+        <div class="desc">删除 <code>bgm_drink_*</code> / <code>bgm_ds_05</code> / <code>bgm_sample_01</code> 等过期槽位表,新增 <code>bgm_01.json</code> 与 <code>config/dedup/bgm03new.yaml</code>(禁翻转)。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 CLI -->
+<section id="cli">
+  <h2><span class="num">05</span>命令与产物</h2>
+  <p class="sub">新增 <code>daily</code> / <code>dedup-publish</code> 子命令,并让 <code>mix</code> / <code>daily</code> 支持 <code>--from-pg</code>。</p>
+  <pre><span class="c"># 整日跑批:5 账号 × 10 条,按账号分发归档</span>
+<span class="k">python -m src.orchestrator</span> beatmix daily \
+    --target-per-account 10 --accounts-config config/accounts.yaml \
+    --publish-date 2026-06-29 --dedup --from-pg
+
+<span class="c"># 兼容本地 SQLite 素材库路径</span>
+<span class="k">python -m src.orchestrator</span> beatmix daily \
+    --target-per-account 10 --accounts-config config/accounts.yaml \
+    --publish-date 2026-06-29 --dedup --from-db
+
+<span class="c"># 对已出片目录补跑视觉扰动去重(可只挑账号)</span>
+<span class="k">python -m src.orchestrator</span> beatmix dedup-publish \
+    --publish-date 2026-06-29 --accounts 账号A,账号B</pre>
+
+  <h3>产物结构</h3>
+  <pre>output/publish/
+  账号A/2026-06-29/
+    bgm_01_42_abc12345.mp4
+    bgm_01_42_abc12345.<span class="s">publish.json</span>   <span class="c"># account_id / seed / 指纹 / 元数据</span>
+  账号A_dedup/2026-06-29/             <span class="c"># --dedup 后的视觉扰动版本</span>
+    ...</pre>
+</section>
+
+<!-- 06 NEXT -->
+<section id="next">
+  <h2><span class="num">06</span>下一步</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">已落地(P0)</h3>
+      <ul>
+        <li>账号配置 + 按账号轮转出片</li>
+        <li>整日跑批总量反推 + 错位分配</li>
+        <li>生成即归档 + <code>.publish.json</code></li>
+        <li>按账号去重、PG 素材源、竖屏/时长兼容字段</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">待实现(P1+)</h3>
+      <ul>
+        <li><code>publish_schedule</code> DB 表 + 时间槽调度(午/晚/宵夜)</li>
+        <li>标题/话题模板库注入 <code>.publish.json</code></li>
+        <li>封面帧自动选优、时长 ±0.3s 微扰</li>
+        <li>抖音开放平台 API 自动推送 + 数据回收 A/B</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><strong>注:</strong>时间槽错峰(同时段 5 账号错开 ≥3 分钟、宵夜 21:00–22:10 分批)目前仍是<strong>人工/发布工具层</strong>执行,生成侧只负责把视频按账号备好,调度尚未进 DB。</div>
+</section>
+
+<footer>
+  dy-cut · beatmix 实验流 · feature/beatmix-voice-driven-mix<br>
+  代码来源:src/beatmix/{runner,db,db_pg}.py · src/orchestrator.py · src/workers/ffmpeg_worker.py<br>
+  设计来源:docs/superpowers/specs/2026-06-28-视频发布分发策略-design.md<br>
+  生成于 2026-06-29
+</footer>
+
+</div>
+<script src="dy-cut-series-nav.js" defer></script>
+</body>
+</html>
