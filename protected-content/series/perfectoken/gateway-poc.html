@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiteLLM 融合 PoC 手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F1F3F2; --surface:#FFFFFF; --ink:#16201D; --muted:#5B6763; --faint:#8A9591; --line:#D5DBD8; --line-soft:#E5E9E7;
+  --lt:#9A5B00; --lt-wash:#F7EEDD;          /* LiteLLM：赭石 */
+  --na:#1D5FA8; --na-wash:#E3ECF7;          /* New API：钴蓝 */
+  --good:#2E7D4F; --good-wash:#E3F1E8;
+  --warn:#A7322A; --warn-wash:#F6E3E0;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+    --lt:#E3A64A; --lt-wash:#2E2414;
+    --na:#7FB0EC; --na-wash:#172536;
+    --good:#6CC792; --good-wash:#15291D;
+    --warn:#EE8A7E; --warn-wash:#361C18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+  --lt:#E3A64A; --lt-wash:#2E2414;
+  --na:#7FB0EC; --na-wash:#172536;
+  --good:#6CC792; --good-wash:#15291D;
+  --warn:#EE8A7E; --warn-wash:#361C18;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:36px 90px}
+a{color:var(--na)}
+a:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--line-soft);padding:1px 5px;border-radius:4px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;letter-spacing:.01em}
+h1{font-size:38px;line-height:1.2;margin:0}
+h2{font-size:25px;line-height:1.35;margin:0}
+h3{font-size:18px;margin:28px 0 10px}
+p{margin:0 0 12px;max-width:74ch}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lt{color:var(--lt)} .na{color:var(--na)}
+.tag{display:inline-block;font:500 12px/1.6 var(--sans);padding:0 8px;border-radius:4px;white-space:nowrap}
+.tag.lt{background:var(--lt-wash)} .tag.na{background:var(--na-wash)}
+
+/* header */
+header.hero{display:grid;gap:16px;padding-bottom:26px;border-bottom:2px solid var(--ink)}
+.vs{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.vs .x{font-family:var(--serif);font-size:22px;color:var(--faint)}
+.hero .lede{color:var(--muted);font-size:16px;max-width:80ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500}
+
+nav.toc{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px;overflow-x:auto;white-space:nowrap}
+nav.toc a{color:var(--muted);text-decoration:none;font-size:13.5px;margin-right:18px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink)}
+
+section{padding-top:48px;scroll-margin-top:50px}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+
+/* verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.verdict > div{padding:20px 22px;display:grid;gap:10px;align-content:start}
+.verdict > div + div{border-left:1px solid var(--line)}
+.verdict h3{margin:0;font-size:20px}
+.verdict .one{font-size:15.5px;margin:0}
+.verdict ul{margin:0;padding-left:1.1em}
+.verdict li{margin-bottom:4px}
+.verdict .bar{height:4px;border-radius:2px}
+.bottomline{margin-top:16px;padding:16px 20px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:15px}
+.bottomline b{font-family:var(--serif)}
+@media (max-width:760px){.verdict{grid-template-columns:1fr}.verdict > div + div{border-left:none;border-top:1px solid var(--line)}}
+
+/* tables */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--bg);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+td.dim{color:var(--muted);white-space:nowrap;font-weight:500}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th.lt{color:var(--lt)} th.na{color:var(--na)}
+tr.group td{background:var(--bg);font-family:var(--serif);font-weight:600;color:var(--ink);font-size:14.5px;padding-top:14px}
+.dot{display:inline-block;width:.9em;text-align:center;font-size:13px;margin-right:4px}
+.s3::before{content:"●";color:var(--good)}
+.s2::before{content:"◐";color:var(--lt)}
+.s1::before{content:"○";color:var(--faint)}
+.win{font-weight:500}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
+
+/* two col */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.panel h4{margin:0 0 10px;font-size:16px;font-family:var(--serif)}
+.panel ul{margin:0;padding-left:1.15em}
+.panel li{margin-bottom:6px}
+.panel.lt{border-top:3px solid var(--lt)}
+.panel.na{border-top:3px solid var(--na)}
+.panel.risk{border-top:3px solid var(--warn)}
+.panel.lt,.panel.na,.panel.risk{color:var(--ink)}
+.callout{border-left:3px solid var(--warn);background:var(--warn-wash);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;margin:16px 0;max-width:none}
+.callout.info{border-color:var(--na);background:var(--na-wash)}
+
+/* flow diagrams */
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
+.fig svg{display:block;min-width:860px;width:100%;height:auto}
+.s-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.s-lt{fill:var(--lt-wash);stroke:var(--lt);stroke-width:1.2}
+.s-na{fill:var(--na-wash);stroke:var(--na);stroke-width:1.2}
+.s-t1{font:600 13px var(--sans);fill:var(--ink)}
+.s-t2{font:400 11.5px var(--sans);fill:var(--muted)}
+.s-h{font:700 14px var(--serif)}
+.s-h.lt{fill:var(--lt)} .s-h.na{fill:var(--na)}
+.s-ln{fill:none;stroke-width:1.5}
+.s-ln.lt{stroke:var(--lt)} .s-ln.na{stroke:var(--na)} .s-ln.mu{stroke:var(--faint)}
+.mk-lt{fill:var(--lt)} .mk-na{fill:var(--na)} .mk-mu{fill:var(--faint)}
+.s-lbl{font:500 11px var(--sans);fill:var(--muted)}
+
+.pick td:first-child{font-weight:500}
+.sources li{margin-bottom:4px;font-size:13.5px;color:var(--muted)}
+.sources a{word-break:break-all}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+</style>
+
+
+<style>
+.tag.warnt{background:var(--warn-wash);color:var(--warn)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.steps li::before{content:counter(s);font:500 12px/26px var(--mono);text-align:center;width:26px;height:26px;border-radius:50%;background:var(--na-wash);color:var(--na)}
+.cl-group{margin-bottom:18px}
+.cl-group h3{margin:18px 0 8px}
+.cl-item{display:grid;grid-template-columns:28px 64px 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.cl-item.done{opacity:.62}
+.cl-item input{width:18px;height:18px;margin-top:3px;accent-color:var(--good)}
+.cl-id{font:500 12.5px var(--mono);color:var(--muted);padding-top:2px}
+.cl-body b{display:block;font-weight:500;margin-bottom:2px}
+.cl-body .how,.cl-body .exp{font-size:13.5px;color:var(--muted)}
+.cl-body .exp::before{content:"期望：";color:var(--good);font-weight:500}
+.cl-body .how::before{content:"操作：";color:var(--na);font-weight:500}
+.auto{font:500 11px var(--mono);color:var(--na);background:var(--na-wash);padding:0 6px;border-radius:4px;margin-left:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tabs button{font:500 13px var(--mono);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button:focus-visible,.copy:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+.codebox{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.codebox pre{margin:0;padding:16px;overflow:auto;max-height:620px;font:12.5px/1.6 var(--mono);white-space:pre;tab-size:4}
+.copy{position:absolute;top:8px;right:8px;font:500 12px var(--sans);border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:4px 10px;border-radius:6px;cursor:pointer}
+.linkbtn{font:inherit;color:var(--na);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">PoC 手册 · 2026-10-01</div>
+  <div class="vs"><h1>PoC 验证清单与配置草稿</h1></div>
+  <p class="lede">配合《01-融合方案》使用。先看「本地预检」了解哪些已经验证过、发现了什么；再按「准备步骤」在杭州机搭起 poc 分组；最后逐条勾选「验证清单」。勾选状态只保存在当前浏览器里。所有配置文件都在本目录的 <code>litellm/</code>、<code>poc/</code> 下，页面底部可以直接查看和复制。</p>
+  <div class="meta"><span><b>LiteLLM</b> 1.103.0（本地预检版本）</span><span><b>New API</b> 生产 rc.37，源码依据为 main 分支</span><span id="progress" class="tag na">进度 0 / 0</span></div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#precheck">本地预检</a><a href="#prep">准备步骤</a><a href="#newapi">New API 配置</a><a href="#checklist">验证清单</a><a href="#files">配置文件</a>
+</nav>
+
+<section id="precheck">
+  <div class="sec-head"><span class="eyebrow">01 · 本地预检</span><h2>已经在本机验证过的</h2></div>
+  <p>在本机用 pip 安装 LiteLLM 1.103.0，上游换成 mock 回复，连接一个临时 PG，用本目录的 <code>config.yaml</code>、<code>cn_guardrail.py</code>、词表和 mock 内容安全服务实际跑了一遍。</p>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:40%">检查</th><th style="width:12%">结果</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>配置加载（4 类设置 + 3 条护栏，含自定义类）</td><td><span class="dot s3"></span>通过</td><td>启动无报错</td></tr>
+      <tr><td>关键词拦截：<code>/v1/chat/completions</code></td><td><span class="dot s3"></span>400</td><td>New API 默认不重试 400</td></tr>
+      <tr><td>关键词拦截：<code>/v1/messages</code>（Anthropic 格式）</td><td><span class="dot s3"></span>400</td><td>Claude 渠道同样生效</td></tr>
+      <tr><td>内容安全拦截（自定义护栏 + mock 服务）</td><td><span class="dot s3"></span>400</td><td>返回「请求内容未通过安全审核」和 label</td></tr>
+      <tr><td>内容安全服务宕机 / 未配置地址</td><td><span class="dot s3"></span>400</td><td>默认拦截（合规优先）</td></tr>
+      <tr><td>OpenAI 流式 + <code>include_usage</code></td><td><span class="dot s3"></span>有 usage</td><td>最后一块带 prompt / completion tokens</td></tr>
+      <tr><td>Anthropic 流式 usage</td><td><span class="dot s1"></span>未验证</td><td>mock 上游在这条路由上不支持流式，留给真实环境 T3</td></tr>
+      <tr><td>Team 预算超限的返回码</td><td><span class="dot s2"></span>429</td><td><b>和文档不一致</b>：1.103.0 代码里写死 429，<code>budget_exceeded_status_code</code> 不生效，文档说的 422 也不对。New API 会重试 429，方案已据此调整</td></tr>
+      <tr><td><code>bootstrap_teams.sh</code></td><td><span class="dot s3"></span>修复后通过</td><td>原脚本用了变量名 <code>GROUPS</code>，这是 bash 的只读内置变量，赋值被静默忽略，脚本什么都不做；已改名，实测建出 3 个 team 和 key</td></tr>
+      <tr><td>Prometheus 指标</td><td><span class="dot s3"></span>通过</td><td>路径是 <code>/metrics/</code>（带结尾斜杠），失败请求指标带状态码标签</td></tr>
+      <tr><td>拦截时返回给用户的内容</td><td><span class="dot s2"></span>注意</td><td><b>关键词和词表里的 description 会原样返回给用户</b>；词表的 description 已改为中性文字，敏感词库应交给内容安全服务</td></tr>
+      <tr><td>个人信息 <code>logging_only</code> 脱敏</td><td><span class="dot s2"></span>部分</td><td>配置能加载；脱敏效果要接上日志回调才能观察</td></tr>
+      <tr><td><code>poc_check.py</code></td><td><span class="dot s1"></span>未运行</td><td>只做了语法检查，需要真实的 New API 才能跑</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="prep">
+  <div class="sec-head"><span class="eyebrow">02 · 准备步骤</span><h2>在杭州机搭起 poc 分组</h2></div>
+  <ol class="steps">
+    <li><span><b>确认资源</b>：<code>free -h</code> 可用内存不少于 1G；<code>docker network ls</code> 能看到 <code>newapi-net</code>。内存不够就先停在这一步，评估升级配置或换机器。</span></li>
+    <li><span><b>选镜像</b>：从 LiteLLM GitHub releases 选一个带 <code>-stable</code> 的版本，按其 README 用 <code>cosign verify</code> 校验签名，写进同目录 <code>.env</code>：<code>LITELLM_IMAGE=ghcr.io/berriai/litellm:vX.Y.Z-stable</code>。</span></li>
+    <li><span><b>建库</b>：把 <code>init-db.sql</code> 里的密码换成随机 28 位后执行：<code>docker exec -i new-api-postgres psql -U newapi -d postgres &lt; init-db.sql</code>。</span></li>
+    <li><span><b>写环境变量</b>：<code>cp litellm.env.example litellm.env &amp;&amp; chmod 600 litellm.env</code>，填入数据库密码、master key 和上游 key。PoC 阶段的 <code>CONTENT_SAFETY_URL</code> 填 <code>http://content-safety-mock:8088/moderate</code>。</span></li>
+    <li><span><b>启动</b>：<code>docker compose --profile poc up -d</code>，然后执行 <code>curl -s 127.0.0.1:4000/health/readiness</code>，应返回 <code>"db":"connected"</code>。</span></li>
+    <li><span><b>打开内容安全护栏</b>（仅 PoC）：把 <code>config.yaml</code> 里 <code>cn-content-safety</code> 的 <code>default_on</code> 改成 <code>true</code>，然后 <code>docker restart litellm</code>。</span></li>
+    <li><span><b>建 team 和 key</b>：<code>LITELLM_MASTER_KEY=… sh bootstrap_teams.sh</code>，key 只记在本机，不要粘贴到任何聊天或文档里。</span></li>
+    <li><span><b>配置 New API</b>：按下一节的表格操作。</span></li>
+    <li><span><b>跑自动化用例</b>：在任意能访问 New API 的机器上设置环境变量后执行 <code>python3 poc/poc_check.py</code>，然后单独执行 <code>python3 poc/poc_check.py T5</code>。</span></li>
+  </ol>
+</section>
+
+<section id="newapi">
+  <div class="sec-head"><span class="eyebrow">03 · New API 配置</span><h2>poc 分组的渠道与用户</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:22%">配置项</th><th>值</th><th style="width:30%">原因</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">分组</td><td>新建 <code>poc</code>，倍率与 default 相同</td><td>和真实用户隔离</td></tr>
+      <tr><td class="dim">渠道 1（OpenAI 系）</td><td>类型 <b>OpenAI</b>；Base URL <code>http://litellm:4000</code>；密钥填 poc team key；模型填 <code>config.yaml</code> 中的 model_name；分组选 poc</td><td>只有 OpenAI 等类型会强制带 <code>include_usage</code>，用「自定义」类型的话流式请求拿不到 usage</td></tr>
+      <tr><td class="dim">渠道 2（Claude）</td><td>类型 <b>Anthropic Claude</b>；Base URL <code>http://litellm:4000</code>；密钥同上；模型填 Claude 系列</td><td>避免 Claude→OpenAI→Claude 两次协议转换</td></tr>
+      <tr><td class="dim">直连渠道（回滚演练用）</td><td>同 poc 分组，指向原上游，<b>默认禁用</b></td><td>启用状态下会被重试选中，从而绕过护栏和预算</td></tr>
+      <tr><td class="dim">测试用户与令牌</td><td>只属于 poc 分组；充少量额度</td><td>poc_check 通过管理接口读取它的额度</td></tr>
+      <tr><td class="dim">系统设置 · 自动重试状态码</td><td>保持默认（不含 400）</td><td>护栏返回 400 时才能不重试、直接退额度</td></tr>
+      <tr><td class="dim">系统设置 · 自动禁用状态码</td><td>保持默认 401</td><td>轮换 LiteLLM key 时，先改渠道再吊销旧 key</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="checklist">
+  <div class="sec-head"><span class="eyebrow">04 · 验证清单</span><h2>逐条勾选</h2></div>
+  <p class="note" style="margin-bottom:12px">标有 <code>poc_check</code> 的条目可以用脚本自动跑；其余需要手工操作。勾选状态保存在本浏览器的 localStorage 里，<button type="button" id="reset" class="linkbtn">清空勾选</button>。</p>
+  <div id="cl"></div>
+</section>
+
+<section id="files">
+  <div class="sec-head"><span class="eyebrow">05 · 配置文件</span><h2>草稿全文</h2></div>
+  <p class="note">与目录中的文件内容一致（生成本页时嵌入）。修改请改文件本身，再重新生成本页。</p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="codebox"><button type="button" class="copy" id="copy">复制</button><pre id="code"></pre></div>
+  <p class="note" id="filedesc"></p>
+</section>
+
+<footer>Perfectoken · New API × LiteLLM 融合 · 2026-10-01 · 内部资料</footer>
+</div>
+<script>
+const CL = [{"group": "部署前", "items": [{"id": "A1", "title": "内存余量", "how": "free -h；docker stats --no-stream", "exp": "可用内存不少于 1G，否则停下评估扩容", "auto": false}, {"id": "A2", "title": "网络", "how": "docker network ls | grep newapi-net", "exp": "存在 newapi-net", "auto": false}, {"id": "A3", "title": "镜像可信", "how": "cosign verify --key <固定 commit 的 cosign.pub> ghcr.io/berriai/litellm:<tag>", "exp": "签名校验通过；tag 带 -stable", "auto": false}, {"id": "A4", "title": "独立库", "how": "执行 init-db.sql 后：docker exec new-api-postgres psql -U litellm -d newapi -c 'select count(*) from users'", "exp": "报 permission denied：litellm 角色读不到 New API 的任何表", "auto": false}, {"id": "A5", "title": "服务就绪", "how": "curl -s 127.0.0.1:4000/health/readiness", "exp": "返回 \"db\":\"connected\"；New API 容器内 curl http://litellm:4000/health/liveliness 可达", "auto": false}, {"id": "A6", "title": "team 与 key", "how": "sh bootstrap_teams.sh", "exp": "生成 poc / default / vip 三个 team 和 key（key 不外泄）", "auto": false}]}, {"group": "New API 配置", "items": [{"id": "B1", "title": "poc 渠道", "how": "按「New API 配置」表格新建两个渠道", "exp": "渠道类型分别是 OpenAI 和 Anthropic Claude，不是「自定义」", "auto": false}, {"id": "B2", "title": "渠道测试", "how": "在后台对两个渠道点「测试」", "exp": "均成功；LiteLLM /metrics/ 出现对应请求", "auto": false}, {"id": "B3", "title": "直连渠道禁用", "how": "检查 poc 分组下的渠道列表", "exp": "只有指向 LiteLLM 的渠道是启用状态", "auto": false}]}, {"group": "计费一致性", "items": [{"id": "T1", "title": "非流式计费", "how": "python3 poc/poc_check.py T1", "exp": "New API 记账的 token 与上游 usage 完全一致；额度扣减等于日志 quota", "auto": true}, {"id": "T2", "title": "OpenAI 流式计费", "how": "python3 poc/poc_check.py T2", "exp": "流里带 usage，且与 New API 记账一致（不是估算值）", "auto": true}, {"id": "T3", "title": "Claude 流式计费", "how": "python3 poc/poc_check.py T3", "exp": "message_start / message_delta 的 usage 与 New API 记账一致", "auto": true}, {"id": "C4", "title": "缓存计费", "how": "同一个长系统提示连续请求两次 Claude 模型", "exp": "第二次 New API 日志显示缓存命中 token，按缓存倍率计费", "auto": false}]}, {"group": "护栏", "items": [{"id": "T4", "title": "关键词拦截", "how": "python3 poc/poc_check.py T4", "exp": "HTTP 400；额度不变；无新增消费日志；耗时短（没有换渠道重试）", "auto": true}, {"id": "T5", "title": "内容安全拦截", "how": "开启 cn-content-safety 后执行 python3 poc/poc_check.py T5", "exp": "HTTP 400；额度不变", "auto": true}, {"id": "D3", "title": "错误信息不泄露", "how": "查看 T4、T5 返回给用户的完整 body", "exp": "只包含中性提示，没有内部分类或处置说明", "auto": false}, {"id": "D4", "title": "内容安全宕机", "how": "docker stop content-safety-mock 后发一个正常请求", "exp": "fail_open=false 时返回 400 且不扣费；恢复后正常", "auto": false}, {"id": "D5", "title": "护栏延迟", "how": "开启和关闭内容安全各发 20 次请求，对比耗时", "exp": "内容安全带来的 P95 增量在可接受范围（目标 300ms 以内）", "auto": false}]}, {"group": "失败与重试", "items": [{"id": "E1", "title": "预算熔断", "how": "临时把 newapi-poc 的 max_budget 调到 0.000001，再发请求", "exp": "New API 返回失败、额度不变；日志里的重试次数等于该分组渠道数（429 被重试）；改回预算后恢复", "auto": false}, {"id": "E2", "title": "LiteLLM 宕机", "how": "docker stop litellm 后发请求", "exp": "New API 返回 5xx 且不扣费；启用直连渠道后恢复正常", "auto": false}, {"id": "E3", "title": "key 失效", "how": "把 poc 渠道的密钥改成一个错误的 key，再做渠道测试", "exp": "New API 自动禁用该渠道（401）；改回后手动启用", "auto": false}, {"id": "E4", "title": "上游限流", "how": "给某个上游 deployment 设很小的 rpm 后连续请求", "exp": "LiteLLM 在 key 池内切换；全部受限时返回 429，New API 重试后失败", "auto": false}]}, {"group": "性能与资源", "items": [{"id": "T6", "title": "串联延迟", "how": "设置 DIRECT_TOKEN 后执行 python3 poc/poc_check.py T6", "exp": "P50 增加不超过约 100ms（量级判断）", "auto": true}, {"id": "F2", "title": "内存稳定", "how": "docker stats litellm，观察 24 小时", "exp": "常驻内存稳定，不持续增长，低于 mem_limit 的 80%", "auto": false}]}, {"group": "可观测", "items": [{"id": "G1", "title": "指标", "how": "curl -s 127.0.0.1:4000/metrics/ -H 'Authorization: Bearer <master key>' | grep team_alias", "exp": "能看到按 newapi-poc 等 team 拆分的请求、失败、花费指标", "auto": false}, {"id": "G2", "title": "成本与收入对账", "how": "取同一天 poc 分组：New API 消费日志的 token 合计 对比 LiteLLM spend logs 的 token 合计", "exp": "token 合计一致；两边金额的比值约等于该分组倍率", "auto": false}, {"id": "G3", "title": "不存原文", "how": "查看 LiteLLM spend logs 和 UI 中的请求详情", "exp": "看不到提示词或回复原文（turn_off_message_logging 生效）", "auto": false}]}, {"group": "回滚演练", "items": [{"id": "H1", "title": "切回直连", "how": "禁用 poc 的 LiteLLM 渠道，启用直连渠道", "exp": "请求恢复正常，计费照常", "auto": false}, {"id": "H2", "title": "切回 LiteLLM", "how": "反向操作", "exp": "恢复，T1–T4 复跑通过", "auto": false}]}];
+const FILES = [{"name": "config.yaml", "path": "litellm/config.yaml", "desc": "LiteLLM 主配置：模型与上游 key 池、路由、预算返回码、护栏", "body": "# LiteLLM 配置草稿：New API（前台：卖）→ LiteLLM（后台：控）→ 上游厂商\n# 用法：docker compose 挂载到 /app/config.yaml。所有密钥一律用 os.environ/XXX 引用，\n# 真实值只写在服务器的 litellm.env（600 root），不进仓库、不进聊天。\n#\n# 草稿状态：已在本地用 mock 上游跑通配置加载、护栏拦截、预算返回码（见 PoC 文档“本地预检”一节）；\n# 真实上游、真实 New API 联调尚未进行。\n\n# ---------------------------------------------------------------------------\n# 1. 模型与上游 key 池\n#    model_name = New API 渠道里填的“模型”名；同名多条 = 同一模型的多个上游 key，\n#    由 router 负载均衡 + 冷却。上游 key 从 New API 渠道迁到这里统一管理。\n#    下面的模型名只是示例，按 New API 现有渠道实际售卖的模型逐个替换。\n# ---------------------------------------------------------------------------\nmodel_list:\n  # OpenAI 系：两个 key 组成池子\n  - model_name: gpt-5.6-terra\n    litellm_params:\n      model: openai/gpt-5.6-terra\n      api_key: os.environ/OPENAI_API_KEY_1\n      rpm: 500                      # 设了 rpm/tpm，simple-shuffle 会按额度加权挑选\n  - model_name: gpt-5.6-terra\n    litellm_params:\n      model: openai/gpt-5.6-terra\n      api_key: os.environ/OPENAI_API_KEY_2\n      rpm: 500\n\n  # Claude：New API 侧用「Anthropic Claude」类型渠道直打 LiteLLM 的 /v1/messages，\n  # 避免 Claude→OpenAI→Claude 两次协议转换丢 thinking / cache_control。\n  - model_name: claude-sonnet-5\n    litellm_params:\n      model: anthropic/claude-sonnet-5\n      api_key: os.environ/ANTHROPIC_API_KEY_1\n\n  # 国内厂商示例\n  - model_name: deepseek-chat\n    litellm_params:\n      model: deepseek/deepseek-chat\n      api_key: os.environ/DEEPSEEK_API_KEY\n\n  # 已有的 sub2api 也可以作为 LiteLLM 的一个 OpenAI 兼容上游（同在 newapi-net）\n  # - model_name: claude-sonnet-5\n  #   litellm_params:\n  #     model: openai/claude-sonnet-5\n  #     api_base: http://sub2api:8080/v1\n  #     api_key: os.environ/SUB2API_KEY\n\n# ---------------------------------------------------------------------------\n# 2. 路由与可靠性\n# ---------------------------------------------------------------------------\nrouter_settings:\n  routing_strategy: simple-shuffle\n  num_retries: 2                  # LiteLLM 内部在同名 deployment 之间重试\n  allowed_fails: 3                # 1 分钟内失败 3 次的 deployment 进入冷却\n  cooldown_time: 60\n  # 跨模型降级（例如 claude 挂了降到别的模型）是商业决策：用户付的是 A 模型的钱，\n  # 不要默认打开。确需时按模型逐个写：\n  # fallbacks: [{\"gpt-5.6-terra\": [\"gpt-5.6-terra-backup\"]}]\n\n# ---------------------------------------------------------------------------\n# 3. 模块级设置\n# ---------------------------------------------------------------------------\nlitellm_settings:\n  callbacks: [\"prometheus\"]       # /metrics；开源版可用。Langfuse 见文档“可观测”一节\n  # 预算超限的返回码：本地预检（LiteLLM 1.103.0）实测是 429，代码里写死，\n  # 官方文档说的 422 和 budget_exceeded_status_code 开关在这个版本都不成立。\n  # New API 默认对 429 切渠道重试：同一分组的渠道都指向同一个 team key，重试同样 429，\n  # 次数用完后失败并退预扣额度——代价只是几次无效重试，但前提是该分组没有直连上游的渠道，\n  # 否则会被“重试到直连渠道”绕过预算。保留下面这行：升级到支持该开关的版本后改成 400 即生效。\n  budget_exceeded_status_code: 400\n  request_timeout: 600            # 长输出模型留足时间；New API 侧 STREAMING_TIMEOUT 另行对齐\n  turn_off_message_logging: true  # 不把提示词/回复内容送进日志回调（隐私最小化）\n\n# ---------------------------------------------------------------------------\n# 4. 服务端设置\n# ---------------------------------------------------------------------------\ngeneral_settings:\n  master_key: os.environ/LITELLM_MASTER_KEY\n  database_url: os.environ/DATABASE_URL          # new-api-postgres 里的独立库 litellm\n  database_connection_pool_limit: 5              # 单 worker；PG 总连接数有限，和 New API、pt-pay 共用实例\n  database_statement_timeout: 30\n  database_lock_timeout: 5\n\n# ---------------------------------------------------------------------------\n# 5. 护栏（开源版能力：default_on 全局生效；按 key/team 单独开关属于企业版）\n#    BLOCK 时返回 HTTP 400 → New API 默认不重试、退回预扣额度（PoC 必测）。\n# ---------------------------------------------------------------------------\nguardrails:\n  # 5.1 个人信息：只在日志里脱敏，不改写发给模型的内容。\n  #     对外卖 API 的场景，改写用户真实请求会破坏正常用途（例如整理通讯录），\n  #     所以默认 logging_only；要真正拦截改成 pre_call + BLOCK。\n  - guardrail_name: cn-pii-logmask\n    litellm_params:\n      guardrail: litellm_content_filter\n      mode: logging_only\n      default_on: true\n      patterns:\n        - pattern_type: \"regex\"\n          name: \"cn_mobile\"\n          pattern: '(?<!\\d)1[3-9]\\d{9}(?!\\d)'\n          action: \"MASK\"\n        - pattern_type: \"regex\"\n          name: \"cn_id_card\"\n          pattern: '(?<!\\d)\\d{17}[\\dXx](?!\\d)'\n          action: \"MASK\"\n        - pattern_type: \"prebuilt\"\n          pattern_name: \"email\"\n          action: \"MASK\"\n\n  # 5.2 关键词拦截：词表单独放文件，运营可维护。\n  - guardrail_name: cn-keyword-block\n    litellm_params:\n      guardrail: litellm_content_filter\n      mode: pre_call\n      default_on: true\n      blocked_words_file: /app/sensitive_keywords.yaml\n\n  # 5.3 内容安全服务（阿里云内容安全 / 网易易盾等）：自定义护栏，见 cn_guardrail.py。\n  #     对接好真实服务、压测过延迟之前保持 default_on: false。\n  - guardrail_name: cn-content-safety\n    litellm_params:\n      guardrail: cn_guardrail.ContentSafetyGuardrail\n      mode: pre_call\n      default_on: false\n"}, {"name": "cn_guardrail.py", "path": "litellm/cn_guardrail.py", "desc": "内容安全自定义护栏：调用适配服务，违规返回 400，服务不可用时默认拦截", "body": "\"\"\"国内内容安全服务的 LiteLLM 自定义护栏（草稿）。\n\nLiteLLM 把请求里要检查的文本抽出来放进 inputs[\"texts\"]，这里逐段送去内容安全服务；\n命中违规就抛 HTTP 400 拦截。必须是 400：New API 默认对 500、422、429 等会切换渠道重试\n（重试可能落到不经过 LiteLLM 的直连渠道，护栏就被绕过了），400 则直接失败并退回预扣额度。\n\n对接方式：本文件只定义一个很薄的 HTTP 契约，真实厂商的签名与字段差异放进一个小适配服务\n（或直接改写 _moderate）。契约：\n    POST {CONTENT_SAFETY_URL}   {\"text\": \"...\", \"scene\": \"llm_query\"}\n    200 → {\"block\": true|false, \"label\": \"violence\", \"request_id\": \"...\"}\nPoC 阶段用 poc/content_safety_mock.py 充当该服务。\n\n环境变量：\n    CONTENT_SAFETY_URL         适配服务地址（必填）\n    CONTENT_SAFETY_TOKEN       适配服务鉴权（可选，作为 Bearer 发送）\n    CONTENT_SAFETY_TIMEOUT     单次调用超时秒数，默认 2\n    CONTENT_SAFETY_FAIL_OPEN   服务不可用时是否放行：true 放行（可用性优先）/ false 拦截（合规优先），默认 false\n\"\"\"\nimport logging\nimport os\nfrom typing import TYPE_CHECKING, Literal, Optional\n\nimport httpx\nfrom fastapi import HTTPException\nfrom litellm.integrations.custom_guardrail import CustomGuardrail\nfrom litellm.types.utils import GenericGuardrailAPIInputs\n\nif TYPE_CHECKING:\n    from litellm.litellm_core_utils.litellm_logging import Logging as LiteLLMLoggingObj\n\nlog = logging.getLogger(\"cn_guardrail\")\n\nMAX_CHARS_PER_CALL = 10000      # 内容安全服务通常有单次长度上限，超长文本分段送检\n\n\ndef _truthy(v: Optional[str]) -> bool:\n    return (v or \"\").strip().lower() in (\"1\", \"true\", \"yes\")\n\n\nclass ContentSafetyGuardrail(CustomGuardrail):\n    def __init__(self, api_base: Optional[str] = None, api_key: Optional[str] = None, **kwargs):\n        self.url = api_base or os.getenv(\"CONTENT_SAFETY_URL\", \"\")\n        self.token = api_key or os.getenv(\"CONTENT_SAFETY_TOKEN\", \"\")\n        self.timeout = float(os.getenv(\"CONTENT_SAFETY_TIMEOUT\", \"2\"))\n        self.fail_open = _truthy(os.getenv(\"CONTENT_SAFETY_FAIL_OPEN\"))\n        self._client = httpx.AsyncClient(timeout=self.timeout)\n        super().__init__(**kwargs)\n\n    async def _moderate(self, text: str, scene: str) -> dict:\n        headers = {\"Authorization\": f\"Bearer {self.token}\"} if self.token else {}\n        r = await self._client.post(self.url, json={\"text\": text, \"scene\": scene}, headers=headers)\n        r.raise_for_status()\n        return r.json()\n\n    async def apply_guardrail(\n        self,\n        inputs: GenericGuardrailAPIInputs,\n        request_data: dict,\n        input_type: Literal[\"request\", \"response\"],\n        logging_obj: Optional[\"LiteLLMLoggingObj\"] = None,\n    ) -> GenericGuardrailAPIInputs:\n        if not self.url:\n            # 没配服务地址：按 fail_open 决定，避免“以为开了护栏其实没生效”\n            if self.fail_open:\n                return inputs\n            raise HTTPException(status_code=400, detail={\"error\": \"内容安全服务未配置\", \"type\": \"guardrail\"})\n\n        scene = \"llm_query\" if input_type == \"request\" else \"llm_response\"\n        meta = request_data.get(\"metadata\") or {}\n        team = meta.get(\"user_api_key_team_alias\") or meta.get(\"user_api_key_team_id\")\n\n        for text in inputs.get(\"texts\") or []:\n            for i in range(0, len(text), MAX_CHARS_PER_CALL):\n                chunk = text[i:i + MAX_CHARS_PER_CALL]\n                if not chunk.strip():\n                    continue\n                try:\n                    verdict = await self._moderate(chunk, scene)\n                except Exception as e:  # 网络、超时、非 JSON\n                    log.warning(\"content safety unavailable team=%s err=%s\", team, type(e).__name__)\n                    if self.fail_open:\n                        return inputs\n                    raise HTTPException(status_code=400, detail={\n                        \"error\": \"内容安全检查暂时不可用，请稍后重试\", \"type\": \"guardrail\"})\n                if verdict.get(\"block\"):\n                    # 日志只记标签和请求号，不记原文\n                    log.info(\"content blocked team=%s label=%s rid=%s\",\n                             team, verdict.get(\"label\"), verdict.get(\"request_id\"))\n                    raise HTTPException(status_code=400, detail={\n                        \"error\": \"请求内容未通过安全审核\", \"type\": \"guardrail\",\n                        \"label\": verdict.get(\"label\")})\n        return inputs\n"}, {"name": "docker-compose.yml", "path": "litellm/docker-compose.yml", "desc": "LiteLLM 容器加入 newapi-net；poc profile 附带 mock 内容安全服务", "body": "# LiteLLM 加入现有的 newapi-net：New API 用 http://litellm:4000 访问，\n# LiteLLM 用 new-api-postgres:5432 访问自己的库。端口只绑 127.0.0.1（管理 UI 走 SSH 隧道）。\n#\n# 启动前：\n#   1. docker network ls 确认网络名就是 newapi-net\n#   2. 在 .env 里写 LITELLM_IMAGE=ghcr.io/berriai/litellm:<vX.Y.Z-stable>\n#      （从 GitHub releases 挑带 -stable 的版本，并按 README 用 cosign 校验签名；不要用 latest / main）\n#   3. free -h 确认剩余内存：杭州机部署 sub2api 时可用约 1.3G，LiteLLM 单 worker 建议预留 700M–1G\nservices:\n  litellm:\n    image: ${LITELLM_IMAGE:?在 .env 中指定带 -stable 的 LiteLLM 镜像版本}\n    container_name: litellm\n    command: [\"--config\", \"/app/config.yaml\", \"--port\", \"4000\", \"--num_workers\", \"1\"]\n    env_file: litellm.env\n    volumes:\n      - ./config.yaml:/app/config.yaml:ro\n      - ./cn_guardrail.py:/app/cn_guardrail.py:ro\n      - ./sensitive_keywords.yaml:/app/sensitive_keywords.yaml:ro\n    ports:\n      - \"127.0.0.1:4000:4000\"\n    networks: [newapi-net]\n    mem_limit: 1g\n    restart: unless-stopped\n    healthcheck:\n      test: [\"CMD\", \"python\", \"-c\", \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=3).status == 200 else 1)\"]\n      interval: 30s\n      timeout: 5s\n      retries: 3\n\n  # 仅 PoC：内容安全服务的假实现（docker compose --profile poc up -d）\n  content-safety-mock:\n    profiles: [\"poc\"]\n    image: python:3.12-slim\n    container_name: content-safety-mock\n    command: [\"python\", \"/app/content_safety_mock.py\"]\n    volumes:\n      - ../poc/content_safety_mock.py:/app/content_safety_mock.py:ro\n    networks: [newapi-net]\n    restart: \"no\"\n\nnetworks:\n  newapi-net:\n    external: true\n"}, {"name": "litellm.env.example", "path": "litellm/litellm.env.example", "desc": "环境变量模板，真实值只放服务器（600 权限）", "body": "# 复制为 litellm.env（chmod 600，属主 root），真实值只放在服务器上。\nLITELLM_MASTER_KEY=sk-<随机 32 位以上，只给运维和 bootstrap 脚本用>\n# new-api-postgres 里的独立库（建库见 init-db.sql），容器内用容器名访问\nDATABASE_URL=postgresql://litellm:<litellm 库密码>@new-api-postgres:5432/litellm\n\n# 上游 key（从 New API 渠道迁过来）\nOPENAI_API_KEY_1=\nOPENAI_API_KEY_2=\nANTHROPIC_API_KEY_1=\nDEEPSEEK_API_KEY=\n\n# 内容安全适配服务（PoC 用 mock：http://content-safety-mock:8088/moderate）\nCONTENT_SAFETY_URL=\nCONTENT_SAFETY_TOKEN=\nCONTENT_SAFETY_TIMEOUT=2\nCONTENT_SAFETY_FAIL_OPEN=false\n\n# 管理 UI 登录（只通过 SSH 隧道访问 127.0.0.1:4000/ui）\nUI_USERNAME=admin\nUI_PASSWORD=<随机强密码>\n\n# 关掉公开的 API 文档页\nNO_DOCS=True\nNO_REDOC=True\nNO_OPENAPI=True\nLITELLM_LOG=INFO\n"}, {"name": "init-db.sql", "path": "litellm/init-db.sql", "desc": "在 new-api-postgres 里建独立角色和独立库 litellm", "body": "-- 在 new-api-postgres 里给 LiteLLM 建独立角色和独立库（与 ptpay、sub2api 同一模式）。\n-- 执行：docker exec -it new-api-postgres psql -U newapi -d postgres -f - < init-db.sql\n-- 密码在执行前替换成随机 28 位，只写进 litellm.env，不要留在本文件里。\ncreate role litellm login password '<随机 28 位>';\ncreate database litellm owner litellm;\nrevoke connect on database litellm from public;\n-- 表结构由 LiteLLM 启动时自己做 prisma 迁移，不需要手工建表。\n"}, {"name": "bootstrap_teams.sh", "path": "litellm/bootstrap_teams.sh", "desc": "按 New API 分组创建 team（含月度预算）和虚拟 key", "body": "#!/bin/sh\n# 为 New API 的每个分组在 LiteLLM 里建一个 team（带月度上游成本预算）和一把虚拟 key。\n# 生成的 key 填进 New API 对应分组的渠道「密钥」里；key 只打印到本机终端，不要贴到聊天或文档。\n#\n# 用法（在服务器上）：\n#   LITELLM_MASTER_KEY=sk-... sh bootstrap_teams.sh\n# 预算单位是美元（LiteLLM 按模型价格表计算的上游成本），budget_duration=30d 每 30 天重置。\nset -eu\nBASE=${LITELLM_BASE:-http://127.0.0.1:4000}\n: \"${LITELLM_MASTER_KEY:?需要 LITELLM_MASTER_KEY}\"\n\n# （变量别叫 GROUPS：那是 bash 的只读内置变量，赋值会被静默忽略）\n# 分组名:月预算美元:允许的模型（逗号分隔，与 config.yaml 的 model_name 对应）\nTEAM_SPECS=\"\npoc:5:gpt-5.6-terra,claude-sonnet-5,deepseek-chat\ndefault:300:gpt-5.6-terra,claude-sonnet-5,deepseek-chat\nvip:600:gpt-5.6-terra,claude-sonnet-5,deepseek-chat\n\"\n\necho \"$TEAM_SPECS\" | while IFS=: read -r group budget models; do\n  [ -z \"$group\" ] && continue\n  models_json=$(printf '%s' \"$models\" | python3 -c 'import sys,json;print(json.dumps(sys.stdin.read().strip().split(\",\")))')\n  team_id=$(curl -fsS \"$BASE/team/new\" \\\n    -H \"Authorization: Bearer $LITELLM_MASTER_KEY\" -H 'Content-Type: application/json' \\\n    -d \"{\\\"team_alias\\\":\\\"newapi-$group\\\",\\\"max_budget\\\":$budget,\\\"budget_duration\\\":\\\"30d\\\",\\\"models\\\":$models_json}\" \\\n    | python3 -c 'import sys,json;print(json.load(sys.stdin)[\"team_id\"])')\n  key=$(curl -fsS \"$BASE/key/generate\" \\\n    -H \"Authorization: Bearer $LITELLM_MASTER_KEY\" -H 'Content-Type: application/json' \\\n    -d \"{\\\"team_id\\\":\\\"$team_id\\\",\\\"key_alias\\\":\\\"newapi-channel-$group\\\"}\" \\\n    | python3 -c 'import sys,json;print(json.load(sys.stdin)[\"key\"])')\n  printf '%-8s team=%s  预算=$%s/30d  key=%s\\n' \"$group\" \"$team_id\" \"$budget\" \"$key\"\ndone\n"}, {"name": "sensitive_keywords.yaml", "path": "litellm/sensitive_keywords.yaml", "desc": "关键词词表（注意：命中时 description 会返回给用户）", "body": "# 关键词拦截词表（cn-keyword-block 护栏读取）。由运营维护，改完 docker restart litellm 生效。\n#\n# 注意（本地预检实测）：命中时 LiteLLM 会把「命中的关键词」和下面的 description 原样写进\n# 返回给用户的错误信息。所以 description 只能写对用户可见也无妨的中性文字，\n# 不要写内部分类、来源或处置说明；词表本身也会因此被逐条试探出来，敏感词库应优先交给\n# 内容安全服务（cn-content-safety）处理，这里只放少量明确的业务禁词。\n#\n# 这里只放 PoC 用的示例词；正式词表不要提交到公开仓库。\nblocked_words:\n  - keyword: \"PoC违规测试词\"\n    action: \"BLOCK\"\n    description: \"内容不符合使用规范\"\n"}, {"name": "poc_check.py", "path": "poc/poc_check.py", "desc": "自动化用例 T1–T6：计费一致、护栏拦截不扣费、串联延迟", "body": "\"\"\"New API → LiteLLM 串联的自动化验证（只用标准库）。\n\n前提：New API 里建一个 poc 分组，只有一个 OpenAI 类型渠道和一个 Anthropic 类型渠道，\nBase URL 都指向 http://litellm:4000，密钥用 bootstrap_teams.sh 生成的 poc key；\n再建一个只属于 poc 分组的测试用户和令牌。\n\n    export NEWAPI_BASE=https://api.perfectoken.com.cn\n    export NEWAPI_ADMIN_UID=1 NEWAPI_ADMIN_TOKEN=<root 系统访问令牌>\n    export POC_USER_ID=<测试用户 id> POC_TOKEN=sk-<测试令牌> POC_TOKEN_NAME=<令牌名称>\n    export OPENAI_MODEL=gpt-5.6-terra CLAUDE_MODEL=claude-sonnet-5\n    export DIRECT_TOKEN=sk-<可选：走直连渠道分组的令牌，用来对比延迟>\n    python3 poc_check.py                 # 跑全部默认用例\n    python3 poc_check.py T4 T5           # 只跑指定用例；T5 需先开启 cn-content-safety\n\n每条用例输出 PASS / FAIL / SKIP 和关键数字，最后汇总。不会打印令牌。\n\"\"\"\nimport json\nimport os\nimport statistics\nimport sys\nimport time\nimport urllib.error\nimport urllib.request\n\nE = os.environ\nBASE = E.get(\"NEWAPI_BASE\", \"\").rstrip(\"/\")\nADMIN = {\"Authorization\": f\"Bearer {E.get('NEWAPI_ADMIN_TOKEN', '')}\", \"New-Api-User\": E.get(\"NEWAPI_ADMIN_UID\", \"1\")}\nTOKEN = E.get(\"POC_TOKEN\", \"\")\nTOKEN_NAME = E.get(\"POC_TOKEN_NAME\", \"\")\nUSER_ID = E.get(\"POC_USER_ID\", \"\")\nOPENAI_MODEL = E.get(\"OPENAI_MODEL\", \"gpt-5.6-terra\")\nCLAUDE_MODEL = E.get(\"CLAUDE_MODEL\", \"claude-sonnet-5\")\nKEYWORD = \"PoC违规测试词\"            # 与 litellm/sensitive_keywords.yaml 一致\nSAFETY_MARKER = \"PoC内容安全拦截样例\"  # 与 poc/content_safety_mock.py 一致\nLOG_WAIT = 3                         # New API 异步写日志，查询前稍等\n\nresults = []\n\n\ndef http(method, path, body=None, headers=None, stream=False, timeout=120):\n    data = json.dumps(body).encode() if body is not None else None\n    req = urllib.request.Request(BASE + path, data=data, method=method,\n                                 headers={\"Content-Type\": \"application/json\", **(headers or {})})\n    try:\n        resp = urllib.request.urlopen(req, timeout=timeout)\n    except urllib.error.HTTPError as e:\n        return e.code, e.read().decode(errors=\"replace\")\n    if stream:\n        return resp.status, resp\n    return resp.status, resp.read().decode(errors=\"replace\")\n\n\ndef user_quota():\n    code, text = http(\"GET\", f\"/api/user/{USER_ID}\", headers=ADMIN)\n    assert code == 200, f\"查用户额度失败 HTTP {code}\"\n    return json.loads(text)[\"data\"][\"quota\"]\n\n\ndef latest_consume_log(after_ts):\n    \"\"\"该令牌在 after_ts 之后的最新一条消费日志（type=2）。\"\"\"\n    code, text = http(\"GET\", f\"/api/log/?type=2&token_name={urllib.request.quote(TOKEN_NAME)}\"\n                             f\"&start_timestamp={after_ts}&p=1&page_size=5\", headers=ADMIN)\n    assert code == 200, f\"查日志失败 HTTP {code}\"\n    items = (json.loads(text).get(\"data\") or {}).get(\"items\") or []\n    return items[0] if items else None\n\n\ndef record(case, ok, detail):\n    results.append((case, ok, detail))\n    print(f\"[{ 'PASS' if ok is True else 'SKIP' if ok is None else 'FAIL' }] {case}: {detail}\")\n\n\ndef auth(token=None):\n    return {\"Authorization\": f\"Bearer {token or TOKEN}\"}\n\n\ndef compare_usage(case, t0, q0, prompt, completion):\n    time.sleep(LOG_WAIT)\n    log = latest_consume_log(t0)\n    q1 = user_quota()\n    if not log:\n        return record(case, False, \"New API 没有生成消费日志\")\n    same = (log.get(\"prompt_tokens\") == prompt and log.get(\"completion_tokens\") == completion)\n    quota_ok = (q0 - q1) == log.get(\"quota\")\n    record(case, same and quota_ok,\n           f\"上游 usage={prompt}/{completion}，New API 记账={log.get('prompt_tokens')}/{log.get('completion_tokens')}，\"\n           f\"额度扣减={q0 - q1}，日志 quota={log.get('quota')}\")\n\n\ndef t1_non_stream():\n    t0, q0 = int(time.time()) - 1, user_quota()\n    code, text = http(\"POST\", \"/v1/chat/completions\", {\n        \"model\": OPENAI_MODEL, \"max_tokens\": 16,\n        \"messages\": [{\"role\": \"user\", \"content\": \"用一句话介绍你自己\"}]}, auth())\n    if code != 200:\n        return record(\"T1 非流式计费一致\", False, f\"HTTP {code} {text[:200]}\")\n    u = json.loads(text)[\"usage\"]\n    compare_usage(\"T1 非流式计费一致\", t0, q0, u[\"prompt_tokens\"], u[\"completion_tokens\"])\n\n\ndef t2_stream_openai():\n    t0, q0 = int(time.time()) - 1, user_quota()\n    code, resp = http(\"POST\", \"/v1/chat/completions\", {\n        \"model\": OPENAI_MODEL, \"max_tokens\": 32, \"stream\": True,\n        \"stream_options\": {\"include_usage\": True},\n        \"messages\": [{\"role\": \"user\", \"content\": \"数到十\"}]}, auth(), stream=True)\n    if code != 200:\n        return record(\"T2 OpenAI 流式计费一致\", False, f\"HTTP {code} {str(resp)[:200]}\")\n    usage = None\n    for raw in resp:\n        line = raw.decode(errors=\"replace\").strip()\n        if line.startswith(\"data:\") and line != \"data: [DONE]\":\n            chunk = json.loads(line[5:])\n            usage = chunk.get(\"usage\") or usage\n    if not usage:\n        return record(\"T2 OpenAI 流式计费一致\", False, \"流里没有 usage：检查 New API 渠道类型是否为 OpenAI\")\n    compare_usage(\"T2 OpenAI 流式计费一致\", t0, q0, usage[\"prompt_tokens\"], usage[\"completion_tokens\"])\n\n\ndef t3_stream_claude():\n    t0, q0 = int(time.time()) - 1, user_quota()\n    code, resp = http(\"POST\", \"/v1/messages\", {\n        \"model\": CLAUDE_MODEL, \"max_tokens\": 32, \"stream\": True,\n        \"messages\": [{\"role\": \"user\", \"content\": \"数到十\"}]},\n        {**auth(), \"anthropic-version\": \"2023-06-01\"}, stream=True)\n    if code != 200:\n        return record(\"T3 Claude 流式计费一致\", False, f\"HTTP {code} {str(resp)[:200]}\")\n    inp = out = None\n    for raw in resp:\n        line = raw.decode(errors=\"replace\").strip()\n        if not line.startswith(\"data:\"):\n            continue\n        ev = json.loads(line[5:])\n        if ev.get(\"type\") == \"message_start\":\n            inp = ev[\"message\"][\"usage\"].get(\"input_tokens\")\n        elif ev.get(\"type\") == \"message_delta\":\n            out = (ev.get(\"usage\") or {}).get(\"output_tokens\", out)\n    if inp is None or out is None:\n        return record(\"T3 Claude 流式计费一致\", False, f\"流里 usage 不完整 input={inp} output={out}\")\n    compare_usage(\"T3 Claude 流式计费一致\", t0, q0, inp, out)\n\n\ndef blocked_case(case, text):\n    t0, q0 = int(time.time()) - 1, user_quota()\n    start = time.time()\n    code, body = http(\"POST\", \"/v1/chat/completions\", {\n        \"model\": OPENAI_MODEL, \"max_tokens\": 16,\n        \"messages\": [{\"role\": \"user\", \"content\": f\"请复述：{text}\"}]}, auth())\n    elapsed = time.time() - start\n    time.sleep(LOG_WAIT)\n    q1, log = user_quota(), latest_consume_log(t0)\n    ok = code == 400 and q1 == q0 and log is None\n    record(case, ok, f\"HTTP {code}（期望 400），额度变化={q1 - q0}（期望 0），\"\n                     f\"新增消费日志={'有' if log else '无'}（期望无），耗时 {elapsed:.2f}s\"\n                     f\"（明显偏长说明 New API 换渠道重试了）\")\n\n\ndef t4_keyword_block():\n    blocked_case(\"T4 关键词护栏拦截且不扣费\", KEYWORD)\n\n\ndef t5_content_safety_block():\n    blocked_case(\"T5 内容安全护栏拦截且不扣费\", SAFETY_MARKER)\n\n\ndef t6_latency():\n    direct = E.get(\"DIRECT_TOKEN\")\n    if not direct:\n        return record(\"T6 串联延迟开销\", None, \"未设置 DIRECT_TOKEN，跳过\")\n\n    def sample(token, n=10):\n        xs = []\n        for _ in range(n):\n            s = time.time()\n            code, _ = http(\"POST\", \"/v1/chat/completions\", {\n                \"model\": OPENAI_MODEL, \"max_tokens\": 1,\n                \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}, auth(token))\n            if code == 200:\n                xs.append((time.time() - s) * 1000)\n        return xs\n\n    via, dir_ = sample(TOKEN), sample(direct)\n    if len(via) < 5 or len(dir_) < 5:\n        return record(\"T6 串联延迟开销\", False, f\"成功样本不足 via={len(via)} direct={len(dir_)}\")\n    p = lambda xs, q: statistics.quantiles(xs, n=20)[int(q * 20) - 1]\n    d50, d95 = statistics.median(via) - statistics.median(dir_), p(via, .95) - p(dir_, .95)\n    record(\"T6 串联延迟开销\", d50 < 100, f\"P50 增加 {d50:.0f}ms，P95 增加 {d95:.0f}ms（上游本身波动大，看量级即可）\")\n\n\nCASES = {\"T1\": t1_non_stream, \"T2\": t2_stream_openai, \"T3\": t3_stream_claude,\n         \"T4\": t4_keyword_block, \"T5\": t5_content_safety_block, \"T6\": t6_latency}\nDEFAULT = [\"T1\", \"T2\", \"T3\", \"T4\", \"T6\"]\n\nif __name__ == \"__main__\":\n    missing = [k for k in (\"NEWAPI_BASE\", \"NEWAPI_ADMIN_TOKEN\", \"POC_USER_ID\", \"POC_TOKEN\", \"POC_TOKEN_NAME\") if not E.get(k)]\n    if missing:\n        sys.exit(f\"缺少环境变量：{', '.join(missing)}\")\n    for name in (sys.argv[1:] or DEFAULT):\n        try:\n            CASES[name]()\n        except Exception as e:  # 单条用例出错不影响其它用例\n            record(name, False, f\"{type(e).__name__}: {e}\")\n    failed = [c for c, ok, _ in results if ok is False]\n    print(f\"\\n共 {len(results)} 条，失败 {len(failed)} 条\" + (f\"：{', '.join(failed)}\" if failed else \"\"))\n    sys.exit(1 if failed else 0)\n"}, {"name": "content_safety_mock.py", "path": "poc/content_safety_mock.py", "desc": "PoC 用内容安全假服务", "body": "\"\"\"PoC 用的内容安全服务假实现（只用标准库）。契约见 litellm/cn_guardrail.py。\n\n文本里含 BLOCK_MARKER 就判违规，其余放行；路径 /slow 模拟超时，用来测 fail_open/fail_close。\n    python content_safety_mock.py        # 监听 0.0.0.0:8088\n\"\"\"\nimport json\nimport time\nimport uuid\nfrom http.server import BaseHTTPRequestHandler, ThreadingHTTPServer\n\nBLOCK_MARKER = \"PoC内容安全拦截样例\"\n\n\nclass Handler(BaseHTTPRequestHandler):\n    def do_POST(self):\n        body = json.loads(self.rfile.read(int(self.headers.get(\"Content-Length\", 0))) or b\"{}\")\n        if self.path.startswith(\"/slow\"):\n            time.sleep(10)\n        block = BLOCK_MARKER in (body.get(\"text\") or \"\")\n        out = json.dumps({\"block\": block, \"label\": \"poc_marker\" if block else None,\n                          \"request_id\": uuid.uuid4().hex}).encode()\n        self.send_response(200)\n        self.send_header(\"Content-Type\", \"application/json\")\n        self.send_header(\"Content-Length\", str(len(out)))\n        self.end_headers()\n        self.wfile.write(out)\n\n    def log_message(self, fmt, *args):   # 不打印请求内容\n        pass\n\n\nif __name__ == \"__main__\":\n    ThreadingHTTPServer((\"0.0.0.0\", 8088), Handler).serve_forever()\n"}];
+const KEY = "pt-litellm-poc-checklist";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const total = CL.reduce((n, g) => n + g.items.length, 0);
+function progress() {
+  const done = Object.values(state).filter(Boolean).length;
+  document.getElementById("progress").textContent = `进度 ${done} / ${total}`;
+}
+function renderChecklist() {
+  const root = document.getElementById("cl");
+  root.innerHTML = CL.map(g => `<div class="cl-group"><h3>${esc(g.group)}</h3>` + g.items.map(it => `
+    <label class="cl-item${state[it.id] ? " done" : ""}" for="ck-${it.id}">
+      <input type="checkbox" id="ck-${it.id}" data-id="${it.id}" ${state[it.id] ? "checked" : ""}>
+      <span class="cl-id">${it.id}</span>
+      <span class="cl-body"><b>${esc(it.title)}${it.auto ? '<span class="auto">poc_check</span>' : ""}</b>
+        <span class="how">${esc(it.how)}</span><br><span class="exp">${esc(it.exp)}</span></span>
+    </label>`).join("") + `</div>`).join("");
+  root.querySelectorAll("input[type=checkbox]").forEach(cb => cb.addEventListener("change", () => {
+    state[cb.dataset.id] = cb.checked; save();
+    cb.closest(".cl-item").classList.toggle("done", cb.checked); progress();
+  }));
+  progress();
+}
+document.getElementById("reset").addEventListener("click", () => { state = {}; save(); renderChecklist(); });
+renderChecklist();
+
+const tabs = document.getElementById("tabs"), code = document.getElementById("code"), desc = document.getElementById("filedesc");
+function show(i) {
+  tabs.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-selected", String(i === j)));
+  code.textContent = FILES[i].body;
+  desc.textContent = `${FILES[i].path} · ${FILES[i].desc}`;
+}
+tabs.innerHTML = FILES.map((f, i) => `<button type="button" role="tab" id="tab-${i}">${esc(f.name)}</button>`).join("");
+tabs.querySelectorAll("button").forEach((b, i) => b.addEventListener("click", () => show(i)));
+show(0);
+const copyBtn = document.getElementById("copy");
+copyBtn.addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(code.textContent); copyBtn.textContent = "已复制"; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = "已选中，按 ⌘C"; }
+  setTimeout(() => copyBtn.textContent = "复制", 1600);
+});
+</script>
+</body>
+</html>

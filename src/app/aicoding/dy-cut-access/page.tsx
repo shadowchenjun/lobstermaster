@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'dy-cut 系列访问申请',
-  description: '提交手机号，审批通过后访问 dy-cut 系列内容。',
+  title: '项目专栏访问申请',
+  description: '使用已审批手机号访问项目专栏。',
 }
 
 type AccessPageProps = {
@@ -16,7 +16,7 @@ type AccessPageProps = {
 
 function statusCopy(status?: string) {
   if (status === 'pending') {
-    return '手机号已提交，但暂未在白名单中。请联系管理员审批后再试。'
+    return '该手机号暂未开通访问权限。请联系管理员审批后再试。'
   }
   if (status === 'invalid') {
     return '请输入有效手机号。'
@@ -40,11 +40,10 @@ export default async function DyCutAccessPage({ searchParams }: AccessPageProps)
             Private Series
           </p>
           <h1 className="mt-3 text-4xl font-extrabold leading-tight text-navy md:text-5xl">
-            dy-cut 系列内容访问申请
+            项目专栏访问申请
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-600">
-            这个系列包含抖音外卖视频剪辑项目的架构、流程、素材质量和实验记录。
-            请输入已审批手机号，系统会校验线上白名单后开放访问。
+            请输入已审批的手机号，查看项目架构、实施记录和相关文档。
           </p>
         </section>
 
@@ -61,7 +60,7 @@ export default async function DyCutAccessPage({ searchParams }: AccessPageProps)
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
-                placeholder="例如 13800138000"
+                placeholder="请输入手机号"
                 defaultValue={params.phone ?? ''}
                 className="mt-2 w-full border border-gray-200 px-4 py-3 text-base outline-none transition focus:border-brand"
               />
@@ -82,8 +81,7 @@ export default async function DyCutAccessPage({ searchParams }: AccessPageProps)
           </form>
 
           <div className="mt-5 border-t border-gray-100 pt-5 text-xs leading-relaxed text-gray-500">
-            管理员在 Vercel 环境变量 <code>DY_CUT_APPROVED_PHONES</code> 中加入手机号后，
-            用户即可通过校验。多个手机号用英文逗号分隔。
+            访问权限由管理员审批。手机号仅用于本次访问校验。
           </div>
         </section>
       </div>

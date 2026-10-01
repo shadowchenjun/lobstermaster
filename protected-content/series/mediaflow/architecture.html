@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="MediaFlow 多模态素材库与长视频生成系统：架构、数据模型、处理流水线、技术决策与实施路线。">
+<title>MediaFlow · 系统架构设计</title>
+<style>
+:root{--paper:#f4f2e9;--ink:#18372f;--muted:#52675f;--line:#cdd4c9;--green:#245d49;--lime:#d8f179;--white:#fffef8;--amber:#805010;--blue:#365b81;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--paper);line-height:1.75}
+*{box-sizing:border-box}body{margin:0}a{color:inherit;text-underline-offset:5px}button{font:inherit;cursor:pointer}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:5px}h1,h2,h3,p{margin-block:0 1rem}h1,h2{line-height:1.25;letter-spacing:-.035em}h1{font-size:clamp(2.35rem,4.5vw,4.4rem);max-inline-size:850px;font-weight:600}h2{font-size:clamp(1.7rem,2.8vw,2.5rem)}h3{font-size:1.05rem}small,.sub{font-size:.8rem;color:var(--muted)}code,pre,.eyebrow,.num{font-family:"SFMono-Regular",Consolas,monospace}code{font-size:.86em;overflow-wrap:anywhere}pre{padding:22px;background:#173b31;color:#edf3de;overflow:auto;font-size:.8rem;line-height:1.8;border-radius:3px}ul,ol{padding-inline-start:22px}li+li{margin-block-start:8px}.skip{position:absolute;inset-block-start:-100px;background:var(--white);padding:12px;z-index:10}.skip:focus{inset-block-start:8px}.shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-block-size:100vh}.sidebar{padding:30px 24px;border-inline-end:1px solid var(--line);position:sticky;inset-block-start:0;align-self:start;max-block-size:100vh;overflow:auto}.brand{font:italic 30px Georgia,serif;letter-spacing:-1px}.sidebar .sub{display:block;margin-block:8px 34px}.sidebar nav{display:grid;gap:5px}.sidebar nav a{text-decoration:none;padding:8px 0;font-size:.86rem}.sidebar nav a:hover,.sidebar nav a[aria-current]{color:var(--green);font-weight:700}.sidebar nav span{color:#7c8c7e;font:12px Georgia,serif;margin-inline-end:12px}.sidebar footer{border-block-start:1px solid var(--line);margin-block-start:36px;padding-block-start:18px;font-size:.72rem;color:var(--muted)}main{min-inline-size:0;padding:34px clamp(24px,5vw,78px) 0;max-inline-size:1450px}.topline,.section-head,.actions{display:flex;flex-wrap:wrap;gap:15px;align-items:center;justify-content:space-between}.topline{border-block-end:1px solid var(--line);padding-block-end:20px;font-size:.72rem;letter-spacing:.12em}.eyebrow{font-size:.7rem;letter-spacing:.14em;color:var(--muted)}.hero{padding-block:62px 42px}.hero .eyebrow{margin-block-end:24px}.hero h1 em{font-style:normal;color:var(--green)}.lede{max-inline-size:740px;font-size:1.03rem;color:var(--muted);margin-block:24px}.pill{display:inline-block;border:1px solid var(--line);border-radius:40px;padding:4px 12px;font-size:.72rem;white-space:nowrap}.pill.live{color:#174a33;background:#e4eedb;border-color:#a9c19a}.pill.build{color:var(--amber);background:#fcf0d7;border-color:#dbc697}.pill.plan{color:var(--blue);background:#e8edf2;border-color:#b8c8d4}.button{border:1px solid var(--ink);padding:9px 15px;background:transparent;text-decoration:none;font-size:.82rem;display:inline-block}.button.primary{background:var(--ink);color:var(--white)}.principles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-block:1px solid var(--line);margin-block:32px 0}.principles>div{padding:22px 20px 22px 0}.principles>div+div{border-inline-start:1px solid var(--line);padding-inline-start:24px}.principles strong{display:block;font-size:1.2rem;font-weight:500}.principles p{font-size:.8rem;color:var(--muted);margin:8px 0 0}section{padding-block:40px;border-block-end:1px solid var(--line);scroll-margin-block-start:24px}.section-head{margin-block-end:26px;align-items:end}.section-head h2{margin:8px 0 0}.note{border-inline-start:3px solid var(--green);background:#e8eddf;padding:16px 20px;font-size:.88rem;margin-block:22px}.note.warning{border-color:#a5762f;background:#f0e7d3}.switcher{display:flex;gap:8px;flex-wrap:wrap;margin-block-end:18px}.switcher button{padding:8px 16px;border:1px solid var(--line);color:var(--muted);background:var(--white);font-size:.82rem}.switcher button[aria-pressed="true"]{background:var(--ink);color:var(--white);border-color:var(--ink)}[hidden]{display:none!important}.architecture{background:var(--ink);color:#f5f4e9;padding:26px;display:grid;gap:12px}.layer{display:grid;grid-template-columns:105px minmax(0,1fr);gap:18px;align-items:center}.layer-label{color:#b8cfc1;font-size:.72rem;letter-spacing:.05em}.nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:9px}.node{background:#24483c;border:1px solid #4c6b5b;padding:14px 16px;min-inline-size:0}.node strong{font-weight:500;display:block;font-size:.9rem}.node small{color:#c3d2c7;font-size:.7rem;display:block;margin-block-start:4px}.node.focus{background:var(--lime);color:#16382e;border-color:var(--lime)}.node.focus small{color:#3b563d}.connection{text-align:center;color:#a7c19a;font-size:.72rem;letter-spacing:.08em}.diagram-caption{font-size:.77rem;color:var(--muted);margin-block:12px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.card{padding:24px;border:1px solid var(--line);background:var(--white);min-inline-size:0}.card p,.card li{font-size:.86rem}.card p:last-child{margin:0}.card .num{color:var(--green);font-size:.73rem;margin-block-end:12px;display:block}.flow{counter-reset:step;list-style:none;padding:0}.flow li{counter-increment:step;display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;border-block-end:1px solid var(--line);padding-block:12px;margin:0}.flow li:before{content:counter(step,decimal-leading-zero);font:italic 22px Georgia,serif;color:var(--green)}.flow p{margin:3px 0;color:var(--muted);font-size:.8rem}.table-wrap{overflow:auto}table{inline-size:100%;border-collapse:collapse;text-align:start;font-size:.83rem}caption{text-align:start;font-size:.8rem;color:var(--muted);margin-block-end:12px}th,td{border-block-end:1px solid var(--line);padding:14px 12px;vertical-align:top;text-align:start}th{background:#e9ece2;font-weight:500}td:first-child{font-weight:500}td p{margin:0}table code{white-space:normal}.entity{padding:14px 20px;background:var(--white);border:1px solid var(--line)}.entity+.entity{margin-block-start:8px}.entity strong{font-size:.85rem}.entity p{font-size:.8rem;color:var(--muted);margin:4px 0 0}.relation{padding:6px 24px;color:var(--muted);font-size:.77rem}.roadmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}.roadmap article{border-block-start:3px solid var(--green);padding:18px 14px;background:var(--white)}.roadmap h3{margin-block:10px}.roadmap p{font-size:.8rem;color:var(--muted)}details{border:1px solid var(--line);background:var(--white);padding:16px 20px;margin-block:12px}summary{cursor:pointer;font-size:.9rem;font-weight:500}details>div{margin-block-start:14px;font-size:.85rem}details p:last-child{margin:0}.end{padding-block:34px 50px;color:var(--muted);font-size:.76rem}.path{overflow-wrap:anywhere}#verification li{font-size:.86rem}.print-only{display:none}
+@media(max-width:1000px){.shell{grid-template-columns:190px minmax(0,1fr)}.sidebar{padding:24px 18px}.grid2{grid-template-columns:1fr}.layer{grid-template-columns:1fr;gap:6px}.hero{padding-block-start:40px}}
+@media(max-width:680px){.shell{display:block}.sidebar{position:static;max-block-size:none;border-inline-end:0;border-block-end:1px solid var(--line);padding:18px 22px}.sidebar .sub{margin:2px 0 12px}.sidebar nav{display:flex;flex-wrap:wrap;gap:2px 18px}.sidebar nav a{padding:3px 0;font-size:.72rem}.sidebar footer{display:none}.brand{font-size:25px}main{padding-inline:22px;padding-block-start:20px}.hero{padding-block:30px}.principles{grid-template-columns:1fr}.principles>div{padding:16px 0}.principles>div+div{border-inline-start:0;border-block-start:1px solid var(--line);padding-inline-start:0}.architecture{padding:18px}.topline{letter-spacing:.04em}.card{padding:20px}th,td{padding:10px 8px;min-inline-size:130px}section{padding-block:32px}}
+@media print{body{background:white;color:#111;font-size:10pt}.shell{display:block}.sidebar,.actions,.switcher,.topline a,.skip{display:none}main{max-inline-size:none;padding:0}.hero{padding-block:18px}.print-only{display:block}.architecture{background:#fff;color:#111;border:1px solid #888}.node,.node.focus{background:#fff;color:#111;border-color:#aaa}.node small,.node.focus small,.layer-label,.connection{color:#333}.card,.note,details{background:#fff}.card,.layer,tr{break-inside:avoid}section{padding-block:22px}h1{font-size:30pt}h2{font-size:20pt}.grid2{grid-template-columns:1fr 1fr}a{text-decoration:none}#target-diagram[hidden],#current-diagram[hidden]{display:grid!important}.table-wrap{overflow:visible}pre{white-space:pre-wrap;background:white;color:#111;border:1px solid #aaa}details>div{display:block!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#overview">跳到正文</a>
+<div class="shell">
+<aside class="sidebar">
+<div class="brand">MediaFlow.</div><span class="sub">架构设计手册 / 0.2</span>
+<nav aria-label="章节导航">
+<a href="#overview"><span>01</span>系统全景</a><a href="#pipelines"><span>02</span>两条核心流水线</a><a href="#data"><span>03</span>素材与数据模型</a><a href="#stack"><span>04</span>技术选型</a><a href="#contracts"><span>05</span>接口与执行契约</a><a href="#reliability"><span>06</span>可靠性与安全</a><a href="#delivery"><span>07</span>实施与 Agent 分工</a><a href="#verification"><span>08</span>验收与边界</a>
+</nav>
+<footer>项目内的架构快照<br>2026.09.14<br><br>原始素材不变。<br>结构化中间产物可追溯。<br>生成结果可编辑、可复现。</footer>
+</aside>
+<main>
+<div class="topline"><span>ENGINEERING / ARCHITECTURE</span><span>设计基线 · 2026 年 09 月</span></div>
+<header class="hero">
+<p class="eyebrow">MULTIMODAL ASSET LIBRARY → LONG-FORM VIDEO</p>
+<h1>把海量素材，<br>变成<em>可编排的故事。</em></h1>
+<p class="lede">建设覆盖长视频、短视频、镜头、关键帧、图片与标签的统一素材库。以自然语言描述创作需求，经理解、检索、规划和时间线编排，合成一部可追溯、可修改的长视频。</p>
+<div class="actions"><div><a class="button primary" href="#overview">阅读系统架构 ↓</a> <button class="button" id="print" type="button">打印 / 另存 PDF</button></div><span class="pill build">本地开发版 · 非生产部署</span></div>
+<div class="principles"><div><strong>资产是底座</strong><p>原片与派生素材关联，不重复存储每个逻辑片段。</p></div><div><strong>Timeline 是契约</strong><p>模型提出计划，确定性程序校验和渲染。</p></div><div><strong>异步是主干</strong><p>耗时分析与渲染脱离请求，最终支持分片恢复。</p></div></div>
+</header>
+
+<section id="overview">
+<div class="section-head"><div><span class="eyebrow">01 / SYSTEM MAP</span><h2>模块化单体起步，按负载拆分。</h2></div><span class="pill plan">目标架构 ≠ 已部署能力</span></div>
+<p>先打通本地真实闭环，再引入可持久化工作流、独立分析 Worker、模型服务和分布式存储。不会在第一阶段把所有模块拆成微服务；接口和数据契约先形成边界。</p>
+<div class="switcher" role="group" aria-label="架构视图"><button type="button" data-view="target" aria-pressed="true" aria-controls="target-diagram">目标架构</button><button type="button" data-view="current" aria-pressed="false" aria-controls="current-diagram">当前运行架构</button></div>
+<div class="architecture" id="target-diagram" role="group" aria-label="目标架构，从交互层到数据层">
+<div class="layer"><span class="layer-label">交互层</span><div class="nodes"><div class="node"><strong>Web 工作台</strong><small>素材库 · 标注 · 搜索 · 任务</small></div><div class="node"><strong>创作与时间线编辑器</strong><small>Brief · 章节 · 选材 · 版本 · 预览</small></div></div></div>
+<div class="connection">↓ HTTPS / JSON · 上传签名 · 进度事件 ↑</div>
+<div class="layer"><span class="layer-label">业务控制面</span><div class="nodes"><div class="node"><strong>FastAPI</strong><small>鉴权 · 项目 · 素材目录 · 审计</small></div><div class="node focus"><strong>检索与创作规划</strong><small>意图 → 多路召回 → 章节 → 全局选材</small></div><div class="node"><strong>Timeline 服务</strong><small>范围校验 · 版本 · 渲染清单</small></div></div></div>
+<div class="connection">↓ 提交持久化任务 / 幂等事件 ↑</div>
+<div class="layer"><span class="layer-label">工作流 / 计算面</span><div class="nodes"><div class="node"><strong>Temporal + Workers</strong><small>重试 · 心跳 · 检查点 · 取消</small></div><div class="node"><strong>分析 Workers</strong><small>探测 · 代理 · 切镜 · ASR / OCR / VLM</small></div><div class="node"><strong>渲染 Workers</strong><small>分段缓存 · FFmpeg · 图文动画</small></div></div></div>
+<div class="connection">↓ 结构化事实 / 文件 / 索引 ↑</div>
+<div class="layer"><span class="layer-label">数据与模型层</span><div class="nodes"><div class="node"><strong>PostgreSQL + pgvector</strong><small>主数据 · 来源关系 · 向量</small></div><div class="node"><strong>OpenSearch</strong><small>文本召回 · 过滤 · 可重建索引</small></div><div class="node"><strong>S3 / MinIO</strong><small>原片 · 代理 · 关键帧 · 成片</small></div><div class="node"><strong>Provider Gateway</strong><small>模型适配 · 成本 · 超时 · 隐私策略</small></div></div></div>
+</div>
+<div class="architecture" id="current-diagram" role="group" aria-label="当前本地单进程架构" hidden>
+<div class="layer"><span class="layer-label">浏览器</span><div class="nodes"><div class="node"><strong>Vue 3 静态工作台</strong><small>web/：真实服务界面</small></div><div class="node"><strong>保留的界面原型</strong><small>mediaflow-prototype/：演示设计</small></div></div></div>
+<div class="connection">↓ 同源 HTTP · 127.0.0.1:8130 ↑</div>
+<div class="layer"><span class="layer-label">本地服务</span><div class="nodes"><div class="node focus"><strong>FastAPI 单进程</strong><small>契约 · 分片上传 · taxonomy · 混合检索 · 时间线</small></div><div class="node"><strong>BackgroundTasks</strong><small>VLM / ASR / OCR / 渲染；中断后标记失败</small></div></div></div>
+<div class="connection">↓ SQLAlchemy / 子进程 / 本地路径 ↑</div>
+<div class="layer"><span class="layer-label">本机资源</span><div class="nodes"><div class="node"><strong>SQLite</strong><small>目录、任务状态、证据与可重建向量</small></div><div class="node"><strong>本地文件系统</strong><small>原片、代理、关键帧、ASR WAV、成片</small></div><div class="node"><strong>FFmpeg + Providers</strong><small>媒体、ASR、OCR、VLM 与 Embedding；由 .env 配置</small></div></div></div>
+</div>
+<p class="diagram-caption">目标图表示依赖关系，不代表每个框必须独立部署。Redis 用于后续缓存、限流与短期状态，不作为任务或目录的唯一事实源。</p>
+<div class="note">当前已经实现真实文件入库、代理、镜头 / 窗口、关键帧、人工标注、多帧 VLM、带时间戳 ASR 对齐、关键帧 OCR、taxonomy-v1 同义词、可选 Embedding 混合检索、顺序编排与 MP4 渲染。模型与本地命令需要通过 .env 配置；真实召回质量、重排与语义长视频规划仍是后续主线。</div>
+</section>
+
+<section id="pipelines">
+<div class="section-head"><div><span class="eyebrow">02 / CORE PIPELINES</span><h2>先理解素材，再组织叙事。</h2></div></div>
+<div class="grid2">
+<article class="card"><span class="num">PIPELINE A / 建库</span><h3>长视频 → 可检索的素材结构</h3><ol class="flow">
+<li><div><strong>接收与去重</strong><p>可续传分片、完整性校验、SHA-256、来源与使用权信息。长视频和短视频共用资产实体。</p></div></li>
+<li><div><strong>标准化预处理</strong><p>ffprobe 技术探测，原片只读保留；生成代理、音频与预览，记录原片和代理时间映射。</p></div></li>
+<li><div><strong>镜头、窗口与关键帧</strong><p>场景边界与长镜头窗口分开标记；关键帧保留精确时间位置，目标增加代表性与质量评分。</p></div></li>
+<li><div><strong>多模态理解</strong><p>ASR 识别语音、OCR 识别画面文字、VLM 描述人物 / 动作 / 环境；时间范围、置信度与模型版本一起存储。</p></div></li>
+<li><div><strong>标签治理与索引</strong><p>本体、同义词、人工审核、纠错版本；文本和向量索引可由主数据重建。</p></div></li>
+</ol></article>
+<article class="card"><span class="num">PIPELINE B / 创作</span><h3>自然语言 → 可编辑的长视频</h3><ol class="flow">
+<li><div><strong>需求转为结构化 Brief</strong><p>提取主题、受众、时长、风格、画幅、必须出现和禁止出现的内容；矛盾条件需澄清。</p></div></li>
+<li><div><strong>章节规划与多路召回</strong><p>把长叙事拆为章节目标；关键词、标签和多模态向量召回，先过滤权限与版权，再重排。</p></div></li>
+<li><div><strong>全局分配素材</strong><p>控制跨章节重复、主体连续、景别变化和可用时长；缺素材要报告缺口，不能靠无意义循环补齐。</p></div></li>
+<li><div><strong>编译为 Timeline</strong><p>确定源入 / 出点、位置、音轨、字幕与转场。服务验证合法性，用户可以局部替换并保存新版本。</p></div></li>
+<li><div><strong>渲染、质检与交付</strong><p>先代理预览再高质量输出；片段缓存、音画检查、来源清单。一条需求可产生多个独立版本。</p></div></li>
+</ol></article>
+</div>
+<div class="note warning">长视频不适合“整片一次丢给模型”。当前 VLM 已按镜头逐段保存结果，ASR 按时间片映射，OCR 按证据帧处理；执行仍是本地顺序 BackgroundTasks，中断会标记失败，需要人工重试，尚不具备生产 Worker 的自动接管能力。</div>
+</section>
+
+<section id="data">
+<div class="section-head"><div><span class="eyebrow">03 / DATA &amp; LINEAGE</span><h2>统一目录，不是五个孤立文件夹。</h2></div></div>
+<div class="grid2"><div>
+<div class="entity"><strong>Asset · 原始视频或图片</strong><p>ID、内容哈希、技术元数据、来源、权限、状态。</p></div><div class="relation">一对多 ↓ 派生关系</div>
+<div class="entity"><strong>Rendition · 代理 / 音频 / 缩略图</strong><p>处理配置、对象地址、版本、校验和；原片不被覆盖。</p></div><div class="relation">视频一对多 ↓ 时间范围</div>
+<div class="entity"><strong>Shot / Segment → Keyframe</strong><p>镜头或分析窗口、入出点、边界来源；关键帧记录所属范围和时刻。</p></div><div class="relation">关联 ↓ 可审核的证据</div>
+<div class="entity"><strong>Annotation / Tag / Embedding</strong><p>ASR / OCR / VLM / 人工来源、置信度、版本、标签关系与索引版本。</p></div>
+</div><div class="card"><span class="num">DESIGN RULES</span><h3>必须守住的数据边界</h3><ul>
+<li><strong>短片段优先是逻辑范围。</strong>引用源资产与时间范围，需要下载或渲染时再物化。</li>
+<li><strong>标签不是模型的“事实担保”。</strong>区分观察、推断、人工确认；保留可回看证据。</li>
+<li><strong>时间以源为锚点。</strong>目标记录 timebase / PTS 与代理映射，界面毫秒只是展示层。</li>
+<li><strong>项目保存引用和版本。</strong>Project → Brief → Plan → TimelineVersion → RenderJob，成片能追溯原始片段。</li>
+<li><strong>检索索引是派生数据。</strong>数据库与对象存储为事实源；模型升级后可以逐步重建索引。</li>
+</ul><p class="sub">现有表为 assets、shots、uploads、audit、projects、timelines、renders；完整 Rendition、Annotation、本体、租户关系仍需扩展。</p></div></div>
+</section>
+
+<section id="stack">
+<div class="section-head"><div><span class="eyebrow">04 / TECHNOLOGY DECISIONS</span><h2>每项技术都有明确职责。</h2></div></div>
+<div class="table-wrap"><table><caption>技术选型以项目规格与当前代码为依据；不代表性能承诺或已完成集成。</caption><thead><tr><th scope="col">层 / 模块</th><th scope="col">当前</th><th scope="col">目标 / 演进</th><th scope="col">选择理由与约束</th></tr></thead><tbody>
+<tr><td>Web</td><td>Vue 3 + 静态资源</td><td>规格中的 React / Next.js 工作台待前端 ADR 确认</td><td>先验证真实流程；当前不为更换框架而重写。重型时间线独立成模块。</td></tr>
+<tr><td>API / 契约</td><td>FastAPI + Pydantic</td><td>OpenAPI + JSON Schema，业务模块分层</td><td>Python 媒体与模型生态一致，强制结构化边界，禁止模型直接生成执行命令。</td></tr>
+<tr><td>关系数据</td><td>SQLAlchemy + SQLite</td><td>PostgreSQL + Alembic</td><td>本地低成本开发；生产并发、事务与迁移单独验收。</td></tr>
+<tr><td>搜索</td><td>同义词扩展关键词 + 可选文本 Embedding 余弦融合；SQLite 保存可重建向量</td><td>pgvector + OpenSearch + Cross-Encoder 重排</td><td>当前绑定模型空间与内容哈希，下一步建立真实黄金集和权限硬过滤。</td></tr>
+<tr><td>媒体文件</td><td>runtime/ 本地目录</td><td>S3 / MinIO + 生命周期策略</td><td>数据库不存大视频 BLOB；原片、热代理、可重建缓存分层保留。</td></tr>
+<tr><td>工作流</td><td>BackgroundTasks</td><td>Temporal + CPU / GPU Worker 池</td><td>长任务要支持心跳、重试、取消和恢复；HTTP 服务不承担长时间算力。</td></tr>
+<tr><td>模型能力</td><td>多帧 VLM + 本地 ASR/OCR + OpenAI-compatible Embedding</td><td>Reranker、LLM 与统一 Gateway</td><td>图像与检索文本分别明示授权；未配置或失败时不生成虚假结果。</td></tr>
+<tr><td>渲染</td><td>FFmpeg 代理粗剪</td><td>FFmpeg 主渲染；Remotion 等承接图文动画</td><td>Timeline 为稳定中间表示；动画引擎不是素材库或检索引擎。</td></tr>
+<tr><td>运维</td><td>本地状态与部分审计</td><td>结构化日志、OTel、成本与质量面板</td><td>关联 asset / job / project ID；模型成本与失败率可计量。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="contracts">
+<p class="note">新增：<code>POST /v1/intent/parse</code> 解析需求；<code>POST /v1/recommendations</code> 按已有文本标签推荐素材；<code>POST /v1/chapters/plan</code> 为明确提供的章节分配素材并输出时间线。详细边界见<a href="02-自然语言选材实施.md">本轮实施说明</a>。自动语义分章与向量召回仍待实现。</p>
+<div class="section-head"><div><span class="eyebrow">05 / API &amp; EXECUTION CONTRACTS</span><h2>模型负责建议，程序负责兑现。</h2></div></div>
+<div class="grid2"><article class="card"><h3>已经运行的核心接口</h3><ul>
+<li><code>POST /v1/uploads</code> 创建分片会话；上传分片、查询状态、完成合并。</li><li><code>GET /v1/assets/{id}/shots</code> 返回关键帧、镜头转写和 OCR 证据。</li><li><code>POST /v1/assets/{id}/text-analysis</code> 手动运行已配置的本地 ASR/OCR。</li><li><code>PATCH /v1/shots/{id}/annotations</code> 带 base_version 保存人工标注。</li><li><code>GET /v1/taxonomy</code> 返回版本化标签分类、概念与同义词。</li><li><code>POST /v1/search/index</code> 经授权重建 Shot 文本向量。</li><li><code>POST /v1/search</code> 默认本地关键词，可选经授权的混合检索并返回分项分数。</li><li><code>POST /v1/projects/{id}/plan</code> 当前为选材顺序编排与缺口报告。</li><li><code>PUT /v1/projects/{id}/timeline</code> 保存不可变新版本。</li><li><code>POST /v1/timelines/{id}/renders</code> 返回渲染任务 ID，随后轮询状态并下载。</li>
+</ul></article><article class="card"><h3>Timeline 的最小可执行契约</h3><pre><code>{
+  "schema_version": "0.1",
+  "clips": [{
+    "id": "clip-id",
+    "shot_id": "existing-shot-id",
+    "source_in_ms": 12000,
+    "source_out_ms": 18000,
+    "start_ms": 0
+  }]
+}</code></pre><p>以上是结构示例，不对应实际资产。当前单视频轨要求从 0 连续排列、clip ID 唯一、源范围有效。后续扩展多轨、转场、字幕与音频时必须升级契约版本和验证规则。</p></article></div>
+<details open><summary>为什么不让大模型直接操作 FFmpeg？</summary><div><p>大模型输出受约束的 Brief、候选镜头和编辑决策，后端验证素材存在、范围、权限、时长、版本与预算，然后编译为固定参数数组。这样失败可定位、结果可复现，也避免提示注入变成命令执行。</p></div></details>
+<details><summary>检索与长视频规划如何验收？</summary><div><p>建立带人工相关性标注的中文查询集，评估 Recall@K、nDCG、硬约束违反率与检索耗时。创作评估章节覆盖率、素材重复率、时长缺口、主体连续性和人工可用率；没有标注集与实测，就不声称“语义理解已达到要求”。</p></div></details>
+</section>
+
+<section id="reliability">
+<div class="section-head"><div><span class="eyebrow">06 / RELIABILITY &amp; SECURITY</span><h2>长任务必须可恢复，素材必须可控。</h2></div></div>
+<div class="grid2"><article class="card"><h3>任务可靠性</h3><ul><li>目标状态：QUEUED → RUNNING → READY / FAILED / CANCELLED；分析节点保存检查点。</li><li>任务幂等键包含资产哈希、操作版本、配置与模型版本，参数变化使缓存失效。</li><li>重试区分网络暂时故障与不可恢复输入错误，配置预算、次数和超时。</li><li>原子发布中间产物，先校验再 READY；缓存损坏应重建。</li><li>当前重启只标记中断失败，不具备自动恢复；Temporal 接入后另测故障恢复。</li></ul></article><article class="card"><h3>权限、隐私与内容治理</h3><ul><li>当前仅本机单用户、同源访问，没有认证，不可直接暴露公网。</li><li>生产阶段由服务端身份确定租户；检索、预览、下载和任务均执行权限检查。</li><li>外部模型默认关闭，显式配置允许传输后才可调用；秘钥不进入浏览器与日志。</li><li>素材文字及模型输出视为不可信数据，不能覆盖系统指令、执行代码或任意读取文件。</li><li>维护来源、授权范围、保留期与删除传播；索引和缓存也受删除与权限更新约束。</li></ul></article></div>
+<p class="note warning">容量和 SLA 是待验证目标：接口允许的大文件上限不等于已经做过对应体量测试。小时级视频、VFR / HDR / 多音轨、磁盘耗尽、生产并发与恢复必须通过独立黄金集和压力测试。</p>
+</section>
+
+<section id="delivery">
+<div class="section-head"><div><span class="eyebrow">07 / DELIVERY PLAN</span><h2>并行建设边界明确的模块。</h2></div><span class="pill live" id="batch-status">首轮多 Agent 已交付</span></div>
+<div class="table-wrap"><table><caption>同一工作区、文件所有权隔离；主 Agent 负责集成，子 Agent 不自行改动共享入口。</caption><thead><tr><th scope="col">执行者</th><th scope="col">本轮范围</th><th scope="col">交付与验收</th></tr></thead><tbody>
+<tr><td>主 Agent</td><td>架构文档、服务集成、工作台文案</td><td>独立 HTML、文档入口、全套回归、桌面与窄屏检查。</td></tr>
+<tr><td>Terra · 数据目录</td><td>版本化数据库迁移</td><td>Alembic、全新库升级、已有库安全接管、拒绝不兼容旧库。</td></tr>
+<tr><td>Terra · 渲染</td><td>独立渲染模块、片段缓存、音轨</td><td>保留原有音频，图片 / 无音轨补静音；真实 FFmpeg 测试与缓存命中验证。</td></tr>
+<tr><td>Luna · 模型适配</td><td>Provider 契约、配置与视觉适配器</td><td>无配置状态、结构化输出、超时错误、离线 Mock 验证；不调用收费模型。</td></tr>
+</tbody></table></div>
+<h3 style="margin-block:28px 16px">后续路线：按退出条件推进，不以界面完成代替系统完成</h3>
+<div class="note warning">2026-09-16 · 与 Specs v0.2、S16 同步：Sxx 是开发批次，不等于以下产品阶段。现有短素材闭环不代表 Phase 0/1 已通过；规模与性能数字是待验收目标。统一中文召回、授权版本与检索硬过滤已接入开发版，但真实权利台账、人工黄金集、生产 RBAC 与任务恢复仍待验收。</div>
+<div class="roadmap"><article><span class="pill build">Phase 0 · 未完成验收</span><h3>需求和数据验证</h3><p>准备 50～100 个真实长视频样本、不少于 10 类查询，确认授权、数据契约与黄金集。</p></article><article><span class="pill build">Phase 1 · 部分能力</span><h3>素材库 MVP</h3><p>标准化、ASR/OCR、标签治理、混合检索及任务恢复；累计 100 小时真实素材验收待完成。</p></article><article><span class="pill plan">Phase 2 · 待验收</span><h3>自然语言创作</h3><p>Brief、章节规划、有限预算跨章节分配与时间线，验收 3～10 分钟可追溯成片。</p></article><article><span class="pill plan">Phase 3 · 待实现</span><h3>长视频生产化</h3><p>30 分钟长片、多轨编辑、字幕旁白、高清输出、局部重渲染和故障恢复。</p></article><article><span class="pill plan">Phase 4 · 持续演进</span><h3>规模化与效果闭环</h3><p>多租户、资源调度、可观测性、大规模压测及效果评估；根据实测再决定基础设施扩展。</p></article></div>
+</section>
+
+<section id="verification">
+<div class="section-head"><div><span class="eyebrow">08 / EVIDENCE &amp; BOUNDARIES</span><h2>用可重复的证据交付。</h2></div></div>
+<div id="verification-status" class="note">最新验收：114 项 Python 回归与 9 项前端状态测试通过；新增覆盖统一 ranking-v2、中文自然语句、否定硬过滤、三条检索/规划路径一致性和黄金集占位拒绝；既有标签词表、Embedding、授权过滤、分析独立表与查询预算继续通过。生产规模、真实供应商质量、授权台账与人工检索黄金集仍待配置后验证。</div>
+<ul><li><strong>媒体真实性：</strong>测试生成真实短视频与图片，断言代理、镜头、关键帧、ASR 音频、时长和可下载 MP4，而不只检查 HTTP 200。</li><li><strong>数据完整性：</strong>覆盖重复上传、续传、重启保持、标签与时间线并发版本冲突、非法源范围。</li><li><strong>本轮新增：</strong>`.env` 加载、本地 Provider 严格输出、转写时间对齐、OCR 证据去重及 ASR/OCR 检索推荐。</li><li><strong>尚未证明：</strong>真实供应商质量、向量检索准确性、小时级处理、PostgreSQL 实跑、跨租户隔离和生产 SLA。</li></ul>
+<details open><summary>架构决策记录</summary><div><p><strong>ADR-01：</strong>先采用模块化单体和独立 Worker 边界，不立即上全套分布式设施。</p><p><strong>ADR-02：</strong>原片只读、代理独立、镜头逻辑引用；完整 PTS 映射作为后续准确性门槛。</p><p><strong>ADR-03：</strong>模型能力通过 Provider 接口接入，未配置不能返回模拟语义。</p><p><strong>ADR-04：</strong>Timeline 是渲染唯一输入契约，保存不可变版本。</p><p><strong>ADR-05：</strong>保留现有 Vue 原型和真实工作台；是否转 React / Next.js 需独立评审，当前不静默改变规格。</p></div></details>
+</section>
+<footer class="end"><p>MediaFlow · Architecture 0.3 · 2026-09-15<br>这是工程设计快照，接口细节以运行服务的 OpenAPI 与测试为准。</p><p class="path">开发根目录：/Users/chenjun/Documents/AI项目开发/AI视频智能分析及生成系统</p><p><a href="plans/2026-09-13-multimodal-video-library-composer-spec.md">完整 Specs</a> · <a href="01-实施记录.md">实施记录</a> · <a aria-disabled="true" title="仅在项目本地环境可用">本地工作台 ↗</a></p></footer>
+</main></div>
+<script>
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelectorAll('[data-view]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+  ['target','current'].forEach(view=>{document.getElementById(view+'-diagram').hidden=view!==button.dataset.view;});
+}));
+document.getElementById('print').addEventListener('click',()=>{document.querySelectorAll('details').forEach(item=>item.open=true);window.print();});
+if('IntersectionObserver' in window){
+  const links=[...document.querySelectorAll('nav a')];
+  const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){links.forEach(link=>{if(link.hash==='#'+entry.target.id)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');});}});},{rootMargin:'-5% 0px -70% 0px'});
+  document.querySelectorAll('main section').forEach(section=>observer.observe(section));
+}
+</script>
+</body></html>

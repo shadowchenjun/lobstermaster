@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiteLLM 与 New API 对比</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F1F3F2; --surface:#FFFFFF; --ink:#16201D; --muted:#5B6763; --faint:#8A9591; --line:#D5DBD8; --line-soft:#E5E9E7;
+  --lt:#9A5B00; --lt-wash:#F7EEDD;          /* LiteLLM：赭石 */
+  --na:#1D5FA8; --na-wash:#E3ECF7;          /* New API：钴蓝 */
+  --good:#2E7D4F; --good-wash:#E3F1E8;
+  --warn:#A7322A; --warn-wash:#F6E3E0;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+    --lt:#E3A64A; --lt-wash:#2E2414;
+    --na:#7FB0EC; --na-wash:#172536;
+    --good:#6CC792; --good-wash:#15291D;
+    --warn:#EE8A7E; --warn-wash:#361C18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+  --lt:#E3A64A; --lt-wash:#2E2414;
+  --na:#7FB0EC; --na-wash:#172536;
+  --good:#6CC792; --good-wash:#15291D;
+  --warn:#EE8A7E; --warn-wash:#361C18;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:36px 90px}
+a{color:var(--na)}
+a:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--line-soft);padding:1px 5px;border-radius:4px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;letter-spacing:.01em}
+h1{font-size:38px;line-height:1.2;margin:0}
+h2{font-size:25px;line-height:1.35;margin:0}
+h3{font-size:18px;margin:28px 0 10px}
+p{margin:0 0 12px;max-width:74ch}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lt{color:var(--lt)} .na{color:var(--na)}
+.tag{display:inline-block;font:500 12px/1.6 var(--sans);padding:0 8px;border-radius:4px;white-space:nowrap}
+.tag.lt{background:var(--lt-wash)} .tag.na{background:var(--na-wash)}
+
+/* header */
+header.hero{display:grid;gap:16px;padding-bottom:26px;border-bottom:2px solid var(--ink)}
+.vs{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.vs .x{font-family:var(--serif);font-size:22px;color:var(--faint)}
+.hero .lede{color:var(--muted);font-size:16px;max-width:80ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500}
+
+nav.toc{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px;overflow-x:auto;white-space:nowrap}
+nav.toc a{color:var(--muted);text-decoration:none;font-size:13.5px;margin-right:18px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink)}
+
+section{padding-top:48px;scroll-margin-top:50px}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+
+/* verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.verdict > div{padding:20px 22px;display:grid;gap:10px;align-content:start}
+.verdict > div + div{border-left:1px solid var(--line)}
+.verdict h3{margin:0;font-size:20px}
+.verdict .one{font-size:15.5px;margin:0}
+.verdict ul{margin:0;padding-left:1.1em}
+.verdict li{margin-bottom:4px}
+.verdict .bar{height:4px;border-radius:2px}
+.bottomline{margin-top:16px;padding:16px 20px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:15px}
+.bottomline b{font-family:var(--serif)}
+@media (max-width:760px){.verdict{grid-template-columns:1fr}.verdict > div + div{border-left:none;border-top:1px solid var(--line)}}
+
+/* tables */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--bg);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+td.dim{color:var(--muted);white-space:nowrap;font-weight:500}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th.lt{color:var(--lt)} th.na{color:var(--na)}
+tr.group td{background:var(--bg);font-family:var(--serif);font-weight:600;color:var(--ink);font-size:14.5px;padding-top:14px}
+.dot{display:inline-block;width:.9em;text-align:center;font-size:13px;margin-right:4px}
+.s3::before{content:"●";color:var(--good)}
+.s2::before{content:"◐";color:var(--lt)}
+.s1::before{content:"○";color:var(--faint)}
+.win{font-weight:500}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
+
+/* two col */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.panel h4{margin:0 0 10px;font-size:16px;font-family:var(--serif)}
+.panel ul{margin:0;padding-left:1.15em}
+.panel li{margin-bottom:6px}
+.panel.lt{border-top:3px solid var(--lt)}
+.panel.na{border-top:3px solid var(--na)}
+.panel.risk{border-top:3px solid var(--warn)}
+.panel.lt,.panel.na,.panel.risk{color:var(--ink)}
+.callout{border-left:3px solid var(--warn);background:var(--warn-wash);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;margin:16px 0;max-width:none}
+.callout.info{border-color:var(--na);background:var(--na-wash)}
+
+/* flow diagrams */
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
+.fig svg{display:block;min-width:860px;width:100%;height:auto}
+.s-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.s-lt{fill:var(--lt-wash);stroke:var(--lt);stroke-width:1.2}
+.s-na{fill:var(--na-wash);stroke:var(--na);stroke-width:1.2}
+.s-t1{font:600 13px var(--sans);fill:var(--ink)}
+.s-t2{font:400 11.5px var(--sans);fill:var(--muted)}
+.s-h{font:700 14px var(--serif)}
+.s-h.lt{fill:var(--lt)} .s-h.na{fill:var(--na)}
+.s-ln{fill:none;stroke-width:1.5}
+.s-ln.lt{stroke:var(--lt)} .s-ln.na{stroke:var(--na)} .s-ln.mu{stroke:var(--faint)}
+.mk-lt{fill:var(--lt)} .mk-na{fill:var(--na)} .mk-mu{fill:var(--faint)}
+.s-lbl{font:500 11px var(--sans);fill:var(--muted)}
+
+.pick td:first-child{font-weight:500}
+.sources li{margin-bottom:4px;font-size:13.5px;color:var(--muted)}
+.sources a{word-break:break-all}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">选型调研 · 2026-09-30</div>
+  <div class="vs"><h1><span class="lt">LiteLLM</span></h1><span class="x">与</span><h1><span class="na">New API</span></h1></div>
+  <p class="lede">两者都叫「AI 网关」，都能把上百家模型厂商统一成 OpenAI 兼容接口。但一个是给<b>平台团队管成本、做治理</b>的，一个是给<b>运营方分发额度、向用户收钱</b>的。本报告按定位、功能、工程、许可与风险逐项对照，最后结合 Perfectoken 的实际部署给出建议。</p>
+  <div class="meta">
+    <span><b>LiteLLM</b> BerriAI/litellm · v1.103.1</span>
+    <span><b>New API</b> QuantumNous/new-api · v1.0.0-rc.40</span>
+    <span><b>数据快照</b> 2026-09-30，来源见文末</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#verdict">结论</a><a href="#basics">基本面</a><a href="#position">定位差异</a><a href="#matrix">功能对照</a><a href="#eng">工程与运维</a><a href="#license">许可与风险</a><a href="#strength">各自擅长</a><a href="#pick">选型指南</a><a href="#pt">对 Perfectoken 的建议</a><a href="#src">来源</a>
+</nav>
+
+<!-- ============ 结论 ============ -->
+<section id="verdict">
+  <div class="sec-head"><span class="eyebrow">01 · 一页结论</span><h2>不是谁更强，而是钱往哪个方向流</h2></div>
+  <div class="verdict">
+    <div>
+      <div class="bar" style="background:var(--lt)"></div>
+      <h3 class="lt">LiteLLM：内部治理型网关 + Python SDK</h3>
+      <p class="one">钱是<b>花出去</b>的：统计每个团队、每个 key 花了多少，给它设预算、限流、护栏。</p>
+      <ul>
+        <li>厂商覆盖最广（README 列 107 项），新模型通常当天可用</li>
+        <li>可观测生态最完整：Langfuse、Langsmith、Datadog、Prometheus 等</li>
+        <li>唯一同时提供 Python SDK、MCP 网关和 A2A Agent 网关的一方</li>
+        <li>MIT 许可，可闭源二次开发；但 SSO（超过 5 人）、审计日志、组织级 RBAC 要买企业版</li>
+      </ul>
+    </div>
+    <div>
+      <div class="bar" style="background:var(--na)"></div>
+      <h3 class="na">New API：对外分发 / 计费型网关</h3>
+      <p class="one">钱是<b>收进来</b>的：用户注册、充值、兑换码、分组倍率、订阅套餐，按额度扣费。</p>
+      <ul>
+        <li>自带完整的用户与计费体系，这是 LiteLLM 没有的一整层</li>
+        <li>OpenAI / Claude / Gemini 四种协议互相转换，中文客户端生态适配最好</li>
+        <li>Go 单体，资源占用低，SQLite 即可起步</li>
+        <li>AGPL-3.0 加署名附加条款；1.0 仍处于 RC 阶段，插件系统官方标注「不推荐生产」</li>
+      </ul>
+    </div>
+  </div>
+  <p class="bottomline"><b>一句话：</b>如果要向外部用户卖 API 额度，选 <span class="na">New API</span>，因为同类产品里只有它自带这层计费。如果是公司内部统一接入模型、按团队管成本和合规，选 <span class="lt">LiteLLM</span>。两者也可以串联：LiteLLM 做内部治理，New API 做对外分发，互为 OpenAI 兼容的上下游。</p>
+</section>
+
+<!-- ============ 基本面 ============ -->
+<section id="basics">
+  <div class="sec-head"><span class="eyebrow">02 · 基本面</span><h2>项目概况（2026-09-30 GitHub 实时数据）</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:20%">维度</th><th class="lt">LiteLLM</th><th class="na">New API</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">维护方</td><td>BerriAI（美国 YC 公司，有商业企业版）</td><td>QuantumNous（文档站署名：锟腾科技），基于 One API（MIT）二次开发</td></tr>
+      <tr><td class="dim">主语言</td><td>Python（FastAPI + Prisma），2026 年起引入 Rust 核心（Beta）</td><td>Go（Gin）；控制台 React 19 + TypeScript</td></tr>
+      <tr><td class="dim">许可证</td><td>MIT；<code>enterprise/</code> 目录另有商业许可</td><td>AGPL-3.0 + 第 7 条附加条款（须保留署名和原项目链接）</td></tr>
+      <tr><td class="dim">GitHub Star</td><td class="num">59,885</td><td class="num">49,106</td></tr>
+      <tr><td class="dim">Fork</td><td class="num">11,896</td><td class="num">11,796</td></tr>
+      <tr><td class="dim">贡献者（含匿名）</td><td class="num">≈ 1,758</td><td class="num">≈ 329</td></tr>
+      <tr><td class="dim">未关闭 Issue + PR</td><td class="num">5,438</td><td class="num">1,362</td></tr>
+      <tr><td class="dim">仓库创建</td><td class="num">2023-07</td><td class="num">2023-11</td></tr>
+      <tr><td class="dim">最新版本</td><td class="num">v1.103.1（2026-09-30）</td><td class="num">v1.0.0-rc.40（2026-09-21）</td></tr>
+      <tr><td class="dim">发版节奏</td><td>约每周一个 minor 版本，最近 3 个月发了 100 多个版本；Docker 另有经 12 小时压测的 <code>-stable</code> 标签</td><td>2026-04 以来发了 60 个版本，全部是 1.0.0-rc 系列</td></tr>
+      <tr><td class="dim">支持策略</td><td>自 2026-06-29 起只维护最近 4 条稳定 minor 线</td><td>未公布；按版本号升级，升级前需阅读迁移说明</td></tr>
+      <tr><td class="dim">知名用户</td><td>Netflix、NVIDIA、AT&amp;T、Okta、SAP、IBM 等（官网背书）</td><td>中文社区自建站点大量使用；合作方包括 Cherry Studio、阿里云等</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Star 数只代表关注度。未关闭数量是 GitHub API 的 <code>open_issues_count</code>，其中包含 PR。LiteLLM 未关闭数更高，一部分原因是它的用户和贡献者基数都更大。</p>
+</section>
+
+<!-- ============ 定位 ============ -->
+<section id="position">
+  <div class="sec-head"><span class="eyebrow">03 · 定位差异</span><h2>同叫网关，服务的是两种人</h2></div>
+  <p>最核心的差别在「谁在网关后面、谁在网关前面」。LiteLLM 前面坐的是公司内部的开发者和团队，它回答「谁花了多少、能不能再花」；New API 前面坐的是外部注册用户，它回答「这个人还剩多少额度、该扣多少」。</p>
+  <div class="fig">
+<svg viewBox="0 0 1080 330" role="img" aria-label="两种网关的资金与请求流向">
+  <defs>
+    <marker id="m-lt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-lt"/></marker>
+    <marker id="m-na" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-na"/></marker>
+    <marker id="m-mu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-mu"/></marker>
+  </defs>
+  <text x="20" y="28" class="s-h lt">LiteLLM · 成本中心视角</text>
+  <rect x="20" y="44" width="220" height="100" rx="8" class="s-box"/>
+  <text x="36" y="70" class="s-t1">内部团队 / 应用</text>
+  <text x="36" y="92" class="s-t2">Org → Team → User → Virtual Key</text>
+  <text x="36" y="112" class="s-t2">或直接 import litellm（SDK）</text>
+  <text x="36" y="132" class="s-t2">身份：SSO / JWT / Key</text>
+  <rect x="300" y="44" width="300" height="100" rx="8" class="s-lt"/>
+  <text x="316" y="70" class="s-t1">LiteLLM Proxy</text>
+  <text x="316" y="92" class="s-t2">预算 · 限流 · 护栏 · 路由 / Fallback</text>
+  <text x="316" y="112" class="s-t2">按模型价格表计算花费（spend）</text>
+  <text x="316" y="132" class="s-t2">日志回调 → Langfuse / Datadog …</text>
+  <rect x="660" y="44" width="220" height="100" rx="8" class="s-box"/>
+  <text x="676" y="70" class="s-t1">模型厂商 / 自建推理</text>
+  <text x="676" y="92" class="s-t2">OpenAI · Bedrock · Vertex</text>
+  <text x="676" y="112" class="s-t2">Azure · vLLM · NIM …</text>
+  <text x="900" y="84" class="s-t2">公司统一付账</text>
+  <text x="900" y="104" class="s-t2">网关只负责记账、设上限</text>
+  <line x1="240" y1="94" x2="298" y2="94" class="s-ln lt" marker-end="url(#m-lt)"/>
+  <line x1="600" y1="94" x2="658" y2="94" class="s-ln lt" marker-end="url(#m-lt)"/>
+
+  <text x="20" y="196" class="s-h na">New API · 分发运营视角</text>
+  <rect x="20" y="212" width="220" height="100" rx="8" class="s-box"/>
+  <text x="36" y="238" class="s-t1">外部注册用户</text>
+  <text x="36" y="260" class="s-t2">邮箱 / OAuth / Passkey 注册登录</text>
+  <text x="36" y="280" class="s-t2">充值 · 兑换码 · 邀请 · 订阅</text>
+  <text x="36" y="300" class="s-t2">分组决定倍率与可用模型</text>
+  <rect x="300" y="212" width="300" height="100" rx="8" class="s-na"/>
+  <text x="316" y="238" class="s-t1">New API</text>
+  <text x="316" y="260" class="s-t2">额度预扣 → 按倍率 / 表达式计价结算</text>
+  <text x="316" y="280" class="s-t2">渠道优先级 · 权重 · 重试 · 多 Key</text>
+  <text x="316" y="300" class="s-t2">协议互转：OpenAI / Claude / Gemini</text>
+  <rect x="660" y="212" width="220" height="100" rx="8" class="s-box"/>
+  <text x="676" y="238" class="s-t1">上游渠道</text>
+  <text x="676" y="260" class="s-t2">官方 API · 其他网关 · vLLM</text>
+  <text x="676" y="280" class="s-t2">SGLang · Ollama · 任务插件</text>
+  <text x="900" y="252" class="s-t2">用户先付钱买额度</text>
+  <text x="900" y="272" class="s-t2">网关按用量扣额度并计毛利</text>
+  <line x1="240" y1="262" x2="298" y2="262" class="s-ln na" marker-end="url(#m-na)"/>
+  <line x1="600" y1="262" x2="658" y2="262" class="s-ln na" marker-end="url(#m-na)"/>
+</svg>
+  </div>
+  <div class="cols" style="margin-top:16px">
+    <div class="panel lt"><h4 class="lt">LiteLLM 的数据模型</h4>
+      <ul>
+        <li>Organization → Team → Internal User → Virtual Key 四层（Organization 与组织管理员属于企业版）</li>
+        <li>花费（spend）是结果：按内置的模型价格表算出每次调用的美元成本，并按 key、team、tag 汇总</li>
+        <li>没有「用户余额」「充值」「售价」的概念，预算是上限，不是可购买的商品</li>
+      </ul>
+    </div>
+    <div class="panel na"><h4 class="na">New API 的数据模型</h4>
+      <ul>
+        <li>用户 → 分组 → 令牌；用户有额度余额，令牌可限定可用模型和额度</li>
+        <li>额度（quota）是商品：模型倍率、补全倍率、分组倍率、缓存倍率共同决定扣费，新版支持计费表达式（阶梯、按次、按时段）</li>
+        <li>入账途径包括易支付等在线充值、兑换码、邀请奖励、订阅套餐，以及管理员直接调整额度</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 功能矩阵 ============ -->
+<section id="matrix">
+  <div class="sec-head"><span class="eyebrow">04 · 功能对照</span><h2>逐项对照</h2></div>
+  <div class="legend"><span><span class="dot s3"></span>完整、开箱可用</span><span><span class="dot s2"></span>有但较基础，或部分需付费 / 插件</span><span><span class="dot s1"></span>无或需自研</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:18%">能力</th><th class="lt" style="width:41%">LiteLLM</th><th class="na" style="width:41%">New API</th></tr></thead>
+    <tbody>
+      <tr class="group"><td colspan="3">模型接入</td></tr>
+      <tr><td class="dim">厂商覆盖</td><td><span class="dot s3"></span><span class="win">100+，README 列出 107 项</span>，含 Bedrock、Vertex、Azure、SageMaker、Watsonx、NIM、Databricks 等企业云，新模型接入快</td><td><span class="dot s3"></span>主流厂商全覆盖（OpenAI、Claude、Gemini、Azure、Bedrock、Vertex、DeepSeek、通义等），国内厂商与中转站适配多；rc.38 新增 vLLM、SGLang 渠道</td></tr>
+      <tr><td class="dim">对外协议</td><td><span class="dot s3"></span><code>/chat/completions</code>、<code>/responses</code>、<code>/messages</code>、embeddings、images、audio、batches、rerank、moderations、a2a</td><td><span class="dot s3"></span>OpenAI Chat 与 Responses、<span class="win">Anthropic Messages、Gemini 原生</span>、Realtime 与 Responses WebSocket、images、audio、embeddings、rerank、任务接口</td></tr>
+      <tr><td class="dim">协议互转</td><td><span class="dot s3"></span>以 OpenAI 格式为中心，任意厂商均可通过 OpenAI 或 Anthropic 格式调用</td><td><span class="dot s3"></span>RelayKit 在 OpenAI Chat、Responses、Claude、Gemini 四种协议之间互转，可让 Claude Code、Gemini CLI 调用任意上游</td></tr>
+      <tr><td class="dim">异步任务 / 多媒体</td><td><span class="dot s2"></span>图片、音频、批处理端点；没有面向 Midjourney 或视频类任务的统一任务层</td><td><span class="dot s3"></span><span class="win">JavaScript 任务插件</span>：统一提交和查询图片、视频、Midjourney、Suno 等任务，并按任务计费（插件系统仍标注为实验性）</td></tr>
+      <tr><td class="dim">Python SDK</td><td><span class="dot s3"></span><span class="win">独有</span>：<code>litellm.completion()</code> 直接嵌入代码，自带 Router、重试和成本计算</td><td><span class="dot s1"></span>只提供 HTTP 接口；RelayKit 是 Go 模块，不面向应用开发</td></tr>
+
+      <tr class="group"><td colspan="3">路由与可靠性</td></tr>
+      <tr><td class="dim">负载均衡 / 故障切换</td><td><span class="dot s3"></span>Router 支持 fallback、cooldown、按延迟、成本或用量路由，以及 auto-router（按内容选模型）</td><td><span class="dot s3"></span>渠道优先级 + 权重随机、失败重试、渠道亲和性、多 Key 轮询；rc.38 新增请求策略（渠道健康、会话与重试）</td></tr>
+      <tr><td class="dim">缓存</td><td><span class="dot s3"></span>Redis 或内存响应缓存、语义缓存；同时统计上游 prompt cache 的花费</td><td><span class="dot s2"></span>主要是<b>缓存计费</b>（上游 prompt cache 命中按比例计费）；Redis 用于配置、额度缓存和限流，未提供响应缓存</td></tr>
+      <tr><td class="dim">限流</td><td><span class="dot s3"></span>按 key、user、team 设置 RPM、TPM</td><td><span class="dot s3"></span>全局限流与模型级限流（可分别限制总请求数和成功请求数）；多节点共享限流需要共享 Redis</td></tr>
+
+      <tr class="group"><td colspan="3">身份与多租户</td></tr>
+      <tr><td class="dim">用户体系</td><td><span class="dot s2"></span>Internal User、Team、Virtual Key；自助注册面向内部员工；Organization 与委派管理员需企业版</td><td><span class="dot s3"></span><span class="win">面向公众的注册登录</span>：邮箱验证、GitHub、OIDC、Telegram 等 OAuth 登录，Passkey、两步验证、Turnstile 人机校验</td></tr>
+      <tr><td class="dim">企业 SSO / RBAC</td><td><span class="dot s2"></span>支持 Okta、Azure AD、SAML；<b>超过 5 个用户需要企业版</b>，JWT 鉴权、审计日志、IP 白名单同样需要企业版</td><td><span class="dot s2"></span>OIDC 登录免费；有细粒度权限，但没有 SAML、审计留存策略这类面向企业合规的包装</td></tr>
+      <tr><td class="dim">密钥管理</td><td><span class="dot s3"></span>对接 AWS、GCP、Azure、Vault 等密钥管理服务（企业版），支持 key 自动轮换（企业版）</td><td><span class="dot s2"></span>渠道 Key 保存在主数据库中；不对接外部密钥管理服务</td></tr>
+
+      <tr class="group"><td colspan="3">计费与运营</td></tr>
+      <tr><td class="dim">成本统计</td><td><span class="dot s3"></span>按模型、key、user、team、tag 统计花费，并提供报表 API（部分维度需企业版）</td><td><span class="dot s3"></span>用量日志、数据看板、按用户与渠道统计消耗</td></tr>
+      <tr><td class="dim">向用户收费</td><td><span class="dot s1"></span><b>没有</b>：没有余额、充值、售价倍率、兑换码</td><td><span class="dot s3"></span><span class="win">完整</span>：额度与倍率、分组价格、计费表达式、订阅套餐、易支付充值、兑换码、邀请奖励</td></tr>
+      <tr><td class="dim">预算</td><td><span class="dot s3"></span>按 key、user、team 设置硬预算，支持软预算告警和临时提额（部分需企业版）</td><td><span class="dot s2"></span>用额度余额和令牌额度上限代替预算，没有按周期自动重置的预算</td></tr>
+
+      <tr class="group"><td colspan="3">治理与可观测</td></tr>
+      <tr><td class="dim">可观测集成</td><td><span class="dot s3"></span><span class="win">生态最全</span>：Langfuse、Langsmith、Arize、Datadog、OTel、S3、GCS、Prometheus 指标；Slack、PagerDuty 告警</td><td><span class="dot s2"></span>内置用量日志与看板，日志可单独写入 ClickHouse，支持 pprof、Pyroscope；外部 APM 需自行对接</td></tr>
+      <tr><td class="dim">Guardrails</td><td><span class="dot s3"></span>自定义护栏与 Presidio PII 脱敏属于开源部分；Llama Guard 等内置审核回调需企业版</td><td><span class="dot s2"></span>请求检查策略（rc.38）；内容安全需要自行接入</td></tr>
+      <tr><td class="dim">MCP / Agent</td><td><span class="dot s3"></span><span class="win">MCP 网关</span>（含 OAuth 与工具权限）和 <span class="win">A2A Agent 网关</span>，可接 LangGraph、Bedrock AgentCore 等</td><td><span class="dot s1"></span>没有原生 MCP 或 A2A 网关，定位在模型调用这一层</td></tr>
+
+      <tr class="group"><td colspan="3">界面</td></tr>
+      <tr><td class="dim">管理控制台</td><td><span class="dot s2"></span>Admin UI（英文），偏平台管理：模型、key、团队、花费</td><td><span class="dot s3"></span>运营控制台 + 用户钱包页 + Playground；<span class="win">简体、繁体中文</span>、英、法、日、俄、越七种语言</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 工程 ============ -->
+<section id="eng">
+  <div class="sec-head"><span class="eyebrow">05 · 工程与运维</span><h2>部署形态、性能与发版稳定性</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:18%">维度</th><th class="lt">LiteLLM</th><th class="na">New API</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">运行时</td><td>Python 进程（uvicorn 多 worker）；可选 Rust 核心（按模型开启，失败自动回退 Python）</td><td>Go 单一二进制，前端编译后嵌入其中；另有 Electron 桌面版</td></tr>
+      <tr><td class="dim">依赖</td><td>生产需要 PostgreSQL（Prisma 迁移）+ Redis；多实例需共享 Redis</td><td>SQLite 即可运行；生产用 MySQL ≥ 5.7.8 或 PostgreSQL ≥ 9.6，Redis 可选，日志可拆到 ClickHouse</td></tr>
+      <tr><td class="dim">官方部署物</td><td>Docker（cosign 签名）、Helm Chart、<b>Terraform 模块</b>（AWS ECS / GCP Cloud Run 一键起全套）</td><td>Docker、Docker Compose（New API + PostgreSQL + Redis）、面板部署、集群部署；Linux amd64、arm64</td></tr>
+      <tr><td class="dim">性能数据</td><td>官方：1k RPS 下 P95 额外延迟 8ms。Rust 核心目前只覆盖 Anthropic <code>/v1/messages</code>、Bedrock 转写和 OpenAI Responses WebSocket；独立的 Rust 服务还没有官方镜像</td><td>官方未公布基准。Go 并发模型开销低，杭州机实测 New API 容器 512M 内存上限内稳定运行；另有社区高性能分支 new-api-horizon</td></tr>
+      <tr><td class="dim">已知运维痛点</td><td>历史上有大表加载导致 OOM（#13210，约 25 万 key 时）、请求体被长期持有造成内存上涨，2026-07 已修复一批；版本迭代极快，需要锁定 <code>-stable</code> 版本</td><td>1.0 仍在 RC：rc.27 引入的插件系统官方连续标注「不推荐生产」，从 rc.26 及更早版本升级需重配视频定价；多节点需共享数据库和 <code>SESSION_SECRET</code></td></tr>
+      <tr><td class="dim">二次开发</td><td>Python，改 callback、自定义 auth 和 guardrail 都很方便；代码库大，issue 多</td><td>Go + React，目录分层清晰（relay、service、model）；任务插件可用 JavaScript 扩展；大改需遵守 AGPL</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 许可与风险 ============ -->
+<section id="license">
+  <div class="sec-head"><span class="eyebrow">06 · 许可与风险</span><h2>许可证义务与安全事件</h2></div>
+  <div class="cols">
+    <div class="panel lt"><h4 class="lt">LiteLLM · MIT + 企业目录</h4>
+      <ul>
+        <li><code>enterprise/</code> 以外的代码是 MIT：可以闭源修改、打包转售，没有开源义务</li>
+        <li>企业功能由 <code>LITELLM_LICENSE</code> 许可证密钥解锁，价格按部署规模报价，可通过 AWS、Azure Marketplace 采购</li>
+        <li>企业版支持：工作日工作时间内的专属 Slack 频道；7×24 SLA 另外收费（Sev0 1 小时响应）</li>
+      </ul>
+    </div>
+    <div class="panel na"><h4 class="na">New API · AGPL-3.0 + 附加条款</h4>
+      <ul>
+        <li><b>网络条款</b>：修改后通过网络向用户提供服务，必须向这些用户公开修改后的源码</li>
+        <li><b>附加署名</b>：修改版必须在界面的关于、页脚等显著位置保留 “Frontend design and development by New API contributors.” 及原项目链接</li>
+        <li>不接受 AGPL 的组织可以邮件联系 support@quantumnous.com 购买商业授权</li>
+        <li>通过 HTTP 调用 New API 的独立服务（例如 pt-pay）不属于修改 New API 本身</li>
+      </ul>
+    </div>
+    <div class="panel risk"><h4 style="color:var(--warn)">安全事件与供应链</h4>
+      <ul>
+        <li><b>LiteLLM · 2026-03-24</b>：Trivy 依赖被攻破导致 PyPI 发布令牌泄露，<code>litellm</code> 1.82.7 和 1.82.8 被植入窃密木马（PYSEC-2026-2）。<code>import</code> 时即执行，窃取 SSH 密钥、云凭证、K8s token 等，并装 systemd 后门。PyPI 一度隔离该包</li>
+        <li>此后 LiteLLM 的 Docker 镜像全部使用 cosign 签名，并在 README 给出校验方法</li>
+        <li><b>New API</b>：本次调研范围内未检索到同级别的供应链事件，但项目迭代快、RC 版本多，同样应当锁定版本号</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">通用建议：两者都会拿到所有上游厂商的 API Key，是高价值攻击目标。生产环境应<b>锁定具体版本</b>，不跟 <code>latest</code>；对镜像做签名或摘要校验；网关进程只放必要的环境变量；升级前先在测试实例上验证。</div>
+</section>
+
+<!-- ============ 各自擅长 ============ -->
+<section id="strength">
+  <div class="sec-head"><span class="eyebrow">07 · 各自擅长</span><h2>优势与短板</h2></div>
+  <div class="cols">
+    <div class="panel lt"><h4 class="lt">LiteLLM 擅长</h4>
+      <ul>
+        <li><b>企业内部 AI 平台</b>：几百个开发者、几十个团队共用一套模型入口，按团队分摊成本、设预算</li>
+        <li><b>多云与合规</b>：Bedrock、Vertex、Azure 私有部署统一接入，满足数据不出云的要求</li>
+        <li><b>可观测与评估</b>：请求直接进入 Langfuse、Datadog，便于做 prompt 评估和成本分析</li>
+        <li><b>应用代码层</b>：Python 项目直接 <code>import litellm</code>，无需部署任何服务</li>
+        <li><b>Agent 基础设施</b>：MCP 工具网关、A2A Agent 网关、护栏</li>
+        <li><b>基础设施即代码</b>：官方 Terraform、Helm，适合有 SRE 的团队</li>
+      </ul>
+    </div>
+    <div class="panel lt" style="border-top-color:var(--faint)"><h4>LiteLLM 短板</h4>
+      <ul>
+        <li>不能向终端用户收费，做 API 分发需要自己写整套余额与充值系统</li>
+        <li>SSO（超过 5 人）、审计日志、组织层级、密钥管理服务集成等企业刚需都在付费版</li>
+        <li>Python 栈内存与 CPU 开销较大，大规模时需要调优；Rust 核心仍是 Beta</li>
+        <li>版本更新极快，issue 积压多，需要紧跟 stable 线；有过 PyPI 投毒事件</li>
+        <li>控制台只有英文，面向中文运营人员不友好</li>
+      </ul>
+    </div>
+    <div class="panel na"><h4 class="na">New API 擅长</h4>
+      <ul>
+        <li><b>API 分发与转售</b>：注册、充值、兑换码、邀请、订阅、分组定价一站式，开箱即可对外运营</li>
+        <li><b>精细计价</b>：模型、补全、分组、缓存多种倍率，加计费表达式，可按条件、按次、按时段定价</li>
+        <li><b>协议互转</b>：让 Claude Code、Gemini CLI、Codex 等客户端用任意上游，是中文 AI 编码工具圈的事实标准</li>
+        <li><b>多媒体任务</b>：Midjourney、Suno、视频生成、图片任务统一提交、查询和计费</li>
+        <li><b>轻量</b>：Go 单体，SQLite 起步，小机器即可跑；中文控制台与中文社区资料丰富</li>
+      </ul>
+    </div>
+    <div class="panel na" style="border-top-color:var(--faint)"><h4>New API 短板</h4>
+      <ul>
+        <li>1.0 仍在 RC，插件系统官方标注「不推荐生产」，升级要谨慎</li>
+        <li>可观测以内置日志为主，缺少与 Langfuse、Datadog 等工具的原生集成</li>
+        <li>没有 MCP 或 A2A 网关、没有 Python SDK、没有面向企业合规的审计与 SAML</li>
+        <li>AGPL 加署名条款：修改后对外服务必须开源并保留署名</li>
+        <li>内置充值有局限（见下一节），日志不记录调用 IP，风控需要外部补充</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 选型 ============ -->
+<section id="pick">
+  <div class="sec-head"><span class="eyebrow">08 · 选型指南</span><h2>按场景选</h2></div>
+  <div class="tbl"><table class="pick">
+    <thead><tr><th style="width:32%">场景</th><th style="width:16%">推荐</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>面向公众 / 客户售卖 API 额度（中转站、SaaS 附带 API）</td><td><span class="tag na">New API</span></td><td>唯一自带用户、余额、充值和定价层的方案；LiteLLM 需要自研整套计费</td></tr>
+      <tr><td>公司内部统一模型入口，按部门核算成本</td><td><span class="tag lt">LiteLLM</span></td><td>团队、预算、花费报表和可观测集成更贴合；规模上来后要评估企业版费用</td></tr>
+      <tr><td>Python 应用里切换多家模型，不想额外部署服务</td><td><span class="tag lt">LiteLLM SDK</span></td><td>直接作为库使用，自带 Router、重试和成本计算</td></tr>
+      <tr><td>让 Claude Code、Gemini CLI 走任意上游</td><td><span class="tag na">New API</span></td><td>四种协议互转成熟，中文社区教程多；LiteLLM 也支持 <code>/messages</code>，可作为备选</td></tr>
+      <tr><td>多云企业（Bedrock、Vertex、Azure 私有端点），有 SSO 和审计合规要求</td><td><span class="tag lt">LiteLLM 企业版</span></td><td>密钥管理服务、SAML、审计留存和 SLA 都有现成方案</td></tr>
+      <tr><td>MCP 工具、Agent 统一治理</td><td><span class="tag lt">LiteLLM</span></td><td>New API 目前没有这一层</td></tr>
+      <tr><td>图片、视频、音乐等异步生成任务的统一计费</td><td><span class="tag na">New API</span></td><td>任务插件 + 按任务计价；注意插件系统仍标注为实验性</td></tr>
+      <tr><td>小团队、单台 2C4G 机器、中文运营人员</td><td><span class="tag na">New API</span></td><td>资源占用低，中文界面，部署简单</td></tr>
+      <tr><td>既要对外售卖，又要内部精细观测</td><td><span class="tag na">New API</span> + <span class="tag lt">LiteLLM</span></td><td>New API 在前面对外计费，LiteLLM 作为 New API 的一个 OpenAI 兼容渠道在后面统一上游和观测；代价是多一跳延迟和两套运维</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ Perfectoken ============ -->
+<section id="pt">
+  <div class="sec-head"><span class="eyebrow">09 · 落到我们自己</span><h2>对 Perfectoken 的建议</h2></div>
+  <p>Perfectoken（api.perfectoken.com.cn）的业务是对外售卖 API 额度，现有架构是 New API rc.37 加自研的 pt-pay 支付与会员服务。以下结合这段时间的实际开发经验给出判断。</p>
+  <div class="cols">
+    <div class="panel na"><h4 class="na">继续用 New API 做主网关（结论不变）</h4>
+      <ul>
+        <li>用户、额度、分组倍率、邀请码这一层 LiteLLM 完全没有，换掉的成本等于重写整个运营系统</li>
+        <li>pt-pay 只通过 HTTP 管理接口与 New API 交互，没有修改 New API 源码，所以不触发 AGPL 的源码公开义务；如果以后要改 New API 前端，需要保留署名</li>
+        <li>New API 管理接口（<code>/api/user/manage</code> 调整额度、<code>/api/user/</code> 查询用户、<code>/api/status</code> 查汇率）足够支撑外挂业务服务</li>
+      </ul>
+    </div>
+    <div class="panel risk"><h4 style="color:var(--warn)">已踩到、需要记住的 New API 局限</h4>
+      <ul>
+        <li><b>内置易支付按整美元入账</b>：到账额度 = 金额 × QuotaPerUnit，本站汇率 7.3，最小充值单位约 7.3 元，做不出「10 元档、1 元 = 1 元」，所以另写了 pt-pay</li>
+        <li><b>调用日志不记录 IP</b>（rc.37 实测 0/1783 条），邀请风控只能改用 pt-pay 订单里记录的 IP</li>
+        <li><b>内置邀请奖励</b>注册即发、没有门槛，上线会员体系时要把 <code>QuotaForInviter</code> 和 <code>QuotaForInvitee</code> 改为 0</li>
+        <li>rc.38 起的版本仍标注「不推荐生产」，建议<b>停留在 rc.37</b>，等 1.0 正式版或插件系统转正后，先在测试实例验证再升级</li>
+      </ul>
+    </div>
+    <div class="panel lt"><h4 class="lt">LiteLLM 可以在哪里帮上忙</h4>
+      <ul>
+        <li><b>暂不需要</b>：当前规模下，New API 自带的日志和看板够用，再加一层会多一跳延迟和一套运维</li>
+        <li><b>值得引入的时机</b>：上游渠道很多、需要按上游做成本和延迟分析，或者要给内部团队（例如清竞智能的项目）单独开放模型并做成本核算时，可以把 LiteLLM 挂在 New API 后面作为一个渠道，或单独给内部使用</li>
+        <li>引入时锁定 <code>-stable</code> 镜像并校验 cosign 签名，不要用 pip 安装的 latest 版本</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section id="src">
+  <div class="sec-head"><span class="eyebrow">10 · 来源与口径</span><h2>数据来源</h2></div>
+  <ul class="sources">
+    <li>GitHub API 实时数据（2026-09-30）：<a href="https://github.com/BerriAI/litellm">BerriAI/litellm</a>、<a href="https://github.com/QuantumNous/new-api">QuantumNous/new-api</a>，包括仓库概况、release 列表和贡献者数（含匿名）</li>
+    <li>LiteLLM README 与 LICENSE（main 分支）；<a href="https://docs.litellm.ai/docs/enterprise">Enterprise 文档</a>；<a href="https://docs.litellm.ai/docs/proxy/rust_gateway">Rust AI Gateway（Beta）文档</a>；<a href="https://www.litellm.ai/features">Free vs Enterprise 功能页</a></li>
+    <li>New API README（简体中文版）、<code>.env.example</code>；<a href="https://docs.newapi.ai/zh/docs">官方文档</a>；v1.0.0-rc.37 至 rc.40 的 release notes</li>
+    <li>安全事件：<a href="https://github.com/pypa/advisory-database/blob/main/vulns/litellm/PYSEC-2026-2.yaml">PYSEC-2026-2</a>、BerriAI/litellm issue #24512、#24518；性能问题：issue #13210、#21046</li>
+    <li>第三方对比参考：<a href="https://gatewayscore.com/compare/new-api-vs-litellm/">GatewayScore · New API vs LiteLLM</a>（2026-09-02）</li>
+    <li>Perfectoken 一手经验：pt-pay 开发文档（计划 1 与计划 2）、杭州机运维记录</li>
+  </ul>
+  <p class="note">口径说明：「●◐○」是基于官方文档与源码 README 的定性判断，不是基准测试结果；性能数字只引用官方公布值。两个项目迭代都很快，本报告反映 2026-09-30 的状态，引用前请以最新官方文档为准。许可证部分是工程角度的理解，不构成法律意见。</p>
+</section>
+
+<footer>整理于 2026-09-30 · 供 Perfectoken / 清竞智能内部选型参考</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pt-pay 架构全景</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F3F5F2; --surface:#FFFFFF; --ink:#18201D; --muted:#5A6661; --line:#D6DCD7; --line-soft:#E6EAE6;
+  --pt:#0E7A6B; --pt-wash:#E4F1EE;
+  --na:#4B5BA8; --na-wash:#EAEDF8;
+  --wx:#2A8A43; --wx-wash:#E6F3E9;
+  --ng:#A0650F; --ng-wash:#F6EEDF;
+  --warn:#B53A26; --warn-wash:#F8E6E2;
+  --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111614; --surface:#1A201E; --ink:#E5EBE8; --muted:#9AA7A1; --line:#2E3834; --line-soft:#242C29;
+    --pt:#46C3AE; --pt-wash:#14302A;
+    --na:#98A5EC; --na-wash:#1C2238;
+    --wx:#63C77C; --wx-wash:#15291B;
+    --ng:#E2AE57; --ng-wash:#2D2414;
+    --warn:#F08B75; --warn-wash:#3A1D17;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111614; --surface:#1A201E; --ink:#E5EBE8; --muted:#9AA7A1; --line:#2E3834; --line-soft:#242C29;
+  --pt:#46C3AE; --pt-wash:#14302A;
+  --na:#98A5EC; --na-wash:#1C2238;
+  --wx:#63C77C; --wx-wash:#15291B;
+  --ng:#E2AE57; --ng-wash:#2D2414;
+  --warn:#F08B75; --warn-wash:#3A1D17;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 80px}
+header.top{display:grid;gap:14px;padding-block:8px 20px;border-bottom:1px solid var(--line)}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--pt)}
+h1{font-size:32px;line-height:1.25;margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:23px;line-height:1.35;margin:0 0 6px;text-wrap:balance}
+h3{font-size:17px;margin:26px 0 8px}
+p{margin:0 0 12px;max-width:72ch}
+.lede{color:var(--muted);max-width:78ch;margin:0}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--line-soft);padding:1px 5px;border-radius:4px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.facts b{color:var(--ink);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 10px;border-radius:99px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-done{color:var(--pt);background:var(--pt-wash)}
+.p-wait{color:var(--ng);background:var(--ng-wash)}
+.p-risk{color:var(--warn);background:var(--warn-wash)}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px;overflow-x:auto;white-space:nowrap}
+nav.toc a{color:var(--muted);text-decoration:none;font-size:13.5px;margin-right:18px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink)}
+a:focus-visible{outline:2px solid var(--pt);outline-offset:2px}
+section{padding-top:44px;scroll-margin-top:52px}
+.sec-head{display:grid;gap:4px;margin-bottom:16px}
+.sec-head .eyebrow{font-size:11px}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto;padding:14px}
+.fig svg{display:block;min-width:900px;width:100%;height:auto}
+.fig pre.mermaid{margin:0;min-width:640px;background:transparent}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.sw{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.panel h4{margin:0 0 8px;font-size:15px}
+.panel ul,.panel ol{margin:0;padding-left:1.2em}
+.panel li{margin-bottom:4px}
+.tag-pt{color:var(--pt)} .tag-na{color:var(--na)} .tag-wx{color:var(--wx)} .tag-ng{color:var(--ng)} .tag-warn{color:var(--warn)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:720px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--bg)}
+tr:last-child td{border-bottom:none}
+td code{white-space:nowrap}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);font:600 12px/24px var(--mono);text-align:center;width:24px;height:24px;border-radius:50%;background:var(--pt-wash);color:var(--pt)}
+.callout{border-left:3px solid var(--ng);background:var(--ng-wash);padding:10px 14px;border-radius:0 8px 8px 0;font-size:14px;margin:14px 0;max-width:none}
+.callout.red{border-color:var(--warn);background:var(--warn-wash)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.split{grid-template-columns:1fr} h1{font-size:26px}}
+/* SVG */
+.g-na{fill:var(--na-wash);stroke:var(--na);stroke-width:1.2}
+.g-pt{fill:var(--pt-wash);stroke:var(--pt);stroke-width:1.2}
+.g-wx{fill:var(--wx-wash);stroke:var(--wx);stroke-width:1.2}
+.g-ng{fill:var(--ng-wash);stroke:var(--ng);stroke-width:1.2}
+.g-plain{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.g-host{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:6 5}
+.g-frame{fill:none;stroke:var(--line);stroke-width:1.2}
+.bx{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.bx-db{fill:var(--surface);stroke:var(--pt);stroke-width:1;stroke-dasharray:4 3}
+.t1{font:600 13px var(--sans);fill:var(--ink)}
+.t2{font:400 11.5px var(--sans);fill:var(--muted)}
+.tm{font:400 11px var(--mono);fill:var(--muted)}
+.th{font:700 13.5px var(--sans)}
+.th.na{fill:var(--na)} .th.pt{fill:var(--pt)} .th.wx{fill:var(--wx)} .th.ng{fill:var(--ng)} .th.mu{fill:var(--muted)}
+.lbl{font:500 11px var(--sans);fill:var(--muted)}
+.ln{fill:none;stroke-width:1.6}
+.ln.ink{stroke:var(--muted)} .ln.na{stroke:var(--na)} .ln.wx{stroke:var(--wx)} .ln.pt{stroke:var(--pt)} .ln.ng{stroke:var(--ng)}
+.ln.dash{stroke-dasharray:5 4}
+.mk-ink{fill:var(--muted)} .mk-na{fill:var(--na)} .mk-wx{fill:var(--wx)} .mk-pt{fill:var(--pt)} .mk-ng{fill:var(--ng)}
+.bg-lbl{fill:var(--surface)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Perfectoken · pt-pay</div>
+  <h1>pt-pay 技术架构、部署结构与 New API 的关系</h1>
+  <p class="lede">pt-pay 是挂在 New API 旁边的独立服务：负责微信扫码充值、退款、会员资格和邀请奖励，New API 本身一行代码不改。本页按「和 New API 的边界 → 架构 → 部署 → 各条调用链 → 数据 → 运维」的顺序展开。</p>
+  <div class="facts">
+    <span><b>技术栈</b> Python 3.11 · FastAPI · uvicorn · httpx · wechatpayv3 · PostgreSQL 16（psycopg 3）</span>
+    <span><b>监听</b> <code>127.0.0.1:8098</code></span>
+    <span><b>对接</b> New API v1.0.0-rc.37 · 微信支付 Native v3</span>
+    <span><b>测试</b> 479 passed（跑在真实 PG 上）</span>
+    <span class="pill p-done">代码已合并 main</span>
+    <span class="pill p-wait">部署暂缓</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#relation">与 New API 的关系</a><a href="#arch">技术架构图</a><a href="#deploy">部署结构图</a><a href="#topup">充值链路</a><a href="#reconcile">补单对账</a><a href="#refund">退款链路</a><a href="#member">会员与邀请</a><a href="#data">数据模型</a><a href="#ops">运维入口</a><a href="#todo">上线待办</a>
+</nav>
+
+<!-- ============ 关系 ============ -->
+<section id="relation">
+  <div class="sec-head"><span class="eyebrow">01 · 边界</span><h2>与原 New API 的关系：旁挂、单向依赖、零改动</h2></div>
+  <p>New API 仍是用户、登录、额度和计费的唯一权威。pt-pay 不直接读写 New API 的数据库，只通过 New API 自己的 HTTP 接口交互：用<b>用户的 access token</b> 核实身份，用<b>root 的系统访问令牌（PAT）</b>调管理接口加减额度。反方向 New API 对 pt-pay 完全无感知，唯一的接缝是后台「充值链接」指向 <code>/pay/</code>。</p>
+
+  <div class="cols" style="margin-top:14px">
+    <div class="panel">
+      <h4 class="tag-na">沿用 New API 的</h4>
+      <ul>
+        <li><b>登录态</b>：页面同源调用 <code>/api/user/auth/refresh</code> 换 access token，pt-pay 再用 <code>/api/user/self</code> 核实，不另设账号体系</li>
+        <li><b>额度体系</b>：入账/扣回都走 <code>/api/user/manage</code>，由 New API 自己同步 Redis 缓存并写充值日志</li>
+        <li><b>邀请关系</b>：注册时的 <code>aff</code> 码 → 用户的 <code>inviter_id</code>，pt-pay 只读</li>
+        <li><b>汇率</b>：<code>/api/status</code> 的 <code>usd_exchange_rate</code>（7.3）与 <code>quota_per_unit</code>（500000）</li>
+        <li><b>运维门禁</b>：<code>/ops/*</code> 复用站点现有的 <code>auth_request /_ops_check</code></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4 class="tag-pt">pt-pay 自己负责的</h4>
+      <ul>
+        <li>充值订单、微信下单/回调/查单/关单、每日账单核对</li>
+        <li>退款（先扣回余额再原路退款）及失败补偿</li>
+        <li>正式会员判定、邀请资格、风控、奖励发放/收回</li>
+        <li>赠送余额批次（180 天有效期）的消耗跟踪与到期扣减</li>
+        <li>自己的数据：new-api-postgres 里的独立库 <code>ptpay</code>（独立角色，看不到 New API 的表）</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4 class="tag-ng">为什么不用 New API 自带功能</h4>
+      <ul>
+        <li><b>自带易支付充值</b>按整美元入账（<code>amount × QuotaPerUnit</code>），本站汇率 7.3，最小单位 7.3 元，做不出「10 元档、1 元 = 1 元」。pt-pay 自算额度：<code>元 ÷ 汇率 × quota_per_unit</code></li>
+        <li><b>自带邀请奖励</b>注册即发、无会员门槛和风控。上线时把 <code>QuotaForInviter/Invitee</code> 改为 0，由 pt-pay 接管</li>
+        <li><b>数据库</b>：复用 New API 的 PG 16 实例，但用独立角色 + 独立库（同 sub2api 先例）。New API 升级做数据库迁移互不影响，权限隔离，备份可单独做</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>pt-pay 调用的 New API 接口一览</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>接口</th><th>身份</th><th>调用方</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /api/user/auth/refresh</code></td><td>浏览器 cookie</td><td>前端页 <code>index.html</code> / <code>invite.html</code></td><td>换取 access token 与 user.id，放进后续请求头</td></tr>
+      <tr><td><code>GET /api/user/self</code></td><td>用户 access token</td><td><code>app.make_current_user</code></td><td>每个 <code>/pay/api/*</code>、<code>/member/api/summary</code> 请求的身份校验（5xx → 503，失败 → 401）</td></tr>
+      <tr><td><code>GET /api/user/aff</code></td><td>用户 access token</td><td><code>invite.html</code> 前端</td><td>取邀请码，拼出 <code>/sign-up?aff=…</code> 邀请链接和二维码</td></tr>
+      <tr><td><code>GET /api/status</code></td><td>匿名</td><td><code>NewApi.rates</code></td><td>下单时算额度、发奖时算 10 元对应额度、页面把额度换回元</td></tr>
+      <tr><td><code>POST /api/user/manage</code></td><td>管理员 PAT</td><td><code>NewApi.add_quota / subtract_quota</code></td><td>充值入账、退款扣回、补偿加回、奖励发放、奖励收回、赠送过期扣减</td></tr>
+      <tr><td><code>GET /api/user/:id</code></td><td>管理员 PAT</td><td><code>NewApi.user_quota</code>、<code>UserDirectory.get_user</code></td><td>退款前余额检查；会员引擎读分组/状态/邮箱/<code>used_quota</code>/余额</td></tr>
+      <tr><td><code>GET /api/user/?sort_by=created_at</code></td><td>管理员 PAT</td><td><code>UserDirectory.new_users</code></td><td>按水位增量同步新注册用户，带 <code>inviter_id</code> 的建立邀请关系</td></tr>
+      <tr><td><code>GET /api/log/?type=1</code></td><td>管理员 PAT</td><td><code>credit-check</code> 命令</td><td>人工核对入账卡单时查 New API 是否已有充值日志</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:10px;font-size:13.5px;color:var(--muted)">额度换算示例：1 元 = 1 ÷ 7.3 × 500000 ≈ <span class="mono">68493</span> quota；10 元奖励 ≈ <span class="mono">684932</span> quota。四舍五入到整数，汇率每次实时读取。</p>
+</section>
+
+<!-- ============ 架构图 ============ -->
+<section id="arch">
+  <div class="sec-head"><span class="eyebrow">02 · 逻辑架构</span><h2>技术架构图</h2></div>
+  <p>所有外部流量都经过 nginx。pt-pay 内部分三层：入口层处理 HTTP 和定时任务，业务层是充值与会员两个引擎，适配层封装对 New API 和微信的调用。两个模块共用 PostgreSQL 里的 <code>ptpay</code> 库，会员模块只写自己的表，对 <code>orders/refunds</code> 只读。</p>
+  <div class="fig">
+<svg viewBox="0 0 1120 612" role="img" aria-label="pt-pay 技术架构图">
+  <defs>
+    <marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-ink"/></marker>
+    <marker id="a-na" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-na"/></marker>
+    <marker id="a-wx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-wx"/></marker>
+    <marker id="a-ng" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-ng"/></marker>
+    <marker id="a-pt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-pt"/></marker>
+  </defs>
+
+  <!-- top actors -->
+  <rect x="40" y="20" width="320" height="76" rx="8" class="g-plain"/>
+  <text x="58" y="48" class="t1">用户浏览器 / 手机微信</text>
+  <text x="58" y="72" class="t2">New API 控制台 · /pay/ 收银台 · /member/invite</text>
+
+  <rect x="400" y="20" width="320" height="76" rx="8" class="g-plain"/>
+  <text x="418" y="48" class="t1">运维人员</text>
+  <text x="418" y="72" class="t2">/ops/member/ · /ops/bill/ 只读页 · SSH 跑 pt-pay-admin</text>
+
+  <rect x="760" y="20" width="320" height="76" rx="8" class="g-wx"/>
+  <text x="778" y="48" class="th wx">微信支付 API v3（外部）</text>
+  <text x="778" y="72" class="t2">Native 下单 · 查单 · 关单 · 退款 · 交易账单</text>
+
+  <!-- nginx -->
+  <rect x="40" y="150" width="1040" height="64" rx="8" class="g-ng"/>
+  <text x="58" y="176" class="th ng">nginx :443 · api.perfectoken.com.cn</text>
+  <text x="58" y="200" class="tm">/ , /api/*  → New API :3001</text>
+  <text x="380" y="200" class="tm">/pay/* , /member/*  → pt-pay :8098（XFF 覆写）</text>
+  <text x="760" y="200" class="tm">/ops/member/ , /ops/bill/ → 静态页</text>
+
+  <line x1="200" y1="96" x2="200" y2="148" class="ln ink" marker-end="url(#a-ink)"/>
+  <text x="208" y="128" class="lbl">HTTPS</text>
+  <line x1="560" y1="96" x2="560" y2="148" class="ln ink" marker-end="url(#a-ink)"/>
+  <text x="568" y="128" class="lbl">HTTPS · /ops 走 auth_request</text>
+  <line x1="880" y1="96" x2="880" y2="148" class="ln wx" marker-end="url(#a-wx)"/>
+  <text x="888" y="128" class="lbl">支付结果回调 /pay/api/wechat/notify</text>
+
+  <!-- New API group -->
+  <rect x="40" y="270" width="400" height="320" rx="10" class="g-na"/>
+  <text x="56" y="294" class="th na">New API v1.0.0-rc.37 · Docker · :3001</text>
+  <text x="332" y="294" class="lbl">原系统 · 零改动</text>
+
+  <rect x="56" y="310" width="176" height="56" rx="6" class="bx"/><text x="68" y="332" class="t1">登录态</text><text x="68" y="353" class="tm">auth/refresh · user/self</text>
+  <rect x="248" y="310" width="176" height="56" rx="6" class="bx"/><text x="260" y="332" class="t1">系统状态</text><text x="260" y="353" class="tm">/api/status 汇率</text>
+  <rect x="56" y="378" width="176" height="56" rx="6" class="bx"/><text x="68" y="400" class="t1">用户目录</text><text x="68" y="421" class="tm">/api/user/ · /:id</text>
+  <rect x="248" y="378" width="176" height="56" rx="6" class="bx"/><text x="260" y="400" class="t1">邀请体系</text><text x="260" y="421" class="tm">aff 码 · inviter_id</text>
+  <rect x="56" y="446" width="176" height="56" rx="6" class="bx"/><text x="68" y="468" class="t1">额度管理</text><text x="68" y="489" class="tm">POST /api/user/manage</text>
+  <rect x="248" y="446" width="176" height="56" rx="6" class="bx"/><text x="260" y="468" class="t1">日志</text><text x="260" y="489" class="tm">GET /api/log/</text>
+  <rect x="56" y="520" width="176" height="52" rx="6" class="bx" style="stroke-dasharray:4 3;stroke:var(--na)"/><text x="68" y="542" class="t1">Redis</text><text x="68" y="561" class="t2">额度缓存</text>
+  <rect x="248" y="520" width="176" height="52" rx="6" class="bx" style="stroke:var(--pt);stroke-width:1.6"/><text x="260" y="542" class="t1">PostgreSQL 16</text><text x="260" y="561" class="tm">库 newapi │ 库 ptpay</text>
+
+  <!-- pt-pay group -->
+  <rect x="540" y="270" width="540" height="320" rx="10" class="g-pt"/>
+  <text x="556" y="294" class="th pt">pt-pay · FastAPI + uvicorn · 127.0.0.1:8098</text>
+
+  <rect x="556" y="310" width="160" height="56" rx="6" class="bx"/><text x="568" y="332" class="t1">app.py</text><text x="568" y="353" class="t2">/pay/* 收银台·下单·回调</text>
+  <rect x="730" y="310" width="160" height="56" rx="6" class="bx"/><text x="742" y="332" class="t1">member/api.py</text><text x="742" y="353" class="t2">/member/* 邀请页·汇总</text>
+  <rect x="904" y="310" width="160" height="56" rx="6" class="bx"/><text x="916" y="332" class="t1">cli.py</text><text x="916" y="353" class="t2">定时任务 + 运维命令</text>
+
+  <rect x="556" y="378" width="160" height="56" rx="6" class="bx"/><text x="568" y="400" class="t1">service.py</text><text x="568" y="421" class="t2">下单 入账 对账 退款</text>
+  <rect x="730" y="378" width="160" height="56" rx="6" class="bx"/><text x="742" y="400" class="t1">member/engine.py</text><text x="742" y="421" class="t2">同步 资格 风控 发奖 收回</text>
+  <rect x="904" y="378" width="160" height="56" rx="6" class="bx"/><text x="916" y="400" class="t1">ledger · risk · rules</text><text x="916" y="421" class="t2">幂等流水 · 风控 · 规则</text>
+
+  <rect x="556" y="446" width="160" height="56" rx="6" class="bx"/><text x="568" y="468" class="t1">newapi.py</text><text x="568" y="489" class="t2">whoami 汇率 加减额度</text>
+  <rect x="730" y="446" width="160" height="56" rx="6" class="bx"/><text x="742" y="468" class="t1">member/users.py</text><text x="742" y="489" class="t2">拉新用户 · 查用户</text>
+  <rect x="904" y="446" width="160" height="56" rx="6" class="bx"/><text x="916" y="468" class="t1">wechat.py</text><text x="916" y="489" class="t2">v3 SDK 封装 + 全局锁</text>
+
+  <rect x="556" y="520" width="508" height="52" rx="6" class="bx-db"/>
+  <text x="568" y="542" class="t1">db.py · member/db.py → pg.py（psycopg 连接池 · 行锁事务 · advisory lock）</text>
+  <text x="568" y="561" class="tm">orders refunds meta │ referrals reward_ledger gift_lots member_meta</text>
+  <line x1="556" y1="546" x2="426" y2="546" class="ln pt" marker-end="url(#a-pt)"/>
+  <text x="490" y="538" class="lbl" text-anchor="middle">SQL :5432</text>
+  <text x="490" y="566" class="lbl" text-anchor="middle">独立库 ptpay</text>
+
+  <!-- nginx -> backends -->
+  <line x1="240" y1="214" x2="240" y2="268" class="ln ink" marker-end="url(#a-ink)"/>
+  <text x="248" y="246" class="lbl">/ , /api/*</text>
+  <line x1="810" y1="214" x2="810" y2="268" class="ln ink" marker-end="url(#a-ink)"/>
+  <text x="818" y="246" class="lbl">/pay/* , /member/*</text>
+
+  <!-- pt-pay -> New API -->
+  <line x1="556" y1="338" x2="442" y2="338" class="ln na" marker-end="url(#a-na)"/>
+  <text x="490" y="330" class="lbl" text-anchor="middle">whoami</text>
+  <text x="490" y="356" class="lbl" text-anchor="middle">用户 token</text>
+  <line x1="556" y1="474" x2="442" y2="474" class="ln na" marker-end="url(#a-na)"/>
+  <text x="490" y="466" class="lbl" text-anchor="middle">管理员 PAT</text>
+  <text x="490" y="492" class="lbl" text-anchor="middle">加减额度·查询</text>
+
+  <!-- pt-pay -> WeChat -->
+  <polyline points="1064,474 1100,474 1100,58 1082,58" class="ln wx" marker-end="url(#a-wx)"/>
+  <text transform="translate(1112,330) rotate(-90)" class="lbl" text-anchor="middle">主动调用：下单·查单·关单·退款·账单</text>
+
+  <!-- layer hints -->
+  <line x1="636" y1="366" x2="636" y2="376" class="ln pt"/>
+  <line x1="636" y1="434" x2="636" y2="444" class="ln pt"/>
+  <line x1="810" y1="366" x2="810" y2="376" class="ln pt"/>
+  <line x1="810" y1="434" x2="810" y2="444" class="ln pt"/>
+  <line x1="984" y1="366" x2="984" y2="376" class="ln pt"/>
+  <line x1="984" y1="434" x2="984" y2="444" class="ln pt"/>
+  <line x1="636" y1="502" x2="636" y2="518" class="ln pt"/>
+  <line x1="810" y1="502" x2="810" y2="518" class="ln pt"/>
+</svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--muted)"></i>用户/运维流量</span>
+    <span><i class="sw" style="background:var(--na)"></i>pt-pay → New API（本机回环 HTTP）</span>
+    <span><i class="sw" style="background:var(--wx)"></i>与微信支付之间</span>
+    <span><i class="sw" style="background:var(--pt)"></i>pt-pay → PostgreSQL（独立库 ptpay）</span>
+    <span>三行由上到下：入口层 → 业务层 → 适配层 → 存储</span>
+  </div>
+
+  <h3>模块职责</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>文件</th><th>层</th><th>职责要点</th></tr></thead>
+    <tbody>
+      <tr><td><code>app.py</code></td><td>入口</td><td>组装 FastAPI；<code>make_current_user</code> 身份依赖（充值、会员共用）；收银台页、预设档位、下单、查单、我的订单、微信回调（先查序列号和 ±300s 时间戳，再验签）</td></tr>
+      <tr><td><code>member/api.py</code></td><td>入口</td><td>邀请页、<code>/member/api/summary</code>（会员状态、邀请列表脱敏、奖励与赠送余额）、<code>/member/api/qr</code>（只允许本站注册链接，nginx 另外限流 30 次/分钟）</td></tr>
+      <tr><td><code>cli.py</code></td><td>入口</td><td><code>db-migrate</code>、<code>serve</code>、<code>reconcile</code>、<code>bill</code>、<code>member-run</code> 等 20 多个子命令；启动时校验 schema 版本；member-run 用 PG advisory lock 防重入，并且 fail-closed</td></tr>
+      <tr><td><code>service.py</code></td><td>业务</td><td><code>PayService</code>：下单、<code>on_paid</code> 核对、<code>credit</code> 入账、<code>reconcile</code> 补单、退款、补偿、人工核账</td></tr>
+      <tr><td><code>member/engine.py</code></td><td>业务</td><td><code>MemberEngine.run()</code> 每分钟一轮，共 9 步，每条记录各自 try/except</td></tr>
+      <tr><td><code>member/ledger.py</code></td><td>业务</td><td>奖励流水：先落 pending（幂等键唯一），再调 New API，结果写回 applied/rejected/unknown</td></tr>
+      <tr><td><code>member/risk.py</code> · <code>rules.py</code></td><td>业务</td><td>纯函数风控判定；所有业务数值集中在 rules.py（改规则只改这里）</td></tr>
+      <tr><td><code>newapi.py</code></td><td>适配</td><td>把 New API 的返回分成三类异常：<code>CreditRejected</code>（确定没加，可重试）、<code>CreditUnknown</code>（可能加了，冻结）、<code>AdminAuthFailed</code>（PAT 失效，告警）</td></tr>
+      <tr><td><code>member/users.py</code></td><td>适配</td><td>管理员只读接口：新用户分页、单用户详情</td></tr>
+      <tr><td><code>wechat.py</code></td><td>适配</td><td><code>RealWechat</code> 包 wechatpayv3，所有 SDK 调用串行加锁（SDK 共享可变默认 headers 的并发 bug）；<code>FakeWechat</code> 供测试</td></tr>
+      <tr><td><code>db.py</code> · <code>member/db.py</code></td><td>存储</td><td>状态机全部靠带前置状态的条件 UPDATE 实现，抢到才算数；退款、赠送批次这 6 处多步操作用事务 + <code>SELECT … FOR UPDATE</code> 行锁</td></tr>
+      <tr><td><code>pg.py</code> · <code>migrate.py</code></td><td>存储</td><td>连接池（serve 1–4 个连接、一次性命令最多 2 个），<code>lock_timeout</code> 5s；编号 SQL 迁移只由 <code>db-migrate</code> 执行</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ 部署图 ============ -->
+<section id="deploy">
+  <div class="sec-head"><span class="eyebrow">03 · 物理部署</span><h2>部署结构图（杭州单机）</h2></div>
+  <p>pt-pay 与 New API 部署在同一台机器上：New API 跑在 Docker 里，pt-pay 由 systemd 管理，以独立的 <code>ptpay</code> 用户运行。常驻进程只有一个，其余三件事由定时器触发一次性任务完成。</p>
+  <div class="fig">
+<svg viewBox="0 0 1120 760" role="img" aria-label="pt-pay 部署结构图">
+  <defs>
+    <marker id="d-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-ink"/></marker>
+    <marker id="d-na" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-na"/></marker>
+    <marker id="d-wx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-wx"/></marker>
+    <marker id="d-pt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-pt"/></marker>
+    <marker id="d-ng" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-ng"/></marker>
+  </defs>
+
+  <rect x="40" y="16" width="320" height="60" rx="8" class="g-plain"/>
+  <text x="58" y="42" class="t1">用户 / 运维浏览器</text><text x="58" y="63" class="t2">公网 HTTPS</text>
+  <rect x="760" y="16" width="320" height="60" rx="8" class="g-wx"/>
+  <text x="778" y="42" class="th wx">微信支付服务器</text><text x="778" y="63" class="t2">回调入站 · API 出站</text>
+
+  <rect x="20" y="104" width="1080" height="644" rx="12" class="g-host"/>
+  <text x="40" y="132" class="th mu">杭州云主机 · api.perfectoken.com.cn（单机）</text>
+
+  <rect x="40" y="148" width="1040" height="58" rx="8" class="g-ng"/>
+  <text x="58" y="172" class="th ng">nginx :443（TLS 终结）</text>
+  <text x="58" y="194" class="tm">http 块：00-ptmember-limits.conf（二维码限流 zone） · server 块 include：nginx-pay.conf、nginx-member.conf</text>
+
+  <line x1="200" y1="76" x2="200" y2="146" class="ln ink" marker-end="url(#d-ink)"/>
+  <line x1="880" y1="76" x2="880" y2="146" class="ln wx" marker-end="url(#d-wx)"/>
+  <text x="888" y="112" class="lbl">notify 回调</text>
+
+  <!-- Docker column -->
+  <rect x="40" y="240" width="320" height="280" rx="10" class="g-na"/>
+  <text x="56" y="264" class="th na">Docker（原有，不动）</text>
+  <rect x="56" y="278" width="288" height="70" rx="6" class="bx"/>
+  <text x="68" y="300" class="t1">new-api · v1.0.0-rc.37</text>
+  <text x="68" y="320" class="tm">发布到 127.0.0.1:3001</text>
+  <text x="68" y="338" class="t2">业务 API、控制台前端、管理接口</text>
+  <rect x="56" y="360" width="288" height="66" rx="6" class="bx"/>
+  <text x="68" y="382" class="t1">new-api-postgres · PG 16</text>
+  <text x="68" y="404" class="tm">127.0.0.1:5432 · newapi / sub2api / ptpay</text>
+  <rect x="56" y="438" width="288" height="66" rx="6" class="bx"/>
+  <text x="68" y="460" class="t1">redis</text>
+  <text x="68" y="482" class="t2">额度缓存；管理接口调额时同步刷新</text>
+
+  <rect x="40" y="540" width="320" height="192" rx="10" class="g-frame"/>
+  <text x="56" y="564" class="th na">New API 后台配置（上线时改）</text>
+  <text x="56" y="592" class="tm">QuotaForInviter  = 0</text>
+  <text x="56" y="614" class="tm">QuotaForInvitee  = 0</text>
+  <text x="56" y="636" class="tm">QuotaForNewUser  = 68493（1 元）</text>
+  <text x="56" y="658" class="tm">TopUpLink = …/pay/</text>
+  <text x="56" y="680" class="tm">邮箱验证 + Turnstile 开启</text>
+  <text x="56" y="708" class="t2">注册接口另加 nginx 限流（上线前核对路由）</text>
+
+  <!-- systemd column -->
+  <rect x="390" y="240" width="340" height="492" rx="10" class="g-pt"/>
+  <text x="406" y="264" class="th pt">systemd · User=ptpay · ProtectSystem=strict</text>
+
+  <rect x="406" y="278" width="308" height="86" rx="6" class="bx" style="stroke:var(--pt)"/>
+  <text x="418" y="300" class="t1">pt-pay.service（常驻）</text>
+  <text x="418" y="320" class="tm">pt-pay serve → uvicorn 127.0.0.1:8098</text>
+  <text x="418" y="339" class="t2">Restart=always · MemoryMax=300M</text>
+  <text x="418" y="356" class="t2">出站 HTTPS → 微信支付 API</text>
+
+  <rect x="406" y="376" width="308" height="70" rx="6" class="bx"/>
+  <text x="418" y="398" class="t1">pt-pay-reconcile.timer → .service</text>
+  <text x="418" y="420" class="tm">每 60s · pt-pay reconcile</text>
+  <text x="418" y="438" class="t2">补单、关单、入账重试、退款状态</text>
+
+  <rect x="406" y="458" width="308" height="84" rx="6" class="bx"/>
+  <text x="418" y="480" class="t1">pt-pay-member.timer → .service</text>
+  <text x="418" y="502" class="tm">每 60s · member-run + member-ops-page</text>
+  <text x="418" y="520" class="t2">advisory lock 防重入；失败也刷新运维页</text>
+  <text x="418" y="536" class="t2">需 PT_MEMBER_PILOT 或 FULL_LAUNCH</text>
+
+  <rect x="406" y="554" width="308" height="70" rx="6" class="bx"/>
+  <text x="418" y="576" class="t1">pt-pay-bill.timer → .service</text>
+  <text x="418" y="598" class="tm">每天 10:30 · bill + bill-ops-page</text>
+  <text x="418" y="616" class="t2">下载微信昨日账单逐笔核对</text>
+
+  <rect x="406" y="636" width="308" height="80" rx="6" class="bx" style="stroke-dasharray:4 3"/>
+  <text x="418" y="658" class="t1">/usr/local/bin/pt-pay-admin</text>
+  <text x="418" y="678" class="t2">root 执行 → systemd-run 切到 ptpay</text>
+  <text x="418" y="696" class="t2">db-migrate、退款、审核、核账等命令</text>
+  <text x="418" y="712" class="t2">注入 env 文件，journal 留审计记录</text>
+
+  <!-- filesystem column -->
+  <rect x="760" y="240" width="320" height="492" rx="10" class="g-frame"/>
+  <text x="776" y="264" class="th mu">文件系统</text>
+  <rect x="776" y="278" width="288" height="62" rx="6" class="bx"/>
+  <text x="788" y="300" class="t1">/opt/pt-pay/venv</text>
+  <text x="788" y="322" class="t2">代码与依赖（pip install 本仓库）</text>
+
+  <rect x="776" y="352" width="288" height="96" rx="6" class="bx" style="stroke:var(--warn)"/>
+  <text x="788" y="374" class="t1">/etc/pt-pay/</text>
+  <text x="1052" y="374" class="tm" text-anchor="end">640 root:ptpay</text>
+  <text x="788" y="396" class="tm">pt-pay.env</text>
+  <text x="788" y="414" class="tm">apiclient_key.pem · pub_key.pem</text>
+  <text x="788" y="436" class="t2">商户密钥、PAT、数据库密码只放这里</text>
+
+  <rect x="776" y="460" width="288" height="84" rx="6" class="bx"/>
+  <text x="788" y="482" class="t1">/var/backups/pt-pay/</text>
+  <text x="1052" y="482" class="tm" text-anchor="end">700 root</text>
+  <text x="788" y="504" class="tm">ptpay-YYYY-MM-DD.dump · 保留 14 天</text>
+  <text x="788" y="524" class="t2">pt-pay-backup.timer 每天 04:00 pg_dump</text>
+
+  <rect x="776" y="556" width="288" height="84" rx="6" class="bx" style="stroke:var(--ng)"/>
+  <text x="788" y="578" class="t1">/var/lib/pt-pay-public/</text>
+  <text x="1052" y="578" class="tm" text-anchor="end">750 ptpay:nginx</text>
+  <text x="788" y="600" class="tm">ops-member.html · ops-bill.html</text>
+  <text x="788" y="620" class="t2">pt-pay 唯一可写的本地目录</text>
+
+  <!-- arrows -->
+  <line x1="200" y1="206" x2="200" y2="276" class="ln ink" marker-end="url(#d-ink)"/>
+  <text x="208" y="232" class="lbl">/ , /api/*</text>
+  <line x1="560" y1="206" x2="560" y2="276" class="ln ink" marker-end="url(#d-ink)"/>
+  <text x="568" y="232" class="lbl">/pay/* , /member/*</text>
+  <polyline points="1080,177 1092,177 1092,598 1066,598" class="ln ng" marker-end="url(#d-ng)"/>
+  <text transform="translate(1086,420) rotate(-90)" class="lbl" text-anchor="middle">/ops/* 门禁后只读</text>
+
+  <line x1="406" y1="310" x2="346" y2="310" class="ln na" marker-end="url(#d-na)"/>
+  <line x1="406" y1="400" x2="346" y2="400" class="ln pt" marker-end="url(#d-pt)"/>
+
+  <!-- member / bill write ops pages -->
+  <line x1="714" y1="500" x2="745" y2="500" class="ln pt dash"/>
+  <line x1="714" y1="589" x2="745" y2="589" class="ln pt dash"/>
+  <line x1="745" y1="500" x2="745" y2="598" class="ln pt dash"/>
+  <line x1="745" y1="598" x2="774" y2="598" class="ln pt dash" marker-end="url(#d-pt)"/>
+</svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--na)"></i>pt-pay → New API :3001（常驻服务和定时任务都调用）</span>
+    <span><i class="sw" style="background:var(--pt)"></i>pt-pay → PostgreSQL 127.0.0.1:5432 库 ptpay（虚线：member / bill 写运维页）</span>
+    <span><i class="sw" style="background:var(--ng)"></i>nginx 读静态运维页</span>
+  </div>
+
+  <h3>nginx 路由表</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>location</th><th>去向</th><th>要点</th></tr></thead>
+    <tbody>
+      <tr><td><code>^~ /pay/</code></td><td>127.0.0.1:8098</td><td>回调也在这里，<b>不能加门禁</b>；<code>X-Forwarded-For $remote_addr</code> 覆写防伪造；禁止 iframe；body ≤ 64k</td></tr>
+      <tr><td><code>= /member/api/qr</code></td><td>127.0.0.1:8098</td><td>精确匹配优先；<code>limit_req zone=ptmember_qr</code> 每 IP 30 次/分钟，突发 10</td></tr>
+      <tr><td><code>^~ /member/</code></td><td>127.0.0.1:8098</td><td>邀请页与 summary；同样覆写 XFF</td></tr>
+      <tr><td><code>= /ops/member/</code></td><td><code>alias …/ops-member.html</code></td><td><code>auth_request /_ops_check</code>；每分钟由 member 任务重写</td></tr>
+      <tr><td><code>= /ops/bill/</code></td><td><code>alias …/ops-bill.html</code></td><td>同上；每天 10:30 由 bill 任务重写</td></tr>
+      <tr><td>其余 <code>/</code>、<code>/api/*</code></td><td>127.0.0.1:3001</td><td>原 New API 配置不变（上线前给注册接口加限流）</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">pt-pay 本机没有数据目录：数据全在 PG 的 <code>ptpay</code> 库里，systemd 单元在 <code>ProtectSystem=strict</code> 下只允许 member / bill 两个任务写 <code>/var/lib/pt-pay-public</code>（750 ptpay:nginx 组，给 nginx 读运维页）。表结构只由 <code>pt-pay-admin db-migrate</code> 创建和升级。</div>
+</section>
+
+<!-- ============ 充值 ============ -->
+<section id="topup">
+  <div class="sec-head"><span class="eyebrow">04 · 调用链</span><h2>充值链路：从扫码到到账</h2></div>
+  <p>用户在 New API 钱包页点充值链接进入 <code>/pay/</code>。收银台和 New API 同域，浏览器带着 New API 的 cookie 就能换到 access token，所以用户无需再次登录。下图省略了 nginx 转发这一跳。</p>
+  <div class="fig">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as 浏览器 / 微信
+  participant A as New API
+  participant P as pt-pay
+  participant W as 微信支付
+  U->>A: POST /api/user/auth/refresh（同源 cookie）
+  A-->>U: access_token + user.id
+  U->>P: POST /pay/api/orders {yuan}（Bearer + New-Api-User）
+  P->>A: GET /api/user/self（核实身份）
+  P->>A: GET /api/status（汇率、quota_per_unit）
+  P->>P: 校验 10–5000 整元、未支付单不超过 5 笔，落库 created（额度已算好）
+  P->>W: Native 下单（time_expire = 30 分钟）
+  W-->>P: code_url
+  P-->>U: 二维码 SVG
+  U->>W: 手机扫码付款
+  W->>P: POST /pay/api/wechat/notify
+  P->>P: 序列号与 ±300s 时间戳 → 验签解密 → 核对商户号、AppID、金额
+  P->>P: created/closed → paid，再条件 UPDATE 抢 paid → crediting
+  P->>A: POST /api/user/manage add_quota（管理员 PAT）
+  A-->>P: success
+  P->>P: crediting → credited
+  P-->>W: 200 SUCCESS
+  loop 每 2 秒，最长 30 分钟
+    U->>P: GET /pay/api/orders/{no}
+  end
+</pre>
+  </div>
+
+  <div class="split" style="margin-top:16px">
+    <div class="fig">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> created: 下单
+  created --> paid: 回调或查单 SUCCESS
+  created --> closed: 超过 35 分钟关单
+  closed --> paid: 关单后迟到的成功
+  paid --> crediting: 条件 UPDATE 抢占
+  crediting --> credited: add_quota 成功
+  crediting --> paid: New API 明确拒绝
+  created --> mismatch: 金额或商户不符
+  closed --> mismatch: 金额或商户不符
+  credited --> [*]
+</pre>
+    </div>
+    <div class="panel">
+      <h4>订单状态机的实现逻辑</h4>
+      <ul>
+        <li><b>只加一次</b>：回调和每分钟的 reconcile 会同时尝试入账，但只有一方能执行成功 <code>UPDATE … SET status='crediting' WHERE status='paid'</code>，另一方直接退出。</li>
+        <li><b>New API 明确拒绝</b>（<code>CreditRejected</code>）：退回 paid，下一轮自动重试。</li>
+        <li><b>结果未知</b>（超时或 5xx，<code>CreditUnknown</code>）：停在 crediting，不自动重试以免重复入账。超过 5 分钟报卡单，由人工执行 <code>credit-check</code> 查 New API 充值日志，再用 <code>credit-resolve</code> 定论。</li>
+        <li><b>mismatch</b> 是终态：金额、商户号或 AppID 与订单不符，只记日志并给微信回 200，不自动处理。</li>
+        <li>回调里非 <code>TRANSACTION.SUCCESS</code> 的事件（例如退款通知）直接回 200 忽略。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ reconcile ============ -->
+<section id="reconcile">
+  <div class="sec-head"><span class="eyebrow">05 · 兜底</span><h2>补单对账：reconcile 每分钟与 bill 每日</h2></div>
+  <div class="cols">
+    <div class="panel">
+      <h4><code>pt-pay reconcile</code>（每 60 秒）</h4>
+      <ol class="steps">
+        <li><span>created 且超过 60 秒的订单去微信查单：已付款的补入账；超过 35 分钟的关单。关单失败会再查一次，<b>绝不关闭已付款的订单</b>。</span></li>
+        <li><span>停在 paid 的订单重试入账。</span></li>
+        <li><span>每 10 分钟回查 24 小时内关闭的订单，迟到的付款成功照样入账。</span></li>
+        <li><span>把 crediting 超过 5 分钟的卡单和 mismatch 订单列进报告。</span></li>
+        <li><span>submitted 状态的退款去微信查结果，转为 succeeded 或 failed。</span></li>
+        <li><span>把 failed 退款，以及卡住超过 5 分钟的 pending/debited/restoring、debit_unknown、restore_unknown 列进报告。</span></li>
+      </ol>
+      <p style="margin-top:10px;font-size:13.5px;color:var(--muted)">每笔订单单独 try/except，一笔出错不影响其它笔。遇到 <code>AdminAuthFailed</code>（PAT 失效）则本轮停止所有加减额度操作，只告警一次。</p>
+    </div>
+    <div class="panel">
+      <h4><code>pt-pay bill</code>（每天 10:30）</h4>
+      <p>调用微信交易账单接口，下载昨天的账单（支持 gzip），与本地当天的已付款订单逐笔比对。有差异时退出码为 1，结果写到 <code>/ops/bill/</code>。</p>
+      <p>退出码组合：bill 失败优先返回 bill 的退出码；bill 成功但页面写入失败，返回写页面的退出码，避免页面静默过期而任务仍显示成功。</p>
+      <h4 style="margin-top:14px">时间与重试参数</h4>
+      <ul>
+        <li>二维码有效期 30 分钟；本地关单 35 分钟（晚于二维码过期，避免提前关单）</li>
+        <li>每用户最多 5 笔未支付订单</li>
+        <li>crediting 超过 5 分钟算卡单</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ refund ============ -->
+<section id="refund">
+  <div class="sec-head"><span class="eyebrow">06 · 调用链</span><h2>退款链路：先扣回余额，再原路退款</h2></div>
+  <p>退款只能由运维通过 <code>pt-pay-admin refund &lt;订单&gt; &lt;元&gt; &lt;操作人&gt;</code> 发起。先扣回余额，是为了防止用户把充值额度花掉之后钱又退回去。扣回前会检查用户当前余额；余额查询失败时拒绝退款，确认无误后需加 <code>--force</code> 才能继续。同一订单同一时间只允许一笔退款在途。</p>
+  <div class="split">
+    <div class="fig">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> pending: 预占 refunded_fen
+  pending --> released: New API 拒绝扣回
+  pending --> debit_unknown: 扣回结果未知
+  pending --> debited: subtract_quota 成功
+  debited --> submitted: 提交微信退款
+  submitted --> succeeded: 微信 SUCCESS
+  submitted --> failed: CLOSED 或 ABNORMAL
+  failed --> restoring: refund-restore
+  restoring --> restored: add_quota 加回
+  restoring --> restore_unknown: 结果未知
+  restore_unknown --> restored: refund-restore-resolve
+</pre>
+    </div>
+    <div class="panel">
+      <h4>各状态的处理方式</h4>
+      <ul>
+        <li><b>debited 卡住</b>：余额已扣回但提交微信失败，用 <code>refund-retry</code> 以同一退款单号重新提交（微信按 <code>out_refund_no</code> 幂等）。</li>
+        <li><b>failed</b>：微信没有退成，用 <code>refund-restore</code> 把扣回的额度加回给用户。</li>
+        <li><b>*_unknown</b>：可能已经扣回或加回，冻结等待人工核对后定论。</li>
+        <li>用户在「我的充值记录」里看到的已退金额只统计 debited、submitted、succeeded 三种状态，不包括 failed 和补偿中的退款。</li>
+        <li class="tag-warn"><b>会员模块只认 succeeded</b>：退款还在途中时不收回奖励。如果收回后微信又判定退款失败，奖励就再也补不回来了。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ member ============ -->
+<section id="member">
+  <div class="sec-head"><span class="eyebrow">07 · 调用链</span><h2>会员与邀请奖励：member-run 每分钟一轮</h2></div>
+  <p>会员模块没有自己的写入接口，全部逻辑都在定时任务里：从 New API 拉新注册用户建立邀请关系，从本地订单表判断资格，再通过 New API 管理接口发放和收回奖励。页面只负责展示。</p>
+
+  <div class="cols">
+    <div class="panel">
+      <h4>规则（<code>member/rules.py</code>）</h4>
+      <ul>
+        <li><b>正式会员</b>：至少有一笔已入账的充值，实付金额减去已成功退款后仍 ≥ 10 元</li>
+        <li><b>有效邀请</b>：被邀请人注册后 30 天内完成上述首充，且邀请人届时已是正式会员</li>
+        <li><b>奖励</b>：邀请人、被邀请人各得 10 元赠送余额，有效期 180 天</li>
+        <li><b>排除</b>：分组为 vip / svip / superall / bileego 的用户，以及已禁用的用户</li>
+        <li><b>预算</b>：每月 2000 元，超过即转人工审核</li>
+        <li><b>审核超时</b>：7 天未处理自动驳回</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>风控（<code>member/risk.py</code>）</h4>
+      <ul>
+        <li><code>same_payer</code>：双方付款用的微信 openid 有交集</li>
+        <li><code>shared_ip</code>：双方下单时的 client_ip 有交集（New API 日志不记录 IP，所以用订单 IP 代替）</li>
+        <li><code>disposable_email</code>：被邀请人使用一次性邮箱</li>
+        <li><code>monthly_cap</code>：邀请人本月已获奖 20 次</li>
+        <li><code>budget</code>：本月发放金额加上本次将超过 2000 元</li>
+        <li><code>daily_alert</code>：邀请人当天超过 5 次，<b>只告警，不拦截</b></li>
+      </ul>
+      <p style="margin-top:8px;font-size:13.5px;color:var(--muted)">除 daily_alert 外，命中任意一项都转人工审核（review）。</p>
+    </div>
+    <div class="panel">
+      <h4>运行前置（fail-closed）</h4>
+      <ul>
+        <li>拿到文件锁，否则说明上一轮还在跑，直接跳过</li>
+        <li>必须已执行 <code>member-init-watermark</code>，避免把历史邀请关系全部回填导致误发奖</li>
+        <li>必须设置 <code>PT_MEMBER_PILOT</code>（灰度名单）或 <code>PT_MEMBER_FULL_LAUNCH=1</code>，两者都没设置就拒绝运行</li>
+        <li><code>member-pause</code> 后跳过本轮</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>一轮 run() 的 9 个步骤</h3>
+  <div class="panel">
+    <ol class="steps">
+      <li><span><b>同步邀请关系</b>：从水位往回退 10 秒拉 New API 新用户，把带 <code>inviter_id</code> 的写成 registered。水位只推进到已确认安全的位置，处理失败的记录下一轮会重试。</span></li>
+      <li><span><b>资格判定</b>：registered 状态的关系去本地 orders 表找被邀请人 30 天内的合格首充；不在灰度名单、属于排除分组、账号被禁用或邀请人不是会员的，标为 ineligible。</span></li>
+      <li><span><b>风控与发奖</b>：qualified 状态的关系再核一次邀请人是否仍是会员，然后做风控判定。未命中的转为 rewarding，给双方各写一条 grant 流水。</span></li>
+      <li><span><b>收尾与自愈</b>：rewarding 状态下若有流水缺失或 pending 卡住，按同一幂等键补发；两条流水都 applied 后建立赠送批次，转为 rewarded。</span></li>
+      <li><span><b>审核超时</b>：review 状态超过 7 天转为 rejected。</span></li>
+      <li><span><b>收回</b>：触发订单成功退款后实付低于 10 元的，转为 clawing，双方各扣回未过期的部分。若批次还有未定论的过期扣减，先等人工处理，避免重复扣。</span></li>
+      <li><span><b>赠送余额</b>：读 New API 的 <code>used_quota</code> 增量，按发放先后抵扣未过期批次（先扣赠送）；到期批次按「剩余额度与当前余额取较小值」扣减。</span></li>
+      <li><span><b>汇总流水异常</b>：统计状态为 unknown 和 rejected 的流水。</span></li>
+      <li><span><b>卡单检查</b>：rewarding/clawing 超过 10 分钟仍未完成的，以及到期超过 10 分钟仍未扣减的赠送批次，列入报告。</span></li>
+    </ol>
+  </div>
+
+  <div class="split" style="margin-top:16px">
+    <div class="fig">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> registered: 同步到带 inviter_id 的新用户
+  registered --> expired: 30 天内无合格首充
+  registered --> ineligible: 非灰度 / 排除分组 / 禁用 / 邀请人非会员
+  registered --> qualified: 首充 ≥ 10 元已入账
+  qualified --> ineligible: 邀请人已失去会员资格
+  qualified --> review: 命中阻断风控
+  qualified --> rewarding: 风控通过
+  review --> rewarding: member-approve
+  review --> rejected: member-reject 或 7 天超时
+  rewarding --> rewarded: 双方 grant 均 applied
+  rewarded --> clawing: 退款后实付低于 10 元
+  clawing --> clawed_back: 双方 clawback 均 applied
+</pre>
+    </div>
+    <div class="panel">
+      <h4>奖励流水 Ledger：怎么保证不多发、不漏发</h4>
+      <ul>
+        <li>每次加减余额前先插入一条 <code>reward_ledger</code>，状态为 pending，<code>idem_key</code> 设唯一约束：
+          <div class="mono" style="margin:6px 0;color:var(--muted)">ref{id}:invitee · ref{id}:inviter<br>ref{id}:invitee:claw · ref{id}:inviter:claw<br>lot{id}:expire</div>
+        </li>
+        <li>插入成功后才调用 New API，结果写回 applied / rejected / unknown</li>
+        <li>幂等键冲突说明已经做过，直接返回原结果；pending 超过 5 分钟按 unknown 处理</li>
+        <li><b>rejected</b>：确定没加，用 <code>member-retry</code> 重试</li>
+        <li class="tag-warn"><b>unknown</b>：可能已加，属于 P0；人工到 New API 核对后用 <code>member-resolve</code> 定论</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ data ============ -->
+<section id="data">
+  <div class="sec-head"><span class="eyebrow">08 · 存储</span><h2>数据模型（PostgreSQL 库 ptpay）</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>表</th><th>归属</th><th>关键字段</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>orders</code></td><td class="tag-pt">充值</td><td><code>out_trade_no</code>、user_id、amount_fen、quota、status、payer_openid、client_ip、refunded_fen、wx_success_at</td><td>quota 在下单时按当时汇率算定。payer_openid 和 client_ip 同时供会员风控使用</td></tr>
+      <tr><td><code>refunds</code></td><td class="tag-pt">充值</td><td><code>out_refund_no</code>、out_trade_no、amount_fen、quota、operator、status</td><td>状态机见第 06 节</td></tr>
+      <tr><td><code>meta</code></td><td class="tag-pt">充值</td><td>key / value</td><td>例如 <code>last_recheck_closed</code></td></tr>
+      <tr><td><code>referrals</code></td><td class="tag-na">会员</td><td>inviter_id、<code>invitee_id</code>（唯一）、status、trigger_order、risk_hits、reviewed_by</td><td>一个被邀请人只对应一条邀请关系</td></tr>
+      <tr><td><code>reward_ledger</code></td><td class="tag-na">会员</td><td>user_id、quota、kind（grant/clawback/expire）、<code>idem_key</code>（唯一）、status</td><td>所有对 New API 余额的改动都记在这里</td></tr>
+      <tr><td><code>gift_lots</code></td><td class="tag-na">会员</td><td>user_id、quota、remaining、expires_at、ledger_id（唯一）、expired</td><td>赠送余额按批次管理，180 天到期</td></tr>
+      <tr><td><code>member_meta</code></td><td class="tag-na">会员</td><td>key / value</td><td><code>users_watermark</code>、<code>paused</code>、<code>used:{uid}</code> 基线</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:10px;font-size:13.5px;color:var(--muted)">表结构在 <code>pt_pay/migrations/001_init.sql</code>，时间戳、金额、额度一律 <code>bigint</code>。隔离级别用默认的 READ COMMITTED：单条条件 UPDATE 天然只有一方抢到；退款预占/释放/补偿和赠送批次扣减用事务 + <code>FOR UPDATE</code> 行锁，锁顺序固定（先退款单后订单），等锁超过 5 秒提示「数据库繁忙，请重试」。</p>
+</section>
+
+<!-- ============ ops ============ -->
+<section id="ops">
+  <div class="sec-head"><span class="eyebrow">09 · 运维</span><h2>运维入口与告警红线</h2></div>
+  <div class="cols">
+    <div class="panel">
+      <h4>只读页面</h4>
+      <ul>
+        <li><code>/ops/member/</code>：每分钟刷新，展示待审核、流水异常和卡单</li>
+        <li><code>/ops/bill/</code>：每天刷新，展示微信账单与本地的差异</li>
+      </ul>
+      <h4 style="margin-top:14px">充值命令</h4>
+      <p class="mono" style="font-size:12.5px;color:var(--muted)">show · refund · refund-retry · refund-restore · refund-restore-resolve · credit-check · credit-resolve · bill</p>
+      <h4 style="margin-top:14px">会员命令</h4>
+      <p class="mono" style="font-size:12.5px;color:var(--muted)">member-init-watermark · member-reviews · member-approve · member-reject · member-retry · member-resolve · member-show · member-pause · member-resume</p>
+    </div>
+    <div class="panel" style="border-color:var(--warn)">
+      <h4 class="tag-warn">P0 告警</h4>
+      <ul>
+        <li><code>ledger_unknown</code>：奖励流水结果未知</li>
+        <li><code>rewarding_stuck</code>：发放或收回卡住超过 10 分钟</li>
+        <li><code>gift_expiry_stuck</code>：赠送余额到期后未能扣减</li>
+        <li>充值侧：crediting 卡单、mismatch、<code>AdminAuthFailed</code>、各类 refund unknown</li>
+      </ul>
+      <div class="callout red" style="margin-bottom:0">给用户办理退款前，先清完该用户所有 unknown 和 rejected 流水。</div>
+    </div>
+    <div class="panel">
+      <h4>安全要点</h4>
+      <ul>
+        <li>微信商户密钥和 New API PAT 只放在 <code>/etc/pt-pay/</code>，权限 640</li>
+        <li>8098 端口只监听 127.0.0.1；nginx 覆写 XFF 头，服务端取最右侧地址</li>
+        <li>回调先检查序列号和时间戳再验签，防止伪造序列号让 SDK 去拉证书（DoS）</li>
+        <li>日志只记订单号、交易号和金额，不记 openid 和回调原文</li>
+        <li>systemd：<code>ProtectSystem=strict</code>、<code>NoNewPrivileges</code>，只有运维页目录可写</li><li>数据库角色 <code>ptpay</code> 只拥有自己的库，碰不到 New API 的数据</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ todo ============ -->
+<section id="todo">
+  <div class="sec-head"><span class="eyebrow">10 · 进度</span><h2>当前进度与上线待办</h2></div>
+  <p><span class="pill p-done">代码完成</span>&nbsp; 计划 1（微信充值）和计划 2（会员与邀请）已合并 main，Codex 评审修复批次也已合并；存储已从 SQLite 迁到 PostgreSQL，479 个测试全部在真实 PG 上通过。<span class="pill p-wait">暂缓</span>&nbsp; 部署和开票入口已决定暂缓，但没有取消。</p>
+  <div class="panel">
+    <ol class="steps">
+      <li><span><b>建库</b>：在 new-api-postgres 里建角色和库 <code>ptpay</code>（随机密码只写进 <code>/etc/pt-pay/pt-pay.env</code>）</span></li>
+      <li><span><b>服务器部署</b>：安装 venv，写入 <code>/etc/pt-pay/</code> 配置与密钥，执行 <code>pt-pay-admin db-migrate</code>，再安装 5 个 service、4 个 timer（含每日备份）和 nginx 配置片段，执行 <code>install -d -m 750 -o ptpay -g &lt;nginx组&gt; /var/lib/pt-pay-public</code></span></li>
+      <li><span><b>New API 后台</b>：QuotaForInviter/Invitee 改为 0，QuotaForNewUser 设为 68493，充值链接指向 <code>/pay/</code>，开启邮箱验证和 Turnstile</span></li>
+      <li><span><b>注册限流</b>：先核对 New API 的注册路由路径，再添加 nginx 限流</span></li>
+      <li><span><b>初始化水位</b>：<code>pt-pay member-init-watermark &lt;上线时刻 unix_ts&gt;</code></span></li>
+      <li><span><b>灰度</b>：设置 <code>PT_MEMBER_PILOT</code> 名单运行 2 周，没有问题再改为 <code>PT_MEMBER_FULL_LAUNCH=1</code></span></li>
+    </ol>
+  </div>
+</section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({startOnLoad: true, theme: dark ? 'dark' : 'neutral', securityLevel: 'strict',
+    fontFamily: '"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif'});
+</script>
+</body>
+</html>

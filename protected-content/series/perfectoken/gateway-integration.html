@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New API × LiteLLM 融合方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F1F3F2; --surface:#FFFFFF; --ink:#16201D; --muted:#5B6763; --faint:#8A9591; --line:#D5DBD8; --line-soft:#E5E9E7;
+  --lt:#9A5B00; --lt-wash:#F7EEDD;          /* LiteLLM：赭石 */
+  --na:#1D5FA8; --na-wash:#E3ECF7;          /* New API：钴蓝 */
+  --good:#2E7D4F; --good-wash:#E3F1E8;
+  --warn:#A7322A; --warn-wash:#F6E3E0;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+    --lt:#E3A64A; --lt-wash:#2E2414;
+    --na:#7FB0EC; --na-wash:#172536;
+    --good:#6CC792; --good-wash:#15291D;
+    --warn:#EE8A7E; --warn-wash:#361C18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101513; --surface:#181F1C; --ink:#E4EAE7; --muted:#9DA9A4; --faint:#75827D; --line:#2C3632; --line-soft:#222A27;
+  --lt:#E3A64A; --lt-wash:#2E2414;
+  --na:#7FB0EC; --na-wash:#172536;
+  --good:#6CC792; --good-wash:#15291D;
+  --warn:#EE8A7E; --warn-wash:#361C18;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:36px 90px}
+a{color:var(--na)}
+a:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--line-soft);padding:1px 5px;border-radius:4px}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;letter-spacing:.01em}
+h1{font-size:38px;line-height:1.2;margin:0}
+h2{font-size:25px;line-height:1.35;margin:0}
+h3{font-size:18px;margin:28px 0 10px}
+p{margin:0 0 12px;max-width:74ch}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lt{color:var(--lt)} .na{color:var(--na)}
+.tag{display:inline-block;font:500 12px/1.6 var(--sans);padding:0 8px;border-radius:4px;white-space:nowrap}
+.tag.lt{background:var(--lt-wash)} .tag.na{background:var(--na-wash)}
+
+/* header */
+header.hero{display:grid;gap:16px;padding-bottom:26px;border-bottom:2px solid var(--ink)}
+.vs{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.vs .x{font-family:var(--serif);font-size:22px;color:var(--faint)}
+.hero .lede{color:var(--muted);font-size:16px;max-width:80ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500}
+
+nav.toc{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-20px;padding:10px 20px;overflow-x:auto;white-space:nowrap}
+nav.toc a{color:var(--muted);text-decoration:none;font-size:13.5px;margin-right:18px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink)}
+
+section{padding-top:48px;scroll-margin-top:50px}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+
+/* verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.verdict > div{padding:20px 22px;display:grid;gap:10px;align-content:start}
+.verdict > div + div{border-left:1px solid var(--line)}
+.verdict h3{margin:0;font-size:20px}
+.verdict .one{font-size:15.5px;margin:0}
+.verdict ul{margin:0;padding-left:1.1em}
+.verdict li{margin-bottom:4px}
+.verdict .bar{height:4px;border-radius:2px}
+.bottomline{margin-top:16px;padding:16px 20px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:15px}
+.bottomline b{font-family:var(--serif)}
+@media (max-width:760px){.verdict{grid-template-columns:1fr}.verdict > div + div{border-left:none;border-top:1px solid var(--line)}}
+
+/* tables */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-weight:500;color:var(--muted);font-size:12.5px;background:var(--bg);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+td.dim{color:var(--muted);white-space:nowrap;font-weight:500}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th.lt{color:var(--lt)} th.na{color:var(--na)}
+tr.group td{background:var(--bg);font-family:var(--serif);font-weight:600;color:var(--ink);font-size:14.5px;padding-top:14px}
+.dot{display:inline-block;width:.9em;text-align:center;font-size:13px;margin-right:4px}
+.s3::before{content:"●";color:var(--good)}
+.s2::before{content:"◐";color:var(--lt)}
+.s1::before{content:"○";color:var(--faint)}
+.win{font-weight:500}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
+
+/* two col */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.panel h4{margin:0 0 10px;font-size:16px;font-family:var(--serif)}
+.panel ul{margin:0;padding-left:1.15em}
+.panel li{margin-bottom:6px}
+.panel.lt{border-top:3px solid var(--lt)}
+.panel.na{border-top:3px solid var(--na)}
+.panel.risk{border-top:3px solid var(--warn)}
+.panel.lt,.panel.na,.panel.risk{color:var(--ink)}
+.callout{border-left:3px solid var(--warn);background:var(--warn-wash);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;margin:16px 0;max-width:none}
+.callout.info{border-color:var(--na);background:var(--na-wash)}
+
+/* flow diagrams */
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
+.fig svg{display:block;min-width:860px;width:100%;height:auto}
+.s-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.s-lt{fill:var(--lt-wash);stroke:var(--lt);stroke-width:1.2}
+.s-na{fill:var(--na-wash);stroke:var(--na);stroke-width:1.2}
+.s-t1{font:600 13px var(--sans);fill:var(--ink)}
+.s-t2{font:400 11.5px var(--sans);fill:var(--muted)}
+.s-h{font:700 14px var(--serif)}
+.s-h.lt{fill:var(--lt)} .s-h.na{fill:var(--na)}
+.s-ln{fill:none;stroke-width:1.5}
+.s-ln.lt{stroke:var(--lt)} .s-ln.na{stroke:var(--na)} .s-ln.mu{stroke:var(--faint)}
+.mk-lt{fill:var(--lt)} .mk-na{fill:var(--na)} .mk-mu{fill:var(--faint)}
+.s-lbl{font:500 11px var(--sans);fill:var(--muted)}
+
+.pick td:first-child{font-weight:500}
+.sources li{margin-bottom:4px;font-size:13.5px;color:var(--muted)}
+.sources a{word-break:break-all}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+</style>
+
+
+<style>
+.tag.warnt{background:var(--warn-wash);color:var(--warn)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.steps li::before{content:counter(s);font:500 12px/26px var(--mono);text-align:center;width:26px;height:26px;border-radius:50%;background:var(--na-wash);color:var(--na)}
+.cl-group{margin-bottom:18px}
+.cl-group h3{margin:18px 0 8px}
+.cl-item{display:grid;grid-template-columns:28px 64px 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.cl-item.done{opacity:.62}
+.cl-item input{width:18px;height:18px;margin-top:3px;accent-color:var(--good)}
+.cl-id{font:500 12.5px var(--mono);color:var(--muted);padding-top:2px}
+.cl-body b{display:block;font-weight:500;margin-bottom:2px}
+.cl-body .how,.cl-body .exp{font-size:13.5px;color:var(--muted)}
+.cl-body .exp::before{content:"期望：";color:var(--good);font-weight:500}
+.cl-body .how::before{content:"操作：";color:var(--na);font-weight:500}
+.auto{font:500 11px var(--mono);color:var(--na);background:var(--na-wash);padding:0 6px;border-radius:4px;margin-left:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tabs button{font:500 13px var(--mono);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button:focus-visible,.copy:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+.codebox{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.codebox pre{margin:0;padding:16px;overflow:auto;max-height:620px;font:12.5px/1.6 var(--mono);white-space:pre;tab-size:4}
+.copy{position:absolute;top:8px;right:8px;font:500 12px var(--sans);border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:4px 10px;border-radius:6px;cursor:pointer}
+.linkbtn{font:inherit;color:var(--na);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">融合方案 · 2026-10-01 · 草稿</div>
+  <div class="vs"><h1><span class="na">New API</span></h1><span class="x">×</span><h1><span class="lt">LiteLLM</span></h1></div>
+  <p class="lede">在不改 New API 一行代码的前提下，把 LiteLLM 的治理、可观测和内容护栏叠加上去：<b>New API 继续管「卖」</b>（用户、额度、充值、定价），<b>LiteLLM 专门管「控」</b>（上游 key 池、成本预算、护栏、指标）。本文是方案；落地步骤、验证清单和配置草稿见配套文档《PoC 验证清单与配置草稿》。</p>
+  <div class="meta">
+    <span><b>适用</b> Perfectoken 杭州机（New API rc.37 + pt-pay）</span>
+    <span><b>依据</b> New API main 分支源码、LiteLLM 1.103.0 文档与本地实测</span>
+    <span class="tag na">方案草稿</span><span class="tag lt">本地预检已通过</span><span class="tag warnt">待真实环境 PoC</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#principle">原则</a><a href="#arch">目标架构</a><a href="#duty">职责划分</a><a href="#identity">身份映射</a><a href="#gov">治理</a><a href="#obs">可观测</a><a href="#guard">内容护栏</a><a href="#roadmap">分阶段路线</a><a href="#risk">风险与代价</a><a href="#deploy">部署形态</a>
+</nav>
+
+<section id="principle">
+  <div class="sec-head"><span class="eyebrow">01 · 原则</span><h2>三条不动摇的约束</h2></div>
+  <div class="cols">
+    <div class="panel na"><h4 class="na">计费只有一个来源</h4><p>用户余额、扣费、退款只在 New API 里发生。LiteLLM 记录的是<b>上游成本</b>，只用来设上限和做毛利分析，从不直接影响用户余额。</p></div>
+    <div class="panel na"><h4 class="na">不改 New API 源码</h4><p>New API 仍在 RC 阶段、迭代频繁，而且是 AGPL 许可。所有能力通过「渠道指向 LiteLLM」接入，和 pt-pay 外挂支付的思路一致。</p></div>
+    <div class="panel na"><h4 class="na">随时可以回滚</h4><p>每个分组保留一条平时禁用的直连渠道。LiteLLM 出问题时，在 New API 后台禁用 LiteLLM 渠道、启用直连渠道即可恢复，不需要发版。</p></div>
+  </div>
+</section>
+
+<section id="arch">
+  <div class="sec-head"><span class="eyebrow">02 · 目标架构</span><h2>前台卖、后台控</h2></div>
+  <div class="fig">
+<svg viewBox="0 0 1160 440" role="img" aria-label="New API 与 LiteLLM 串联架构">
+  <defs>
+    <marker id="a-na" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-na"/></marker>
+    <marker id="a-lt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-lt"/></marker>
+    <marker id="a-mu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="mk-mu"/></marker>
+  </defs>
+
+  <rect x="20" y="60" width="200" height="96" rx="8" class="s-box"/>
+  <text x="36" y="86" class="s-t1">客户端 / 用户</text>
+  <text x="36" y="108" class="s-t2">Claude Code · Cherry Studio</text>
+  <text x="36" y="128" class="s-t2">业务系统 · 持 New API 令牌</text>
+
+  <rect x="260" y="28" width="320" height="270" rx="10" class="s-na"/>
+  <text x="276" y="52" class="s-h na">New API（前台：卖）</text>
+  <rect x="276" y="64" width="288" height="44" rx="6" class="s-box"/><text x="288" y="84" class="s-t1">用户 · 额度 · 分组定价</text><text x="288" y="100" class="s-t2">计费唯一来源；失败请求退预扣额度</text>
+  <rect x="276" y="116" width="288" height="44" rx="6" class="s-box"/><text x="288" y="136" class="s-t1">协议入口</text><text x="288" y="152" class="s-t2">OpenAI · Claude · Gemini 互转</text>
+  <rect x="276" y="168" width="288" height="52" rx="6" class="s-box" style="stroke:var(--lt)"/><text x="288" y="188" class="s-t1">分组渠道 → LiteLLM</text><text x="288" y="206" class="s-t2">OpenAI / Anthropic 类型 · 密钥=分组 key</text>
+  <rect x="276" y="228" width="288" height="52" rx="6" class="s-box" style="stroke-dasharray:4 3"/><text x="288" y="248" class="s-t1">直连渠道（应急回滚）</text><text x="288" y="266" class="s-t2">平时禁用；LiteLLM 故障时启用</text>
+
+  <rect x="660" y="28" width="320" height="270" rx="10" class="s-lt"/>
+  <text x="676" y="52" class="s-h lt">LiteLLM（后台：控）</text>
+  <rect x="676" y="64" width="288" height="44" rx="6" class="s-box"/><text x="688" y="84" class="s-t1">Team = New API 分组</text><text x="688" y="100" class="s-t2">月度上游成本预算 · 模型白名单</text>
+  <rect x="676" y="116" width="288" height="44" rx="6" class="s-box"/><text x="688" y="136" class="s-t1">护栏</text><text x="688" y="152" class="s-t2">日志脱敏 · 关键词拦截 · 内容安全</text>
+  <rect x="676" y="168" width="288" height="52" rx="6" class="s-box"/><text x="688" y="188" class="s-t1">Router</text><text x="688" y="206" class="s-t2">上游 key 池 · 冷却 · 同模型重试</text>
+  <rect x="676" y="228" width="288" height="52" rx="6" class="s-box"/><text x="688" y="248" class="s-t1">观测</text><text x="688" y="266" class="s-t2">/metrics/ · spend logs（不存提示词）</text>
+
+  <rect x="1020" y="60" width="120" height="150" rx="8" class="s-box"/>
+  <text x="1034" y="84" class="s-t1">上游厂商</text>
+  <text x="1034" y="108" class="s-t2">OpenAI</text><text x="1034" y="128" class="s-t2">Anthropic</text><text x="1034" y="148" class="s-t2">DeepSeek 等</text><text x="1034" y="168" class="s-t2">sub2api</text><text x="1034" y="188" class="s-t2">自建 vLLM</text>
+
+  <rect x="1020" y="228" width="120" height="70" rx="8" class="s-box"/>
+  <text x="1034" y="252" class="s-t1">内容安全</text>
+  <text x="1034" y="272" class="s-t2">阿里云 / 易盾</text>
+  <text x="1034" y="288" class="s-t2">经适配服务</text>
+
+  <rect x="260" y="350" width="720" height="70" rx="8" class="s-box" style="stroke:var(--faint);stroke-dasharray:4 3"/>
+  <text x="276" y="376" class="s-t1">new-api-postgres（PG 16，容器网络 newapi-net）</text>
+  <text x="276" y="400" class="s-t2">库 newapi（New API） │ 库 ptpay（pt-pay） │ 库 litellm（LiteLLM，独立角色）</text>
+
+  <rect x="20" y="350" width="200" height="70" rx="8" class="s-box"/>
+  <text x="36" y="376" class="s-t1">pt-pay</text>
+  <text x="36" y="400" class="s-t2">充值 · 会员 · 邀请（已有）</text>
+
+  <line x1="220" y1="108" x2="256" y2="108" class="s-ln na" marker-end="url(#a-na)"/>
+  <line x1="580" y1="194" x2="656" y2="194" class="s-ln lt" marker-end="url(#a-lt)"/>
+  <text x="618" y="184" class="s-lbl" text-anchor="middle">litellm:4000</text>
+  <text x="618" y="214" class="s-lbl" text-anchor="middle">分组 key</text>
+  <line x1="980" y1="135" x2="1016" y2="135" class="s-ln lt" marker-end="url(#a-lt)"/>
+  <line x1="980" y1="262" x2="1016" y2="262" class="s-ln lt" marker-end="url(#a-lt)"/>
+  <polyline points="560,28 560,12 1080,12 1080,56" class="s-ln mu" style="stroke-dasharray:5 4" marker-end="url(#a-mu)"/>
+  <text x="820" y="24" class="s-lbl" text-anchor="middle">应急直连（平时禁用）</text>
+  <line x1="420" y1="298" x2="420" y2="346" class="s-ln mu" marker-end="url(#a-mu)"/>
+  <line x1="820" y1="298" x2="820" y2="346" class="s-ln mu" marker-end="url(#a-mu)"/>
+  <polyline points="120,350 120,250 256,250" class="s-ln mu" marker-end="url(#a-mu)"/>
+  <text x="128" y="244" class="s-lbl">管理接口</text>
+</svg>
+  </div>
+  <p class="note">LiteLLM 以容器形式加入现有的 <code>newapi-net</code> 网络。这和 New API 已经通过 <code>http://sub2api:8080</code> 串联 sub2api 是同一种做法，所以不需要新的网络改造。</p>
+</section>
+
+<section id="duty">
+  <div class="sec-head"><span class="eyebrow">03 · 职责划分</span><h2>谁管什么</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:14%">负责方</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">用户、令牌、额度、充值、定价、邀请</td><td><span class="tag na">New API + pt-pay</span></td><td>保持现状，完全不动</td></tr>
+      <tr><td class="dim">客户端协议入口</td><td><span class="tag na">New API</span></td><td>OpenAI、Claude、Gemini 协议互转仍由 New API 完成，客户端配置不变</td></tr>
+      <tr><td class="dim">上游 key 池、冷却、同模型重试</td><td><span class="tag lt">LiteLLM</span></td><td>上游 key 从 New API 渠道迁到 LiteLLM，New API 只保存几把 LiteLLM 虚拟 key，上游 key 的暴露面变小</td></tr>
+      <tr><td class="dim">上游成本统计与预算熔断</td><td><span class="tag lt">LiteLLM</span></td><td>每个分组一个 team，按 30 天周期设上游成本上限</td></tr>
+      <tr><td class="dim">内容护栏</td><td><span class="tag lt">LiteLLM</span></td><td>开源版的 <code>default_on</code> 护栏对所有请求生效</td></tr>
+      <tr><td class="dim">技术指标</td><td><span class="tag lt">LiteLLM</span></td><td>Prometheus 指标：请求量、失败数（带状态码）、延迟、token 与花费</td></tr>
+      <tr><td class="dim">按用户的用量与收入</td><td><span class="tag na">New API</span></td><td>仍以 New API 的消费日志为准，LiteLLM 只看得到分组</td></tr>
+      <tr><td class="dim">毛利</td><td><span class="tag na">收入</span> − <span class="tag lt">成本</span></td><td>New API 按分组汇总的收入减去 LiteLLM 按 team 汇总的上游成本，按天对账</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="identity">
+  <div class="sec-head"><span class="eyebrow">04 · 身份映射</span><h2>LiteLLM 能看到多细：分组级，而不是用户级</h2></div>
+  <p>New API 转发给上游时，能不能把「当前是哪个用户」带过去，决定了 LiteLLM 能做多细的治理。查 New API main 分支源码的结论如下。</p>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:26%">New API 机制</th><th>能做什么</th><th style="width:22%">能否带用户 ID</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">渠道「请求头覆盖」</td><td>只支持两种占位符：<code>{api_key}</code>（渠道密钥）和 <code>{client_header:名称}</code>（客户端传来的请求头）</td><td>否</td></tr>
+      <tr><td class="dim">渠道「参数覆盖」</td><td>上下文里有 <code>user_id</code>、<code>user_group</code>、<code>using_group</code>，但只能用在<b>条件判断</b>里；<code>set</code>、<code>set_header</code> 写入的值是静态的</td><td>否（只能按分组写固定值）</td></tr>
+      <tr><td class="dim">客户端自带 <code>user</code> 字段</td><td>会原样透传，但由客户端自己填写，不可信</td><td>不可用于治理</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout info">结论：<b>按分组映射</b>。New API 每个分组配一组指向 LiteLLM 的渠道，每组用该分组专属的 team key。LiteLLM 里的预算、限流和指标都是分组粒度。按用户的分析继续用 New API 日志；如果以后确实需要用户级，需要给 New API 提 PR，让参数覆盖支持把上下文变量写成值，这不在本方案范围内。</div>
+  <div class="tbl" style="margin-top:14px"><table>
+    <thead><tr><th>New API 分组</th><th>LiteLLM team</th><th>月度上游成本上限（示例）</th><th>护栏</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>poc</code></td><td>newapi-poc</td><td class="num">$5</td><td>全开（含内容安全）</td><td>内部测试用户，PoC 和每次升级回归</td></tr>
+      <tr><td><code>default</code></td><td>newapi-default</td><td class="num">$300</td><td>日志脱敏 + 关键词 + 内容安全</td><td>普通用户</td></tr>
+      <tr><td><code>vip</code></td><td>newapi-vip</td><td class="num">$600</td><td>同上</td><td>会员 / 企业客户</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">预算数字只是占位，需按各分组实际的月消耗乘以 1.5–2 倍设定，作为「失控时的上限」，而不是日常配额。开源版里护栏是全局生效的（<code>default_on</code>），不能按 team 设置不同强度；按 key 或 team 单独配置护栏需要企业版。</p>
+</section>
+
+<section id="gov">
+  <div class="sec-head"><span class="eyebrow">05 · 治理</span><h2>错误码怎么在两个网关之间传递</h2></div>
+  <p>串联以后，LiteLLM 返回的状态码直接决定 New API 是重试、停止还是禁用渠道。New API 的默认规则见源码 <code>setting/operation_setting/status_code_ranges.go</code>：自动重试的范围是 100–199、300–399、401–407、409–499、500–503、505–523、525–599，504 和 524 永不重试，<b>401 会自动禁用渠道</b>，失败请求会退回预扣的额度。</p>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:26%">LiteLLM 返回</th><th style="width:30%">New API 的行为</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>护栏拦截：<b>400</b></td><td>不重试，失败并退回预扣额度</td><td><span class="dot s3"></span>理想情况。内置内容过滤和我们写的自定义护栏都返回 400（本地已实测）</td></tr>
+      <tr><td>自定义护栏抛普通异常：<b>500</b></td><td><b>重试，可能换到别的渠道</b></td><td><span class="dot s1"></span>危险：可能重试到直连渠道，绕过护栏。自定义护栏必须显式抛 <code>HTTPException(400)</code>，草稿已按此实现</td></tr>
+      <tr><td>Team 预算用完：<b>429</b></td><td>重试，同分组其它渠道也是同一个 team key，同样 429，次数用完后失败</td><td><span class="dot s2"></span>本地实测 1.103.0 写死为 429，文档里的 422 和返回码开关在这个版本不成立。代价是几次无效重试；前提是该分组没有启用的直连渠道</td></tr>
+      <tr><td>上游限流：<b>429</b></td><td>重试</td><td><span class="dot s3"></span>LiteLLM 内部已经在 key 池之间重试过，再由 New API 兜底一次也合理</td></tr>
+      <tr><td>LiteLLM 虚拟 key 失效：<b>401</b></td><td><b>自动禁用该渠道</b></td><td><span class="dot s2"></span>轮换 key 时要先改 New API 渠道再吊销旧 key，否则渠道会被自动禁用</td></tr>
+      <tr><td>LiteLLM 宕机：连接失败或 <b>502/503</b></td><td>重试，同组渠道全部失败</td><td><span class="dot s2"></span>启用直连渠道回滚；LiteLLM 健康检查纳入告警</td></tr>
+    </tbody>
+  </table></div>
+  <h3>预算熔断为什么值得做</h3>
+  <p>卖额度的生意里，最怕的是「收入按倍率算，成本没有上限」：倍率配错、某个渠道被盗刷、某个模型突然涨价，都会在用户正常付费的情况下持续亏损，而 New API 本身察觉不到。LiteLLM 的 team 预算按<b>真实上游成本</b>封顶，触发时这个分组暂时不可用。这虽然影响体验，但把最大亏损锁定在一个已知数字内。</p>
+</section>
+
+<section id="obs">
+  <div class="sec-head"><span class="eyebrow">06 · 可观测</span><h2>三层视角，按成本从低到高</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:18%">层次</th><th>看什么</th><th style="width:30%">怎么做</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">业务（New API）</td><td>每个用户、令牌、模型的消费和收入，渠道错误率</td><td>现有日志 + 控制台；可以用 <code>LOG_SQL_DSN</code> 把日志拆到独立库，再接 Grafana</td></tr>
+      <tr><td class="dim">技术（LiteLLM）</td><td>每个分组、上游 key 的请求量、失败数（带状态码）、延迟、token、花费</td><td>开源版内置 Prometheus，路径是 <code>/metrics/</code>（注意结尾的斜杠，本地已实测）；Prometheus 加 Grafana 约 200MB 内存</td></tr>
+      <tr><td class="dim">链路（暂不做）</td><td>单次请求的完整提示词与回复、评估</td><td>Langfuse 自建需要 ClickHouse 等组件，资源不够；Langfuse Cloud 会把用户对话传到境外，有合规问题</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">LiteLLM 配置里打开了 <code>turn_off_message_logging</code>，不把提示词和回复内容送进日志回调，只记元数据。</p>
+</section>
+
+<section id="guard">
+  <div class="sec-head"><span class="eyebrow">07 · 内容护栏</span><h2>三层护栏，各管一件事</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:20%">护栏</th><th style="width:18%">实现</th><th style="width:16%">模式</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">个人信息日志脱敏</td><td>内置 <code>litellm_content_filter</code>，正则匹配手机号、身份证、邮箱</td><td><code>logging_only</code></td><td>只在日志里打码，不改写发给模型的内容。卖 API 时改写用户真实请求会破坏正常用途</td></tr>
+      <tr><td class="dim">业务禁词</td><td>内置 <code>litellm_content_filter</code> + 词表文件</td><td><code>pre_call</code> 拦截</td><td>只放少量明确的业务禁词。<b>本地实测：命中时会把关键词和 description 原样返回给用户</b>，词表会被逐条试探出来，所以敏感词库不放在这里</td></tr>
+      <tr><td class="dim">内容安全</td><td>自定义护栏 <code>cn_guardrail.py</code> → 适配服务 → 阿里云内容安全或网易易盾</td><td><code>pre_call</code> 拦截</td><td>用于履行生成式 AI 服务的内容安全义务。服务不可用时默认<b>拦截</b>（合规优先，本地已实测返回 400），也可以配置为放行</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">流式输出的限制：<code>post_call</code> 护栏在流式响应时，要等全部内容发给用户之后才运行，<b>只能审计，拦不住</b>。如果需要拦截输出，要用逐块处理的钩子，这会增加首字延迟。所以第一阶段只检查输入；输出的检查先做抽检审计。</div>
+</section>
+
+<section id="roadmap">
+  <div class="sec-head"><span class="eyebrow">08 · 分阶段路线</span><h2>每一步都可以回退</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:16%">阶段</th><th>做什么</th><th style="width:28%">进入下一阶段的条件</th><th style="width:20%">回滚方式</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">0 · 只加观测</td><td>New API 日志接 Grafana，看渠道错误率、各模型消耗；不改动请求链路</td><td>有了基线数据：各分组月消耗、渠道 P95 延迟</td><td>无需回滚</td></tr>
+      <tr><td class="dim">1 · PoC</td><td>部署 LiteLLM，新建 <code>poc</code> 分组和内部测试用户，跑完 PoC 清单</td><td>清单全部通过，尤其是流式计费一致、拦截后退额度</td><td>删除 poc 分组渠道</td></tr>
+      <tr><td class="dim">2 · 灰度</td><td>选一个分组（例如 vip）切到 LiteLLM，同时保留禁用的直连渠道；只开日志脱敏和关键词护栏</td><td>运行 2 周：计费零差异，延迟增加在可接受范围，内存稳定</td><td>启用直连渠道，禁用 LiteLLM 渠道</td></tr>
+      <tr><td class="dim">3 · 全量 + 内容安全</td><td>所有分组切换；接入内容安全服务，打开 <code>cn-content-safety</code></td><td>误拦率可接受；内容安全接口 P95 在 300ms 以内</td><td>同上；或单独关闭某个护栏</td></tr>
+      <tr><td class="dim">4 · 成本熔断</td><td>按阶段 0 的基线给每个 team 设预算，接上告警</td><td>—</td><td>调高预算或删除预算</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="risk">
+  <div class="sec-head"><span class="eyebrow">09 · 风险与代价</span><h2>要接受的东西</h2></div>
+  <div class="cols">
+    <div class="panel risk"><h4 style="color:var(--warn)">性能与资源</h4><ul>
+      <li>多一跳本机转发，官方数据是 1k RPS 下 P95 增加约 8ms；内容安全接口另加一次外部调用（预计 50–300ms）</li>
+      <li>杭州机部署 sub2api 时可用内存约 <b>1.3G</b>，LiteLLM 单 worker 需要预留 700M–1G；不够就需要升级配置，或者放到另一台机器</li>
+      <li>LiteLLM 成为单点：它挂了，同组渠道全部失败</li>
+    </ul></div>
+    <div class="panel risk"><h4 style="color:var(--warn)">维护与安全</h4><ul>
+      <li>LiteLLM 大约每周一个 minor 版本，只维护最近 4 条；必须锁定带 <code>-stable</code> 的镜像并校验 cosign 签名（2026-03 发生过 PyPI 投毒）</li>
+      <li>实测发现文档和代码对不上（预算返回码），每次升级都要重跑 PoC 清单</li>
+      <li>上游 key 集中到 LiteLLM，它的 <code>litellm.env</code> 和 master key 是新的高价值目标</li>
+    </ul></div>
+    <div class="panel risk"><h4 style="color:var(--warn)">功能边界</h4><ul>
+      <li>按 key 或 team 单独配置护栏、按 team 分流日志、Llama Guard 等内置审核回调，都需要企业版</li>
+      <li>只能做到分组级治理，用户级看不到</li>
+      <li>两套系统的 token 计数如果不一致，会出现对账差异；流式 usage 必须实测</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="deploy">
+  <div class="sec-head"><span class="eyebrow">10 · 部署形态</span><h2>放在哪、连什么</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:22%">项目</th><th>选择</th></tr></thead>
+    <tbody>
+      <tr><td class="dim">运行方式</td><td>Docker 容器 <code>litellm</code>，加入 <code>newapi-net</code>；端口只绑定 <code>127.0.0.1:4000</code>，管理 UI 走 SSH 隧道访问</td></tr>
+      <tr><td class="dim">数据库</td><td>new-api-postgres 里的独立角色和独立库 <code>litellm</code>，和 ptpay、sub2api 同一种模式；表结构由 LiteLLM 启动时的 Prisma 迁移创建</td></tr>
+      <tr><td class="dim">Redis</td><td>单实例不需要。<b>不要和 New API 共用 Redis</b>：那个实例配置了 <code>allkeys-lru</code>，内存满时会淘汰 key，LiteLLM 的限流计数会被冲掉</td></tr>
+      <tr><td class="dim">New API 渠道</td><td>OpenAI 模型用「OpenAI」类型，Base URL 填 <code>http://litellm:4000</code>。<b>不能用「自定义」类型</b>：源码中只有 OpenAI 等少数类型会强制带 <code>stream_options.include_usage</code>，否则流式请求拿不到 usage，New API 只能自己估算 token。Claude 模型用「Anthropic Claude」类型，避免两次协议转换</td></tr>
+      <tr><td class="dim">镜像</td><td><code>ghcr.io/berriai/litellm:&lt;vX.Y.Z-stable&gt;</code>，写死具体版本并校验签名，不用 latest 或 main</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">配套文件都在本目录的 <code>litellm/</code> 和 <code>poc/</code> 下；逐步操作和验证见《02-PoC验证清单与配置草稿.html》。</p>
+</section>
+
+<footer>Perfectoken · New API × LiteLLM 融合 · 2026-10-01 · 内部资料</footer>
+</div>
+
+</body>
+</html>

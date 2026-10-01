@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import ArticleCard from '@/components/ArticleCard'
 import { getArticles } from '@/lib/mdx'
-import { dyCutSeries } from '@/lib/dyCutSeries'
+import { projectColumnCards } from '@/lib/projectSeries'
 
 export const metadata: Metadata = {
   title: 'AIcoding实践',
@@ -27,6 +27,27 @@ export default function AICodingPage() {
         </div>
       </div>
 
+      <section className="mb-12 border-t border-gray-200 pt-7" aria-labelledby="project-columns">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h2 id="project-columns" className="text-xl font-extrabold text-navy">项目专栏</h2>
+          <span className="text-sm text-gray-500">{projectColumnCards.length} 个项目</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {projectColumnCards.map((column) => (
+            <Link key={column.slug} href={column.href} className="group flex min-w-0 flex-col border border-gray-200 rounded-lg bg-white p-5 transition hover:border-brand">
+              <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
+                <span>{column.count ? `${column.count} 篇文档` : '待收录'}</span>
+                <span>审批访问</span>
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-navy group-hover:text-brand">{column.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-500">{column.description}</p>
+              <span className="mt-5 text-sm font-semibold text-brand">进入专栏 <span aria-hidden="true">→</span></span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <h2 className="mb-6 text-xl font-extrabold text-navy">实践文章</h2>
       {articles.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <div className="text-5xl mb-4">⌨️</div>
@@ -34,26 +55,6 @@ export default function AICodingPage() {
         </div>
       ) : (
         <>
-          <section className="mb-10 border border-orange-100 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-brand">系列专题</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-navy">
-                  dy-cut 抖音外卖视频剪辑项目系列
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-                  把项目说明、系统架构、团队导览、对标拆解、拍摄灵感、素材质检、beatmix 和工具对比串成一条阅读路径。
-                </p>
-              </div>
-              <Link
-                href="/aicoding/dy-cut-series"
-                className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-              >
-                查看 {dyCutSeries.length} 篇合集 →
-              </Link>
-            </div>
-          </section>
-
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {articles.map((a) => (
               <ArticleCard key={a.slug} article={a} />

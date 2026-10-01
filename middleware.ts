@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const DY_CUT_ACCESS_COOKIE = 'dy_cut_access'
 
 const protectedDyCutPaths = [
+  '/aicoding/series',
   '/aicoding/dy-cut-series',
   '/aicoding/douyin-takeout-video-ai-remix',
   '/aicoding/dy-cut-architecture',

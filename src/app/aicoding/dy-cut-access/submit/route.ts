@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const url = new URL('/aicoding/dy-cut-access', request.url)
     url.searchParams.set('status', 'invalid')
     url.searchParams.set('returnTo', returnTo)
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, 303)
   }
 
   if (!isApprovedPhone(phone)) {
@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
     url.searchParams.set('status', 'pending')
     url.searchParams.set('phone', phone)
     url.searchParams.set('returnTo', returnTo)
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, 303)
   }
 
-  const response = NextResponse.redirect(new URL(returnTo, request.url))
+  const response = NextResponse.redirect(new URL(returnTo, request.url), 303)
   response.cookies.set({
     name: DY_CUT_ACCESS_COOKIE,
     value: createAccessToken(phone),

@@ -4,6 +4,7 @@ export const DY_CUT_ACCESS_COOKIE = 'dy_cut_access'
 export const DY_CUT_ACCESS_MAX_AGE = 60 * 60 * 24 * 30
 
 export const protectedDyCutPaths = [
+  '/aicoding/series',
   '/aicoding/dy-cut-series',
   '/aicoding/douyin-takeout-video-ai-remix',
   '/aicoding/dy-cut-architecture',

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { DY_CUT_ACCESS_COOKIE, verifyAccessToken } from '@/lib/dyCutAccess'
 import { dyCutSeries } from '@/lib/dyCutSeries'
+import { projectColumnCards } from '@/lib/projectSeries'
 
 export const metadata: Metadata = {
   title: 'dy-cut 抖音外卖视频剪辑项目系列',
@@ -37,6 +38,12 @@ export default async function DyCutSeriesPage() {
           <Link href="/aicoding" className="text-sm font-semibold text-brand hover:underline">
             ← AIcoding实践
           </Link>
+          <nav aria-label="项目专栏" className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm">
+            {projectColumnCards.map((column) => (
+              <Link key={column.slug} href={column.href} aria-current={column.slug === 'dy-cut' ? 'page' : undefined}
+                className={column.slug === 'dy-cut' ? 'font-bold text-brand' : 'text-gray-500 hover:text-brand'}>{column.title}</Link>
+            ))}
+          </nav>
           <div className="mt-8 max-w-3xl">
             <p className="text-xs font-bold tracking-widest text-brand uppercase mb-3">Project Series</p>
             <h1 className="text-3xl md:text-5xl font-extrabold text-navy leading-tight">
