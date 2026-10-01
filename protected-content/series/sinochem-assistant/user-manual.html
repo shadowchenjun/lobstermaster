@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智能助手使用手册</title>
+<meta name="description" content="中化商务智能助手使用手册：智能采集、文件解析、智能填写、工作台与设置的操作步骤，以及管理后台的日常维护">
+<style>
+:root {
+  --bg: #f5f6f8; --panel: #ffffff; --ink: #1b2330; --ink-2: #4a5566; --muted: #7d8796; --line: #e3e6eb;
+  --accent: #1f5fd6; --accent-bg: #eaf1ff; --accent-ink: #164aa8;
+  --ok: #0a7d4f; --ok-bg: #e6f6ee; --warn: #a15c00; --warn-bg: #fff4e0; --bad: #c4332b; --bad-bg: #fdecea;
+  --zone: #f8f9fb; --kbd: #eef0f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111317; --panel: #181b20; --ink: #e7eaee; --ink-2: #b3bac4; --muted: #8a929d; --line: #2b3038;
+    --accent: #7aa7ff; --accent-bg: #1b2842; --accent-ink: #a9c5ff;
+    --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+    --zone: #15181d; --kbd: #262a31;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111317; --panel: #181b20; --ink: #e7eaee; --ink-2: #b3bac4; --muted: #8a929d; --line: #2b3038;
+  --accent: #7aa7ff; --accent-bg: #1b2842; --accent-ink: #a9c5ff;
+  --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+  --zone: #15181d; --kbd: #262a31;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.8 system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+.page { max-width: 1240px; margin: 0 auto; padding: 28px 16px 72px; display: grid; grid-template-columns: 1fr; gap: 28px; }
+@media (min-width: 1100px) { .page { grid-template-columns: 220px minmax(0, 1fr); } }
+nav.toc { font-size: 13.5px; line-height: 1.6; }
+@media (min-width: 1100px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow-y: auto; } }
+nav.toc .h { font-weight: 600; color: var(--muted); margin: 14px 0 6px; font-size: 12px; letter-spacing: 1.5px; }
+nav.toc .h:first-child { margin-top: 0; }
+nav.toc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 3px 8px; border-radius: 6px; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--accent-bg); color: var(--accent-ink); outline: none; }
+@media (max-width: 1099px) { nav.toc ul { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+main { min-width: 0; }
+header.doc { padding: 4px 0 20px; }
+header.doc .eyebrow { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+header.doc h1 { font-size: 30px; line-height: 1.3; margin: 6px 0 8px; }
+header.doc .meta { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.hero { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 18px 0 6px; }
+.feat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.feat b { display: block; font-size: 16px; margin-bottom: 2px; }
+.feat span { color: var(--ink-2); font-size: 14px; }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 14px 0; }
+.flow .n { flex: 1 1 130px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.flow .n small { display: block; color: var(--muted); font-size: 12px; }
+.flow .n.me { border-color: var(--accent); background: var(--accent-bg); }
+.flow .arr { align-self: center; color: var(--muted); }
+@media (max-width: 640px) { .flow .arr { display: none; } }
+.rules { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin: 12px 0; }
+.rule { border-left: 3px solid var(--accent); background: var(--panel); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 14.5px; }
+.rule b { display: block; }
+section.s { padding: 30px 0 10px; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+h2 { font-size: 22px; line-height: 1.35; margin: 0 0 6px; }
+h2 + .sub { color: var(--muted); margin: 0 0 12px; font-size: 14px; }
+h3 { font-size: 17px; margin: 22px 0 8px; }
+p, li { max-width: 76ch; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 22px; margin: 6px 0; }
+li { margin: 4px 0; }
+a { color: var(--accent); }
+.btn { display: inline-block; font-size: 13px; line-height: 1.4; padding: 1px 8px; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; font-weight: 600; white-space: nowrap; }
+.btn.p { background: var(--accent); border-color: var(--accent); color: #fff; }
+kbd { font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--kbd); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--kbd); padding: 1px 5px; border-radius: 4px; }
+.steps { counter-reset: st; list-style: none; padding: 0; margin: 10px 0; }
+.steps > li { counter-increment: st; position: relative; padding: 4px 0 10px 40px; max-width: 80ch; }
+.steps > li::before { content: counter(st); position: absolute; left: 0; top: 5px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-bg); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+figure { margin: 14px 0 18px; }
+figure img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+figure.sm img { max-width: 560px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.tip { border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-size: 14.5px; background: var(--accent-bg); }
+.tip.warn { background: var(--warn-bg); }
+.tip.bad { background: var(--bad-bg); }
+.tip b.t { display: block; }
+.tw { overflow-x: auto; margin: 10px 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.65; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { color: var(--ink-2); font-weight: 600; white-space: nowrap; background: var(--zone); }
+td.nw { white-space: nowrap; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.sw.g { background: var(--ok); } .sw.o { background: #e37318; } .sw.r { background: var(--bad); } .sw.pk { background: var(--bad-bg); border: 1px solid var(--bad); } .sw.yl { background: var(--warn-bg); border: 1px solid var(--warn); }
+.faq { display: grid; gap: 8px; }
+.faq details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.faq details p { margin: 8px 0 2px; }
+.part { margin: 40px 0 0; padding: 18px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.part .eyebrow { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+.part h2 { margin-top: 4px; }
+footer { color: var(--muted); font-size: 12.5px; margin-top: 32px; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+
+<body><div class="page">
+<nav class="toc" aria-label="目录">
+  <p class="h">业务人员</p>
+  <ul>
+    <li><a href="#intro">认识智能助手</a></li>
+    <li><a href="#start">第一次使用</a></li>
+    <li><a href="#open">打开助手</a></li>
+    <li><a href="#collect">智能采集</a></li>
+    <li><a href="#parse">文件解析</a></li>
+    <li><a href="#fill">智能填写</a></li>
+    <li><a href="#history">工作台</a></li>
+    <li><a href="#settings">设置</a></li>
+    <li><a href="#legend">颜色与状态速查</a></li>
+    <li><a href="#privacy">数据与安全</a></li>
+    <li><a href="#faq">常见问题</a></li>
+  </ul>
+  <p class="h">管理员</p>
+  <ul>
+    <li><a href="#admin">管理后台总览</a></li>
+    <li><a href="#learn">让助手越用越准</a></li>
+    <li><a href="#mapping">平台与映射配置</a></li>
+    <li><a href="#tpl">页面模板维护</a></li>
+    <li><a href="#dict">要素字典</a></li>
+    <li><a href="#kb">知识库维护</a></li>
+    <li><a href="#sys">账号、配置与审计</a></li>
+  </ul>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="eyebrow">使用手册 · 客户端 0.1.0</div>
+  <h1>中化商务智能助手 使用手册</h1>
+  <div class="meta"><span>适用：招采业务人员、配置/知识库/系统管理员</span><span>更新：2026-09-24</span></div>
+</header>
+
+<section class="s" id="intro" style="border-top:0;padding-top:0">
+<h2>认识智能助手</h2>
+<p>智能助手是装在电脑上的一个小工具。它能读懂招采平台页面和招标文件，把项目信息整理好，再帮你填到另一个平台的表单里。</p>
+<div class="hero">
+  <div class="feat"><b>智能采集</b><span>从源平台页面一键读取项目信息和附件</span></div>
+  <div class="feat"><b>文件解析</b><span>从招标文件、公告等文件中提取项目信息</span></div>
+  <div class="feat"><b>智能填写</b><span>把已整理的信息填到目标平台的表单里</span></div>
+</div>
+<h3>典型用法：把 A 平台的项目录到 B 平台</h3>
+<div class="flow">
+  <div class="n"><small>在浏览器</small>打开 A 平台的项目页面</div><div class="arr">→</div>
+  <div class="n"><small>助手</small>智能采集，核对后保存为“项目”</div><div class="arr">→</div>
+  <div class="n"><small>在浏览器</small>打开 B 平台的新建表单</div><div class="arr">→</div>
+  <div class="n"><small>助手</small>智能填写，自动填好大部分字段</div><div class="arr">→</div>
+  <div class="n me"><small>你自己</small>补录、核对，然后点平台上的“提交”</div>
+</div>
+<div class="rules">
+  <div class="rule"><b>助手不会替你提交</b>填写时，“提交、发布、保存、送审”等按钮会被锁住，最终由你核对后自己提交。</div>
+  <div class="rule"><b>数据只存在你的电脑上</b>采集的项目信息和附件都加密保存在本机，服务端不保存。</div>
+  <div class="rule"><b>看颜色核对</b>绿色可以放心，黄色/橙色请核对，红色需要你补录。</div>
+</div>
+</section>
+
+<section class="s" id="start">
+<h2>第一次使用</h2>
+<p class="sub">安装包由信息部门提供，服务端地址已经预置好。</p>
+<ol class="steps">
+  <li><b>安装并启动。</b>启动后屏幕边上会出现一个圆形“助手”悬浮球，同时打开工作台窗口。</li>
+  <li><b>设置本地保险箱 PIN（部分电脑才有这一步）。</b>如果系统不支持自动保管密钥（部分麒麟/统信电脑），会要求设置一个至少 6 位的 PIN，输入两次后点 <span class="btn">设置并解锁</span>。以后每次启动都要输入这个 PIN。<br><b>PIN 忘了就无法打开本机保存的数据，请务必记住。</b></li>
+  <li><b>登录。</b>输入用户名和口令，点 <span class="btn p">登录</span>。登录框下方显示服务端地址；如果信息部门让你修改，点 <span class="btn">修改</span>，填好后保存。</li>
+  <li><b>准备浏览器。</b>第一次采集或填写时，助手会自动打开一个浏览器窗口，并提示“浏览器刚刚启动”。请在这个窗口里登录招采平台、打开要操作的页面，再回到助手重新点一次按钮。这个浏览器窗口会记住你的登录状态。</li>
+</ol>
+<div class="tip warn"><b class="t">需要 CA 证书或 U 盾登录的平台</b>助手自动打开的浏览器通常用不了证书。请联系信息部门安装“智能助手”浏览器扩展，然后在 <a href="#settings">设置</a> 里把“浏览器通道”改为“浏览器扩展”，之后就在你平时用的浏览器里操作。</div>
+</section>
+
+<section class="s" id="open">
+<h2>打开助手</h2>
+<div class="tw"><table>
+<tr><th>方式</th><th>怎么用</th></tr>
+<tr><td>悬浮球</td><td>单击展开工具条（智能采集 / 文件解析 / 智能填写）；按住拖动可以换位置；右键可打开工作台、设置、隐藏悬浮球、退出。悬浮球不会抢走浏览器的焦点，可以放心边看页面边点。</td></tr>
+<tr><td>快捷键</td><td>Windows / 麒麟 / 统信：<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>空格</kbd>；Mac：<kbd>⌘</kbd> + <kbd>⌥</kbd> + <kbd>空格</kbd>。直接打开工作台。</td></tr>
+<tr><td>托盘图标</td><td>任务栏（Mac 为顶部菜单栏）右侧的小图标。单击打开工作台，右键可显示/隐藏悬浮球或退出。</td></tr>
+</table></div>
+<figure class="sm"><img src="img/10-float.png" alt="圆形悬浮球，上面写着“助手”" width="120" height="120" style="width:60px;border-radius:50%"><figcaption>悬浮球。关掉悬浮球后，可以从托盘或快捷键重新打开。</figcaption></figure>
+<p>工作台左侧是五个页面：<b>智能采集、文件解析、智能填写、工作台、设置</b>（智能问答暂未开放）。左下角显示你的姓名和“已连接服务端”状态；底部“运行日志”可以展开，看到每一步做了什么。</p>
+</section>
+
+<section class="s" id="collect">
+<h2>智能采集</h2>
+<p class="sub">从源平台（例如 A 平台）的项目页面读取信息，核对后保存成一个“项目”。</p>
+<ol class="steps">
+  <li>在浏览器里打开源平台的项目页面（编辑页、详情页、公告页都可以）。</li>
+  <li>在助手的“智能采集”页点 <span class="btn p">采集当前页面</span>。</li>
+  <li>查看结果。每一行是一个<b>标准要素</b>（助手统一使用的字段名），右边是取值、置信度和依据（来自页面上的哪个字段）。
+    <ul>
+      <li>取值不对，直接在框里改。改过的行不再标颜色。</li>
+      <li>标“冲突”的行，下面会列出其他候选值，点一下就采用。</li>
+      <li>不需要的行，点 <span class="btn">移除</span>。</li>
+    </ul></li>
+  <li>检查“<b>未对应到标准要素的字段</b>”。如果其中有你需要的信息，用右边的“指定要素”下拉选一个对应要素。你的指定会帮助助手以后自动识别这个字段。</li>
+  <li>检查“<b>附件</b>”。显示“已加密保存”表示已经下载到本机；下载失败的点 <span class="btn">重试</span>。点附件名可以打开查看。</li>
+  <li>在底部选择“保存到”：新建项目（默认用项目名称命名）或已有项目，选择阶段，点 <span class="btn p">确认保存</span>。</li>
+</ol>
+<h3>没有平台账号：用演示页面试一试</h3>
+<p>“智能采集”页下方有几个演示页面按钮（A 平台立项编辑、E 平台立项查看、E 平台标段详情抽屉、招标公告）。点一下，助手会在浏览器里打开本机模拟的平台页面，并<b>直接采集</b>。演示页的数据都是虚构的，适合熟悉操作或给别人演示。</p>
+<figure><img src="img/01-collect-demo.jpg" alt="智能采集页，下方是演示页面按钮" loading="lazy"><figcaption>智能采集页：下方是演示页面按钮。</figcaption></figure>
+<figure><img src="img/02-collect-result.jpg" alt="智能采集结果：标准要素表，含取值、置信度和依据" loading="lazy"><figcaption>采集结果。顶部提示“还有未展开的分组：采购需求（2 个）”，表示页面上有一个页签没点开，点开后可以再采一次并保存到同一项目。</figcaption></figure>
+<figure><img src="img/03-collect-bottom.jpg" alt="采集结果底部：未对应字段、附件和保存区域" loading="lazy"><figcaption>页面底部：未对应的字段（可手动指定要素）、附件（已加密保存）、保存位置与阶段。</figcaption></figure>
+<div class="tip"><b class="t">小提示</b>
+<ul>
+<li>助手只读取浏览器<b>当前标签页</b>里<b>看得见</b>的内容。信息分在几个页签里时，逐个点开采集，都保存到同一个项目即可。</li>
+<li>页面上打开了弹窗或侧边抽屉（如“标段/包详情”）时，助手只采集弹窗里的内容，不会把背景页的信息混进来；结果顶部会显示弹窗标题和“只采集了当前打开的弹窗”。</li>
+<li>公告正文如果是网页里嵌的 PDF，助手会自动读取 PDF 里的信息并入结果（需要多等一会儿）。PDF 和页面不一致时以页面为准，并标为“冲突”让你确认。</li>
+<li>有标红或低置信度的行还没核对就保存，会弹出提醒。</li>
+<li>同一信息在页面上出现多次且取值不同（如“所在行政区域”和“项目地址”），助手取最可信的一个，其余列为候选并标“冲突”，请选定后再保存。</li>
+</ul></div>
+</section>
+
+<section class="s" id="parse">
+<h2>文件解析</h2>
+<p class="sub">手上只有招标文件、公告等文件时，用它提取项目信息。</p>
+<ol class="steps">
+  <li>在“文件解析”页点 <span class="btn">选择文件</span>，可以多选、可以多次添加。支持 PDF、Word、Excel、WPS、TXT、JPG、PNG，单个文件不超过 100MB。</li>
+  <li>点 <span class="btn p">开始解析</span>，等待显示“完成”。扫描件需要识别文字，时间会长一些。</li>
+  <li>选择抽取方式后点 <span class="btn p">抽取</span>：
+    <ul>
+      <li><b>按浏览器当前页面需要的字段抽取</b>：先在浏览器打开要填写的表单，助手只找这个表单需要的信息。</li>
+      <li><b>按阶段抽取</b>：选择一个阶段（如“公告”），提取这个阶段的全部要素。</li>
+    </ul></li>
+  <li>核对结果。每个值都注明出自哪个文件、第几页、原文是什么。<b>文件里找不到的信息助手不会猜</b>，会列在“未找到”里，需要你补录。</li>
+  <li>选择保存到的项目；需要把原文件存进项目时勾选“原文件加密保存到项目”，点 <span class="btn p">保存并去填写</span>，助手会直接跳到“智能填写”。</li>
+</ol>
+<div class="tip"><b class="t">文件会上传吗？</b>文件会上传到公司内网服务端进行解析，解析完成后服务端立即删除文件，解析结果 30 分钟后也会清除。</div>
+</section>
+
+<section class="s" id="fill">
+<h2>智能填写</h2>
+<p class="sub">把项目信息填到目标平台（例如 B 平台）的表单里。</p>
+<ol class="steps">
+  <li>在浏览器里打开目标平台要填写的表单页面。</li>
+  <li>在助手的“智能填写”页，从“数据来源”选择项目，点 <span class="btn p">识别当前页面</span>。</li>
+  <li>查看填写计划。上方汇总“可填写 / 低置信度 / 需补录 / 跳过”各有几项，同时浏览器页面上需要你处理的字段已经标出颜色。
+    <ul>
+      <li>勾选的行会被填写；低置信度的行默认不勾，你确认值没问题后可以勾上。</li>
+      <li>填写值可以直接修改。</li>
+    </ul></li>
+  <li>点 <span class="btn p">执行填写（N）</span>，等待“正在填写…”完成。</li>
+  <li>回到浏览器核对：补录标红的字段，检查标橙的字段，<b>确认无误后自己点平台上的提交按钮</b>。</li>
+</ol>
+<div class="tip"><b class="t">用演示页面试一试</b>先用演示页采集并保存一个项目，再到“智能填写”页点下方的演示填写页按钮（B 平台立项新增、C 平台 layui 表单）。助手会打开页面并<b>自动识别</b>，确认填写计划后点“执行填写”即可。</div>
+<figure><img src="img/04-fill-plan.jpg" alt="填写计划：页面字段、填写值、置信度和状态" loading="lazy"><figcaption>填写计划。“组织方式”显示“目标选项中没有「自行组织」”：B 平台用的叫法不同（自主招标），管理员配置好对应关系后，这类字段就能自动填写（见 <a href="#learn">让助手越用越准</a>）。</figcaption></figure>
+<figure><img src="img/05-fill-result.jpg" alt="填写结果：成功回填 12 个，未回填 2 个" loading="lazy"><figcaption>填写完成：识别 15 个字段，成功回填 12 个；每一项都显示“✓ 已填写”或失败原因。</figcaption></figure>
+<figure><img src="img/06-target-page.jpg" alt="目标平台表单，下拉、单选、复选、日期、多行文本和附件都已填好，需要处理的字段带红框" loading="lazy"><figcaption>目标平台页面：下拉、复选、日期、附件都已填好；红框是需要你处理的字段。页面底部的“提交审核”需要你自己点。</figcaption></figure>
+<h3>填错了怎么办</h3>
+<ul>
+<li>点 <span class="btn">撤销本次填写</span>，把字段恢复成填写前的样子（要在同一个页面上操作）。已上传的附件、原来为空的下拉框无法撤销，需要手动处理。</li>
+<li>页面有变化（例如切换了选项后多出新字段）时，点 <span class="btn">重新识别</span> 再填一次。</li>
+<li>页面上的颜色标记不想要了，点 <span class="btn">清除页面标记</span>。</li>
+</ul>
+<div class="tip warn"><b class="t">默认不覆盖已有内容</b>表单里已经填了内容的字段，助手默认跳过。需要覆盖时，在“设置”里打开“覆盖页面已有值”。</div>
+</section>
+
+<section class="s" id="history">
+<h2>工作台</h2>
+<p class="sub">查看和管理本机保存的所有项目与记录。</p>
+<ul>
+<li>按项目、类型（采集 / 文件解析 / 填写）、阶段、平台、日期筛选。</li>
+<li>点某一行，在右侧查看详细内容：要素和取值，或每个字段的填写结果；附件可以 <span class="btn">查看</span> 或 <span class="btn">另存为</span>。</li>
+<li>选中一个项目后，可以点 <span class="btn">用该项目填写</span> 直接去填表，或 <span class="btn">删除项目</span>。</li>
+<li><span class="btn">批量清除</span> 按当前筛选条件删除记录；没有筛选时删除全部。</li>
+</ul>
+<figure><img src="img/08-history.jpg" alt="工作台：记录列表，一条填写记录和一条采集记录" loading="lazy"><figcaption>工作台记录列表。填写记录显示“成功 12 / 识别 15”，采集记录显示“13 个要素，2 个附件”。</figcaption></figure>
+<div class="tip bad"><b class="t">删除无法恢复</b>删除记录、项目或批量清除时，相关附件会从电脑上彻底擦除。记录默认保留 90 天，过期自动清除。</div>
+</section>
+
+<section class="s" id="settings">
+<h2>设置</h2>
+<div class="tw"><table>
+<tr><th>设置项</th><th>说明</th></tr>
+<tr><td>服务端地址 / 服务端公钥指纹</td><td>由信息部门提供，一般不用改。</td></tr>
+<tr><td>浏览器通道</td><td><b>托管外部浏览器（推荐）</b>：助手自己打开一个浏览器。<b>浏览器扩展</b>：用于 CA 证书/U 盾登录的平台，需要先安装扩展。<b>内嵌浏览器</b>：前两种都不行时的备用方案。</td></tr>
+<tr><td>浏览器路径</td><td>留空会自动查找奇安信可信浏览器、360 安全浏览器、Chrome、Edge 等。</td></tr>
+<tr><td>调试通道</td><td>默认 pipe。浏览器内核较旧、打不开时改为“本地端口”。</td></tr>
+<tr><td>悬浮球 / 显示方式</td><td>可以关闭悬浮球。悬浮球显示成黑块等异常时，改为“不透明”，重启后生效。</td></tr>
+<tr><td>开机自启</td><td>开机后自动在后台运行（不弹工作台）。</td></tr>
+<tr><td>覆盖页面已有值</td><td>默认关闭：不覆盖表单里已经填写的内容。</td></tr>
+<tr><td>诊断</td><td>遇到问题时点 <span class="btn">运行环境诊断</span>，把结果发给信息部门。</td></tr>
+</table></div>
+<figure><img src="img/09-settings.jpg" alt="设置页面" loading="lazy"><figcaption>设置页。底部“本地操作记录”只保存在本机，服务端只收到不含内容的统计摘要。</figcaption></figure>
+</section>
+
+<section class="s" id="legend">
+<h2>颜色与状态速查</h2>
+<div class="tw"><table>
+<tr><th>看到的</th><th>意思</th><th>你要做什么</th></tr>
+<tr><td><span class="sw g"></span>置信度绿色（≥ 90%）</td><td>助手很有把握</td><td>扫一眼即可</td></tr>
+<tr><td><span class="sw o"></span>置信度橙色（70%–90%）/ 行底色浅黄</td><td>基本正确，但建议核对</td><td>核对取值</td></tr>
+<tr><td><span class="sw r"></span>置信度红色（&lt; 70%）/ 行底色浅红</td><td>把握不大，或有冲突</td><td>仔细核对或修改</td></tr>
+<tr><td>冲突</td><td>同一信息出现了不同的值</td><td>从候选值中选一个，或手动改</td></tr>
+<tr><td>已改</td><td>你手动改过</td><td>—</td></tr>
+<tr><td>填写</td><td>会被自动填写</td><td>—</td></tr>
+<tr><td>低置信度</td><td>默认不填</td><td>确认后可勾选填写</td></tr>
+<tr><td>需补录</td><td>必填但没有数据，或目标平台没有对应选项</td><td>在页面上手工填写</td></tr>
+<tr><td>跳过</td><td>非必填且没有数据、已有内容不覆盖、控件不可编辑</td><td>按需处理</td></tr>
+<tr><td>页面上红框</td><td>需补录或填写失败</td><td>手工处理</td></tr>
+<tr><td>页面上橙框</td><td>已填写但置信度不高</td><td>核对</td></tr>
+<tr><td>✗ 页面拒绝该值</td><td>平台没有接受这个值（例如选项不存在或被禁用）</td><td>手工选择</td></tr>
+<tr><td>✗ 找不到控件</td><td>页面在识别后发生了变化</td><td>点“重新识别”</td></tr>
+</table></div>
+</section>
+
+<section class="s" id="privacy">
+<h2>数据与安全</h2>
+<ul>
+<li><b>项目信息和附件只存在你的电脑上</b>，而且是加密的；别人拷走文件也打不开。</li>
+<li>采集和填写时，页面上的内容会发到公司内网服务端做识别，识别完即丢弃，不保存。</li>
+<li>文件解析会上传文件到内网服务端，解析完成立即删除。</li>
+<li>服务端只会收到不含业务内容的信息：例如“某平台的‘招标方式’字段对应‘采购方式’”，以及操作次数、成功率等统计。这些信息用来让助手越用越准。</li>
+<li>助手记录你的操作日志（采集、填写、打开附件等），明细保存在本机，只把摘要上报用于安全审计。</li>
+<li>本地记录默认保留 90 天；删除后会彻底擦除。PIN 遗忘后数据无法恢复。</li>
+</ul>
+</section>
+
+<section class="s" id="faq">
+<h2>常见问题</h2>
+<div class="faq">
+<details><summary>点“采集当前页面”后提示“浏览器刚刚启动”</summary><p>这是第一次使用时的正常提示。在弹出的浏览器窗口里登录平台、打开要操作的页面，再点一次按钮。</p></details>
+<details><summary>提示“当前页面没有识别到表单字段或附件”</summary><p>确认浏览器里最前面的标签页是你要操作的页面，且页面已完全加载。如果打开了多个浏览器窗口，先点一下目标页面让它处于最前。</p></details>
+<details><summary>采集到的字段不全</summary><p>助手只读取看得见的内容。点开页面上的其他页签或“展开”，再采集一次，保存到同一个项目。</p></details>
+<details><summary>某个字段总是“需补录：目标选项中没有…”</summary><p>说明两个平台对同一选项的叫法不同。可以先手工选择；同时告诉配置管理员，配置好对应关系后以后就能自动填写。</p></details>
+<details><summary>“所在行政区域”显示成“福建省/福州市/鼓楼区”这样的路径</summary><p>行政区域按省 / 市 / 区县三级保存，路径能准确区分同名的区县（福州、南京都有鼓楼区）。填写时助手会按目标平台的选项自动选到对应的级别；目标只有省份时会选“福建省”，并提示“只能选到这一级”。</p></details>
+<details><summary>行政区域只写了“鼓楼区”，助手没认出来</summary><p>全国有好几个“鼓楼区”，只凭区名无法确定是哪一个，助手不会乱猜。请在取值里补上省市，例如“福建省福州市鼓楼区”，或直接写“福州市鼓楼区”。</p></details>
+<details><summary>填写结果显示“页面拒绝该值”</summary><p>目标平台不接受这个值，常见原因是选项被禁用、选项名称不同或日期格式限制。请在页面上手工选择。</p></details>
+<details><summary>左下角显示“服务端不可用”</summary><p>网络断开或服务端维护中。此时可以查看工作台里的本地记录，但采集、解析、填写、问答暂不可用。</p></details>
+<details><summary>提示“服务端身份校验失败（公钥指纹不一致）”</summary><p>为防止连到伪造的服务端，助手拒绝了这次连接。请不要自行修改设置，立即联系信息部门。</p></details>
+<details><summary>选了“浏览器扩展”但提示扩展未连接</summary><p>确认扩展已安装并启用，点浏览器上的扩展图标查看是否显示“已连接客户端”；没有的话点“重新连接”，并确保助手正在运行。</p></details>
+<details><summary>悬浮球显示成黑色方块或看不见</summary><p>在设置里把“悬浮球显示方式”改为“不透明”，然后重启助手。</p></details>
+<details><summary>忘记了本地保险箱 PIN</summary><p>本机保存的项目和附件无法恢复。请联系信息部门重置客户端，重新采集需要的数据。</p></details>
+</div>
+</section>
+
+<!-- ================= 管理员篇 ================= -->
+<div class="part" id="admin">
+  <div class="eyebrow">管理员篇</div>
+  <h2>管理后台总览</h2>
+  <p>管理后台通过浏览器访问（地址由信息部门提供）。首次登录如果还在用初始口令，会强制修改：新口令至少 8 位，包含大写、小写、数字、特殊字符中的三类。</p>
+  <div class="tw"><table>
+  <tr><th>角色</th><th>能看到的菜单</th><th>日常工作</th></tr>
+  <tr><td>配置管理员</td><td>运营看板、平台管理、要素字典、枚举集、映射配置、页面模板、模板候选、发布与回滚、系统配置</td><td>审核候选、维护映射、发布</td></tr>
+  <tr><td>知识库管理员</td><td>运营看板、知识库、问答反馈</td><td>上传/更新资料、处理“答案有误”的反馈</td></tr>
+  <tr><td>系统管理员</td><td>用户与权限、系统配置</td><td>建用户、启停、重置口令</td></tr>
+  <tr><td>安全管理员</td><td>用户与权限</td><td>分配角色和知识库权限标签</td></tr>
+  <tr><td>审计管理员</td><td>审计日志</td><td>查询审计、校验审计链完整性</td></tr>
+  </table></div>
+  <p>系统管理员、安全管理员、审计管理员三个角色不能由同一个人兼任（三员分立）。</p>
+</div>
+
+<section class="s" id="learn">
+<h2>让助手越用越准</h2>
+<p class="sub">这是配置管理员最重要的日常工作，建议每周做一次。</p>
+<p>业务人员每次确认采集结果或填写成功，助手都会把“某平台的某字段对应哪个要素”记下来（不含业务内容）。同一对应被确认 3 次以上且没有矛盾时，就会出现在“模板候选”里等你审核。</p>
+<ol class="steps">
+  <li><b>看运营看板找重点。</b>“各平台填写成功率”从低到高排序，“采集低置信度占比”从高到低排序，排在前面的平台最需要配置。</li>
+  <li><b>审核候选。</b>进入“模板候选”→“待审核”，检查每条“字段名 → 要素”是否正确，勾选后 <span class="btn">批量通过</span>，不对的 <span class="btn">驳回</span>。通过后系统会自动生成该平台的字段和选项对应关系（平台不存在时会自动创建）。</li>
+  <li><b>生成页面模板（可选，效果最好）。</b>在“已通过”页底部，页面按“域名 + URL 模式”列出，选一个点 <span class="btn">生成 / 合并页面模板</span>。这个页面已经有模板时，只会把新字段合并进去，不会重复生成。然后到“页面模板”页核对（可以修改，见 <a href="#tpl">页面模板维护</a>）并点 <span class="btn">启用</span>。启用模板的页面，所有字段都能直接对应，不用大模型判断。</li>
+  <li><b>发布。</b>到“发布与回滚”点 <span class="btn p">发布当前配置</span>，写上说明。发布后业务人员下一次采集或填写就会生效。</li>
+</ol>
+<div class="tip warn"><b class="t">关于回滚</b>“回滚到此版”只切换当前生效的版本，不会把配置页面上的内容改回去。回滚后如果需要继续修改，请先按回滚版本的内容核对配置，再发布。</div>
+</section>
+
+<section class="s" id="mapping">
+<h2>平台与映射配置</h2>
+<h3>新增平台</h3>
+<ol class="steps">
+  <li>“平台管理”→ <span class="btn">新增平台</span>。</li>
+  <li>填写名称和域名规则（每行一个，如 <code>ebid.example.com</code>、<code>*.example.com</code>、<code>example.com/bid*</code>），选择页面组件库；如果是公司内部招采平台，打开“内部平台”。</li>
+  <li>保存。平台只能停用，不能删除。</li>
+</ol>
+<h3>配置字段和选项的对应关系</h3>
+<ol class="steps">
+  <li>“映射配置”→ 顶部选择平台。</li>
+  <li>“字段别名”页签：左边是标准要素，右边填这个平台上对应的字段名，多个用逗号分隔。点 <span class="btn">保存字段别名</span>。</li>
+  <li>“枚举别名”页签：选择枚举集（如“组织形式”），在每个标准选项后填该平台上意思相同的选项名（如“自行组织”后面填“自主招标”）。点 <span class="btn">保存枚举别名</span>。</li>
+  <li>点 <span class="btn">去发布</span>，在“发布与回滚”页发布后生效。</li>
+</ol>
+<div class="tip warn"><b class="t">注意</b>“保存”会用当前页面的内容整体替换该平台的配置。已经通过审核生成的对应关系也在这张表里，修改前请先确认。</div>
+</section>
+
+<section class="s" id="tpl">
+<h2>页面模板维护</h2>
+<p class="sub">页面模板记录“某个平台的某个页面上，每个字段对应哪个标准要素”，命中后识别最快、最准。</p>
+<p>每个页面用<b>域名 + URL 模式</b>来识别，例如 <code>ebid.example.com/bid/{id}/edit?action=edit</code>：网址里的项目编号等变化的部分写成 <code>{id}</code> 或 <code>{v}</code>，所以同一类页面（不同项目的编辑页）共用一个模板。页面上多出联动字段、切换页签，都不影响识别。同一平台的同一个页面只能有一个模板。</p>
+<h3>修改模板</h3>
+<ol class="steps">
+  <li>进入“页面模板”，可以按平台筛选。点某个模板的 <span class="btn">编辑</span>。</li>
+  <li>可以修改名称、阶段（采集命中该模板时直接用这个阶段）、URL 模式。</li>
+  <li>在“字段映射”里逐行核对：页面字段名（页面上显示的名称）、控件类型、对应的标准要素。对应错的直接改；页面上有、模板里没有的，点 <span class="btn">添加字段</span>；不需要的点 <span class="btn">删除</span>。标准要素留空表示忽略这个字段。</li>
+  <li>点 <span class="btn p">保存</span>，版本号加 1。修改要到“发布与回滚”页<b>发布后才生效</b>。</li>
+</ol>
+<h3>新建模板</h3>
+<p>点 <span class="btn p">新建模板</span>，选择平台，填写名称、URL 模式和字段映射。URL 模式可以从“模板候选”的页面列表里复制。如果这个页面已经有模板，会提示直接去修改已有的那个。</p>
+<div class="tip warn"><b class="t">旧模板</b>列表中标“旧版指纹，请补 URL 模式”的模板是早期生成的，需要编辑补上 URL 模式并发布后才能重新生效。</div>
+</section>
+
+<section class="s" id="dict">
+<h2>要素字典</h2>
+<ul>
+<li><b>要素</b>是助手统一使用的字段，以公司内部招采平台的字段为准。在“要素字典”页可以按名称、编码、别名搜索，按阶段筛选。</li>
+<li>新增要素时填写：编码（大写字母、数字、下划线，保存后不能改）、名称、所属阶段、类型（枚举类要选枚举集）、<b>通用别名</b>（各平台常见叫法，每行一个）、<b>说明</b>（写清业务含义，助手判断时会参考）。</li>
+<li>要素的修改<b>保存后立即生效</b>，不需要发布，也不能回滚，请谨慎操作。要素只能停用，不能删除。</li>
+<li>“行政区域”已经是省 / 市 / 区县三级（全国行政区划数据）。各平台叫法不同（如“福建/福州”）时，在“映射配置”的枚举别名里配置。</li>
+<li>“枚举集”页维护标准选项。树形选项（如行业）可以“加子项”；改名会同步更新子项路径；有子项的选项不能删除。删除选项会让已配置的平台选项对应失效。</li>
+</ul>
+</section>
+
+<section class="s" id="kb">
+<h2>知识库维护</h2>
+<ol class="steps">
+  <li><b>目录。</b>左侧目录树分“业务知识”（法律法规、政策文件、管理制度、行业规范、业务流程）和“系统知识”（招采平台、财务报销、请假、邮件）。目录可以设置权限标签，为空表示所有人可见。</li>
+  <li><b>上传。</b>选中目录，需要时选择生效日期，点 <span class="btn p">上传文档</span>（可多选）。状态依次为“等待解析”“解析中”，最后显示“已入库 N 个切片”；失败时显示原因。相同文件不能重复上传。</li>
+  <li><b>更新。</b>新版本用 <span class="btn">替换</span>；过时的用 <span class="btn">废止</span>（不再参与回答，原文保留）；不要的 <span class="btn">删除</span>。</li>
+  <li><b>修正。</b>回答不准时，点文档的 <span class="btn">切片</span>，找到对应段落修改后 <span class="btn">保存修正</span>。</li>
+  <li><b>看反馈。</b>“问答反馈”页筛选“答案有误”，据此补充或修正资料。</li>
+</ol>
+<p>更换向量模型后，需要点顶部的 <span class="btn">重建索引</span>。</p>
+<div class="tip warn"><b class="t">智能问答暂未开放</b>客户端里的智能问答入口目前是隐藏的。知识库可以先上传和整理，开放后直接可用。</div>
+</section>
+
+<section class="s" id="sys">
+<h2>账号、配置与审计</h2>
+<h3>用户与权限</h3>
+<ul>
+<li>系统管理员：<span class="btn">新建用户</span>（用户名、姓名、部门、初始口令，默认为普通用户），可停用/启用、重置口令。</li>
+<li>安全管理员：在用户行点 <span class="btn">分配角色</span>，勾选角色、填写知识库权限标签。</li>
+</ul>
+<h3>系统配置</h3>
+<div class="tw"><table>
+<tr><th>配置</th><th>默认</th><th>作用</th></tr>
+<tr><td>自动填写阈值</td><td>0.9</td><td>高于此值显示绿色</td></tr>
+<tr><td>高亮阈值</td><td>0.7</td><td>低于此值默认不填</td></tr>
+<tr><td>按钮黑名单</td><td>提交、发布、送审、审核、确认、确定、保存、签章、报名、上报、完成</td><td>填写时禁止点击的按钮</td></tr>
+<tr><td>填写等待时长</td><td>文本 120ms、选择 250ms、最长 2500ms</td><td>页面反应慢、联动字段填不上时适当调大</td></tr>
+<tr><td>本地记录保留天数</td><td>90</td><td>客户端自动清理</td></tr>
+<tr><td>候选所需确认次数</td><td>3</td><td>越小候选出现越快，但误差越大</td></tr>
+<tr><td>问答记录保留天数</td><td>180</td><td></td></tr>
+<tr><td>解析结果保留分钟</td><td>30</td><td></td></tr>
+<tr><td>悬浮球外观、客户端版本</td><td>—</td><td></td></tr>
+</table></div>
+<p>修改后，客户端在下次登录或 30 分钟内自动获取。</p>
+<h3>审计日志</h3>
+<p>审计管理员可按用户名、操作类型（如 <code>LOGIN</code> 登录、<code>ADMIN_</code> 后台修改、<code>CLIENT_</code> 客户端操作）、日期查询。点 <span class="btn">校验哈希链</span> 检查审计记录是否被篡改，结果显示“完整”或列出异常记录。</p>
+</section>
+
+<footer>本手册截图来自测试环境的模拟平台页面，数据均为示例。技术细节见《智能助手技术交接文档》。</footer>
+</main>
+</div>
+
+</body></html>

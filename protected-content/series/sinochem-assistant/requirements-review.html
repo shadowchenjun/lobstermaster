@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求匹配度评审</title>
+<meta name="description" content="中化商务智能助手：研发内容与 V3 建设方案的匹配度评审、已落地的优化与待决策事项（2026-09-23）">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2129; --ink-2: #4e5969; --muted: #86909c; --line: #e5e6eb;
+  --accent: #1f5fd6; --accent-bg: #eaf1ff;
+  --ok: #0a7d4f; --ok-bg: #e6f6ee; --warn: #a15c00; --warn-bg: #fff4e0; --bad: #c4332b; --bad-bg: #fdecea;
+  --code-bg: #f2f3f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111317; --panel: #191c21; --ink: #e8eaed; --ink-2: #b4bac3; --muted: #8a919c; --line: #2c3037;
+    --accent: #7aa7ff; --accent-bg: #1c2a44;
+    --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+    --code-bg: #23272e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111317; --panel: #191c21; --ink: #e8eaed; --ink-2: #b4bac3; --muted: #8a919c; --line: #2c3037;
+  --accent: #7aa7ff; --accent-bg: #1c2a44;
+  --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+  --code-bg: #23272e;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.7 system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+header h1 { font-size: 26px; line-height: 1.3; margin: 0 0 6px; letter-spacing: .5px; }
+header .meta { color: var(--muted); font-size: 13px; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 18px 0 8px; font-size: 13px; }
+nav.toc a { color: var(--accent); text-decoration: none; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; margin-top: 18px; }
+h2 { font-size: 18px; margin: 0 0 12px; display: flex; align-items: baseline; gap: 10px; }
+h2 .n { color: var(--muted); font-weight: 500; font-size: 14px; }
+h3 { font-size: 15px; margin: 18px 0 8px; }
+p { margin: 8px 0; }
+.lead { font-size: 16px; }
+.lead b { color: var(--accent); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.kpi { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.kpi .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kpi .k { color: var(--muted); font-size: 12px; }
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--ink-2); font-weight: 600; white-space: nowrap; background: color-mix(in srgb, var(--bg) 60%, var(--panel)); }
+td.st { white-space: nowrap; }
+.chip { display: inline-block; font-size: 12px; line-height: 1; padding: 5px 8px; border-radius: 999px; font-weight: 600; }
+.ok { color: var(--ok); background: var(--ok-bg); }
+.warn { color: var(--warn); background: var(--warn-bg); }
+.bad { color: var(--bad); background: var(--bad-bg); }
+.new { color: var(--accent); background: var(--accent-bg); }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+ol.issues { padding-left: 20px; margin: 6px 0; }
+ol.issues li { margin: 8px 0; }
+.muted { color: var(--muted); }
+.decisions { display: grid; gap: 12px; }
+.dec { border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; padding: 12px 14px; }
+.dec.hi { border-left-color: var(--bad); }
+.dec .t { font-weight: 600; }
+.dec .opts { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+.dec .rec { margin-top: 6px; font-size: 14px; }
+.dec .rec b { color: var(--accent); }
+.tag { font-size: 12px; color: var(--muted); margin-left: 6px; font-weight: 400; }
+.commits code { white-space: nowrap; }
+footer { color: var(--muted); font-size: 12px; margin-top: 24px; text-align: center; }
+@media (max-width: 640px) {
+  section { padding: 16px 14px; }
+  header h1 { font-size: 22px; }
+  th, td { padding: 7px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>中化商务智能助手 · 需求匹配度评审</h1>
+  <div class="meta">2026-09-23 · 对照《中化商务智能助手建设方案 V3.0》与 <code>docs/specs/00–05</code> · 仓库 <code>shadowchenjun/AIBiddingCollector</code></div>
+</header>
+
+<nav class="toc">
+  <a href="#s1">1 结论</a><a href="#s2">2 逐项对照</a><a href="#s3">3 主要问题</a><a href="#s4">4 本次已落地</a><a href="#s5">5 待你决策</a><a href="#s6">6 后续计划</a><a href="#s7">7 第二轮进展</a>
+</nav>
+
+<section id="s1">
+  <h2><span class="n">1</span>结论</h2>
+  <p class="lead">需求功能点<b>基本都有实现，深度是原型级</b>。对照 <code>05 §3</code> 实施计划：<b>P0 技术验证已完成、P2 底座骨架已完成</b>；决定准确率的 <b>P1（要素定稿、真实平台调研）基本还没开始</b>。</p>
+  <p>所有端到端测试都跑在自建的测试页上，还没接触过任何一个真实招采平台。这是目前最大的风险：功能"能跑通"不代表"在甲方平台上能填准"。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v">65 / 65</div><div class="k">客户端端到端（两个通道；本次前为 51）</div></div>
+    <div class="kpi"><div class="v">16 / 16</div><div class="k">业务服务测试（本次前为 14）</div></div>
+    <div class="kpi"><div class="v">25 / 25</div><div class="k">AI 服务测试（本次前为 24）</div></div>
+    <div class="kpi"><div class="v">0</div><div class="k">验证过的真实招采平台</div></div>
+    <div class="kpi"><div class="v">42 / 200+</div><div class="k">标准要素：已有 / spec 计划</div></div>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>需求逐项对照</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>需求（V3 方案）</th><th>状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>悬浮球：展开收起、右键菜单、拖动、多屏、可关闭不自启</td><td class="st"><span class="chip ok">已实现</span></td><td>只在 macOS 验证；麒麟/统信 F1–F10 人工检查未做</td></tr>
+      <tr><td>智能采集：页面字段、附件存入加密目录、置信度、修改、重新采集</td><td class="st"><span class="chip ok">已实现</span></td><td></td></tr>
+      <tr><td>附件下载进度、中断、重试（§5.3.4）</td><td class="st"><span class="chip new">本次补齐</span></td><td>新增失败附件单独重试；下载进度条仍为整体进度</td></tr>
+      <tr><td>A↔B 双向流转、分阶段录入</td><td class="st"><span class="chip ok">已实现</span></td><td>以内部平台"标准要素"作中转，7 个阶段</td></tr>
+      <tr><td>智能填写：字段/枚举匹配、映射优先 + 大模型兜底、高亮、结果汇总</td><td class="st"><span class="chip ok">已实现</span></td><td></td></tr>
+      <tr><td>填写支持的控件</td><td class="st"><span class="chip warn">部分</span></td><td>Element UI/Plus、原生控件；<b>本次新增 layui 下拉/单选/复选和 Element 级联</b>。antd、UEditor 等富文本编辑器、远程搜索下拉仍未支持</td></tr>
+      <tr><td>工作台：项目维度、按时间/平台/阶段筛选、删除即擦除</td><td class="st"><span class="chip ok">已实现</span></td><td>secure_delete + VACUUM</td></tr>
+      <tr><td>映射配置：文本、单选复选、下拉树，发布回滚</td><td class="st"><span class="chip ok">已实现</span></td><td>界面简陋，没有 spec 里的左右拖拽对应</td></tr>
+      <tr><td>文件解析：Word、PDF、Excel</td><td class="st"><span class="chip ok">已实现</span></td><td>真实招标文件 72 页 7.1 s；<b>本次新增跨页表格合并</b></td></tr>
+      <tr><td>文件解析：JPG/PNG、扫描件、doc/wps</td><td class="st"><span class="chip bad">不可用</span></td><td>依赖 PaddleOCR、LibreOffice，本机都没装</td></tr>
+      <tr><td>解析保留原文坐标</td><td class="st"><span class="chip warn">部分</span></td><td>PDF 有；docx 没有（需转 PDF 定位）</td></tr>
+      <tr><td>开标记录、评标报告、投标人须知前附表专用抽取</td><td class="st"><span class="chip bad">未做</span></td><td>只有通用的"标签-值"规则</td></tr>
+      <tr><td>智能问答：意图、混合检索、带出处、拒答、反馈、权限过滤</td><td class="st"><span class="chip ok">已实现</span></td><td>未导入真实知识库</td></tr>
+      <tr><td>审计留痕：时间轴回放（方案底座表）</td><td class="st"><span class="chip bad">未做</span></td><td>有防篡改审计日志，无回放</td></tr>
+      <tr><td>任务调度：失败重试、断点续传</td><td class="st"><span class="chip warn">未验证</span></td><td>代码有，无专门测试</td></tr>
+      <tr><td>信创：麒麟/统信、金仓、TongWeb、昇腾</td><td class="st"><span class="chip bad">未实测</span></td><td>适配层已写，都没连过真实环境</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>主要问题（按严重程度）</h2>
+  <ol class="issues">
+    <li><b>只在自建测试页上验证过。</b>真实公共资源交易平台常见 jQuery、layui、老 ASP.NET、IE 兼容模式、UEditor；本次已补上 layui，其余还需要拿到真实页面再做。</li>
+    <li><b>准确率基础未建立。</b>要素字典 42 个（计划 200–300）；评测集是冒烟级（大模型集 9 / 3 / 3 条），"全部达标"没有统计意义；置信度是线性映射，未校准；没部署向量模型。</li>
+    <li><b>需求明确要求的图片、扫描件解析不可用。</b></li>
+    <li><b>执行器集中在一个 700 多行的 <code>inject.js</code> 里</b>，spec 要求的"每种组件库一个插件"还没拆；逐个平台适配时回归风险高。</li>
+    <li><b>工程与安全基础</b>：本次已建仓、加 CI、补生产密钥防护和初始口令强制修改；管理后台双因素认证仍未做。</li>
+    <li><b>需求侧未闭环</b>：<code>05 §4</code> 的 Q1–Q11 都没和甲方确认，影响最大的是 Q2（平台清单）与 Q9（业务数据端侧留存）。</li>
+  </ol>
+  <h3>本次顺带发现并修复的两个缺陷</h3>
+  <ol class="issues">
+    <li><b>回读失败被报成功</b>：<code>inject.js</code> 在回读值不一致时把 <code>ok:false</code> 写在 <code>...res</code> 前面，被覆盖成 <code>ok:true</code>。新加的 layui 复选测试暴露了它：点击丢了，结果却报"成功"。</li>
+    <li><b>端到端验证卡死</b>：开发机上已有"系统凭据库"模式的保险箱时，测试 PIN 分支仍调用 PIN 解锁，在 <code>unhex(undefined)</code> 处崩溃且异常被吞，进程挂起。现在按模式分别处理，<code>--e2e</code> 改用独立临时数据目录，不再动开发机上的保险箱。</li>
+  </ol>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>本次已落地（均已推送到 main）</h2>
+  <div class="table-wrap">
+  <table class="commits">
+    <thead><tr><th>提交</th><th>内容</th><th>验证</th></tr></thead>
+    <tbody>
+      <tr><td><code>2c08400</code></td><td>初始提交。甲方方案 docx 与 <code>招投标素材/</code> 已加入 .gitignore，未入库（见决策 1）</td><td>提交前检查过密钥、大文件</td></tr>
+      <tr><td><code>3c59cb7</code></td><td>修复端到端验证卡死；e2e 使用独立临时数据目录</td><td>e2e 恢复 51/51</td></tr>
+      <tr><td><code>c500c68</code></td><td>PDF 跨页表格合并：列数相同、中间只隔页码/页眉页脚则合并，去掉续页重复表头</td><td>真实招标文件：前附表第 8–19 页 12 个碎片合并为 73 行；新增单测</td></tr>
+      <tr><td><code>a2d7743</code></td><td>执行器支持 layui 下拉/单选/复选、Element 级联（完整路径或只给末级名称）；修复回读结果被覆盖；填写后静默时长按控件类型区分（文本 120 ms / 选择类 250 ms），由服务端 <code>fill.quietMs</code> 下发</td><td>新测试页用真实 layui 2.13 + Element Plus；e2e 63/63；整页填写约 4.5 s</td></tr>
+      <tr><td><code>22e0ca6</code></td><td>生产模式（强制签名）下，JWT 密钥、服务令牌、初始口令、SM2 私钥为默认值则拒绝启动；初始口令登录后管理后台强制改口令</td><td>业务服务 16/16；管理后台编译通过（弹窗未在浏览器里手点验证）</td></tr>
+      <tr><td><code>e6a7fd4</code></td><td>采集面板中下载失败的附件可单独重试</td><td>e2e 65/65</td></tr>
+      <tr><td><code>ac9e361</code></td><td>GitHub Actions CI：mvn test、pytest、客户端类型检查 + vitest、管理后台构建</td><td>已推送；本机无 gh，<b>首次运行结果请在 Actions 页确认</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>待你决策</h2>
+  <p class="muted">红色左边框表示阻塞后续工作，需要优先决定。每条都附了我的建议。</p>
+  <div class="decisions">
+    <div class="dec hi">
+      <div class="t">1. 甲方资料是否入库<span class="tag">docx 1.7 MB、招投标素材 406 MB（含 364 MB 投标人 zip）</span></div>
+      <ul class="opts"><li>A：保持本地，不入库（现状）</li><li>B：用 Git LFS 放进私有仓库</li><li>C：只把脱敏后的评测样例入库</li></ul>
+      <div class="rec">建议 <b>C</b>：原件留在本地或甲方网盘；评测需要的样例脱敏后放进 <code>eval/datasets</code>。投标人材料涉及第三方企业信息，不宜进代码仓库。</div>
+    </div>
+    <div class="dec hi">
+      <div class="t">2. 首批真实平台与测试账号<span class="tag">前置条件 ①，最大风险项</span></div>
+      <ul class="opts"><li>需要甲方提供：平台清单、测试环境地址、账号；是否使用 CA 证书 U 盾登录</li></ul>
+      <div class="rec">建议先做 <b>内部招采平台 + 1 个公共资源交易平台</b>，跑通真实的"采集 → 填写"；页面脱敏后存成 HTML 快照，作为回归测试的页面样本。</div>
+    </div>
+    <div class="dec hi">
+      <div class="t">3. 要素字典扩充到 200+ 的方式</div>
+      <ul class="opts"><li>A：等甲方业务骨干提供</li><li>B：我先用真实招标文件和平台页面起草候选清单，业务骨干评审</li></ul>
+      <div class="rec">建议 <b>B</b>：先出一份带"来源页面/文件"的草稿，评审比从零梳理快得多。</div>
+    </div>
+    <div class="dec">
+      <div class="t">4. 文件抽取评测集的标注</div>
+      <ul class="opts"><li>spec 要求每类文件 ≥ 5 份；目前只有 1 份招标文件和 1 份投标人材料</li></ul>
+      <div class="rec">建议由我<b>预标注</b>（抽取 + 证据），业务人员逐条复核；同时向甲方要开标记录、评标报告、中标通知样例。</div>
+    </div>
+    <div class="dec">
+      <div class="t">5. 执行器插件化重构的时机</div>
+      <ul class="opts"><li>A：现在就拆（按组件库拆成插件 + 构建打包）</li><li>B：拿到首批真实平台页面后再拆</li></ul>
+      <div class="rec">建议 <b>B</b>：插件边界应由真实平台决定；在这之前先保证每加一类控件都有测试页和 e2e 覆盖（本次 layui/级联即按此做）。</div>
+    </div>
+    <div class="dec">
+      <div class="t">6. 在开发机安装 PaddleOCR、LibreOffice、向量模型</div>
+      <ul class="opts"><li>PaddleOCR 依赖较重（数 GB）；LibreOffice 约 1 GB；向量模型可用小模型本地跑或接公网接口</li></ul>
+      <div class="rec">建议<b>装 LibreOffice + 一个小向量模型</b>，先把 doc/wps 和召回质量跑通；OCR 用公网多模态接口临时替代验证流程，正式环境再上 PaddleOCR。</div>
+    </div>
+    <div class="dec">
+      <div class="t">7. 管理后台双因素认证</div>
+      <ul class="opts"><li>A：自建 TOTP（手机验证器）</li><li>B：依赖甲方 SSO 的多因素</li></ul>
+      <div class="rec">取决于 Q6（SSO 类型）。甲方 SSO 支持多因素时选 <b>B</b>，只为三员本地账号做 TOTP 兜底。</div>
+    </div>
+    <div class="dec">
+      <div class="t">8. 初始口令的服务端强制</div>
+      <ul class="opts"><li>目前只在管理后台界面层拦截；接口仍可用初始口令调用</li></ul>
+      <div class="rec">建议<b>加服务端拦截</b>（令牌带"需改口令"标记，除改口令接口外一律拒绝）。改动涉及客户端和 e2e 登录流程，需要你确认。</div>
+    </div>
+    <div class="dec">
+      <div class="t">9. 与甲方确认的事项</div>
+      <ul class="opts"><li><code>05 §4</code> Q1–Q11，尤其 Q2 平台清单、Q7 招采数据问答是否纳入（+80–120 人天）、Q9 数据端侧留存</li><li><code>05 §5</code> 方案修订建议（补 D6 审计域、D4 改端侧、"RPA"改称自研执行器等）</li></ul>
+      <div class="rec">建议整理成一页问题清单，<b>一次会议过完</b>。</div>
+    </div>
+    <div class="dec">
+      <div class="t">10. 商务：平台适配单独计价</div>
+      <div class="rec">建议按 <code>05 §5</code> 把平台适配从 395 人天中拆出，按平台数量计价；合同写明首期适配平台清单，清单外不承诺准确率。</div>
+    </div>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="n">6</span>后续计划（不依赖决策，可以继续做的）</h2>
+  <ol class="issues">
+    <li>审计时间轴回放：客户端本地审计已有逐步记录，补查看界面</li>
+    <li>任务调度断点续传、失败重试的专项测试</li>
+    <li>投标人须知前附表的专用抽取规则（跨页合并后已具备条件）</li>
+    <li>docx 解析补段落/表格定位信息（不依赖坐标的"第几段/第几表"定位）</li>
+    <li>评测脚本接入 CI（规则集部分不需要大模型）</li>
+  </ol>
+</section>
+
+<section id="s7">
+  <h2><span class="n">7</span>第二轮：按决策推进（同日）</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>决策</th><th>结果</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>1 甲方资料不入库</td><td><code>招投标素材/</code>、docx、真实平台快照 <code>client/test/snapshots-local/</code>、真实标注 <code>eval/local/</code> 均已 gitignore；要素草稿里的来源描述已去掉项目和企业名称</td><td class="st"><span class="chip ok">完成</span></td></tr>
+      <tr><td>2 真实平台 ebid.sinochemitc.com</td><td>只读访问了公开页面（没有登录，也没有提交）。交易信息页查询表单：5 个字段识别正确（修复前 8 个里 3 个错误），填写并回读全部通过。公告详情页正文是 pdf.js 里的 PDF：采集时自动下载、解析正文并入结果，已补测试页和 e2e</td><td class="st"><span class="chip ok">完成</span></td></tr>
+      <tr><td>3 要素字典草稿</td><td><code>docs/elements/要素字典草稿-v0.csv</code>：233 个（已有 42 + 新增 191），新增枚举集 16 个；标注阶段、粒度（项目 / 标段 / 投标人 / 证书 / 分项）、来源，末列留空给业务填评审意见</td><td class="st"><span class="chip warn">待业务评审</span></td></tr>
+      <tr><td>4 评测集预标注</td><td>6 个真实文件、234 条预标注，复核表在 <code>eval/local/extract_review.csv</code>（复核结果填「正确 / 改为… / 文件中没有」，再运行 <code>eval/preannotate.py --apply-review</code>）</td><td class="st"><span class="chip warn">待业务复核</span></td></tr>
+      <tr><td>5 插件化等真实页面</td><td>按约定暂不拆；本轮按真实页面修了 3 处字段识别</td><td class="st"><span class="chip ok">按约定</span></td></tr>
+      <tr><td>6 OCR / LibreOffice / 向量</td><td>MinerU 已接入（<code>AI_OCR_BACKEND=mineru</code>，只上传扫描页）；投标文件 237 页里识别出 165 页扫描件，招标文件 72 页没有误判。<b>本机没有装 LibreOffice</b>（只在 Parallels 虚拟机里）；doc/wps 可以先交给 MinerU 处理。向量模型等你另一台机器接入</td><td class="st"><span class="chip warn">LibreOffice 待定</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>真实数据暴露并已修复的问题</h3>
+  <ol class="issues">
+    <li>大模型抽取把 35 个要素挤进一个请求，推理模型的思考过程占满输出后整体失败，错误还被静默吞掉。改为 6 个一批并发，失败的批重试一次。ebid 公告：从仅规则 4/39 提高到 15/39</li>
+    <li>PDF 标题折行没有合并；「2.1项目名称：xxx」被当成标题，折到下一行的取值拼不上</li>
+    <li>macOS/Chrome 生成的 PDF 用康熙部首字符（「项⽬」「⼈⺠」），导致匹配不上</li>
+    <li>取值后面紧跟下一个标签（「某公司地址：…」）、键值写在括号里、前附表写「见招标公告」时，结果会带上多余内容或引用文字</li>
+    <li>扫描页只认"完全没有文字层"，漏掉了带页码或水印的证照页</li>
+    <li>列表页的分页控件被当作字段；列表项的标题被当作页面标题；搜索框取到了别的字段的标签</li>
+  </ol>
+  <h3>从预标注看到的差距（下一步）</h3>
+  <ol class="issues">
+    <li><b>投标人信息表、分项报价表几乎抽不到（0–1 / 39）</b>：现有 42 个要素里没有投标人、证书、分项这类要素。草稿评审后并入字典，并支持"每个投标人一条"的多值结构</li>
+    <li>ebid 公告里「项目负责人（异议联系人）」被当成项目负责人。草稿已把"异议联系人"拆成单独要素并加了说明，需要字典落地后复测</li>
+    <li>公网大模型抽取一份公告约 60 秒，采集时正文 PDF 的解析要在界面上显示进度，内网部署后再测</li>
+  </ol>
+</section>
+
+<footer>本页为本地评审文档：docs/reviews/2026-09-23-需求匹配度评审.html</footer>
+</div>
+</body>
+</html>

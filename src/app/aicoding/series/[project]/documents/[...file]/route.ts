@@ -24,7 +24,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(target)
   }
 
-  const source = await readFile(path.join(process.cwd(), 'protected-content', 'series', project, filename), 'utf8')
+  const filePath = path.join(process.cwd(), 'protected-content', 'series', project, filename)
+  const imageType = ({ '.png': 'image/png', '.jpg': 'image/jpeg' } as Record<string, string>)[path.extname(filename)]
+  if (isSupportingFile && imageType) {
+    const image = await readFile(filePath)
+    return new NextResponse(new Uint8Array(image), { headers: { 'content-type': imageType, 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow', 'x-content-type-options': 'nosniff' } })
+  }
+  const source = await readFile(filePath, 'utf8')
   if (isSupportingFile) {
     return new NextResponse(source, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex, nofollow' } })
   }

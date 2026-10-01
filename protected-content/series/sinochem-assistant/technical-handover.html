@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智能助手技术交接文档</title>
+<meta name="description" content="中化商务智能助手：整体架构、智能采集 / 文件解析 / 智能填写 / 问答的实现流程、数据积累与配置、部署、安全与已知问题（基于提交 3105385）">
+<style>
+:root {
+  --bg: #f5f6f8; --panel: #ffffff; --ink: #1b2330; --ink-2: #4a5566; --muted: #7d8796; --line: #e3e6eb;
+  --accent: #1f5fd6; --accent-bg: #eaf1ff; --accent-ink: #164aa8;
+  --ok: #0a7d4f; --ok-bg: #e6f6ee; --warn: #a15c00; --warn-bg: #fff4e0; --bad: #c4332b; --bad-bg: #fdecea;
+  --code-bg: #f1f3f6; --zone: #f8f9fb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111317; --panel: #181b20; --ink: #e7eaee; --ink-2: #b3bac4; --muted: #8a929d; --line: #2b3038;
+    --accent: #7aa7ff; --accent-bg: #1b2842; --accent-ink: #a9c5ff;
+    --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+    --code-bg: #22262d; --zone: #15181d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111317; --panel: #181b20; --ink: #e7eaee; --ink-2: #b3bac4; --muted: #8a929d; --line: #2b3038;
+  --accent: #7aa7ff; --accent-bg: #1b2842; --accent-ink: #a9c5ff;
+  --ok: #5fd39b; --ok-bg: #16302a; --warn: #f0b35a; --warn-bg: #33291a; --bad: #ff8a80; --bad-bg: #3a1f1e;
+  --code-bg: #22262d; --zone: #15181d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.75 system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+.page { max-width: 1320px; margin: 0 auto; padding: 28px 16px 72px; display: grid; grid-template-columns: 1fr; gap: 28px; }
+@media (min-width: 1100px) { .page { grid-template-columns: 232px minmax(0, 1fr); } }
+nav.toc { font-size: 13px; line-height: 1.6; }
+@media (min-width: 1100px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow-y: auto; } }
+nav.toc .h { font-weight: 600; color: var(--ink-2); margin: 0 0 8px; letter-spacing: .5px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 3px 8px; border-radius: 6px; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--accent-bg); color: var(--accent-ink); outline: none; }
+nav.toc .n { display: inline-block; width: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 1099px) { nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
+main { min-width: 0; }
+header.doc { padding: 4px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+header.doc .eyebrow { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+header.doc h1 { font-size: 28px; line-height: 1.3; margin: 6px 0 8px; text-wrap: balance; }
+header.doc .meta { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+header.doc .lead { max-width: 72ch; color: var(--ink-2); margin: 12px 0 0; }
+section.s { padding: 26px 0 8px; border-bottom: 1px solid var(--line); }
+section.s:last-of-type { border-bottom: 0; }
+h2 { font-size: 21px; line-height: 1.35; margin: 0 0 12px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+h2 .no { color: var(--accent); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; min-width: 28px; }
+h3 { font-size: 16.5px; margin: 24px 0 8px; }
+h4 { font-size: 15px; margin: 18px 0 6px; color: var(--ink-2); }
+p, li { max-width: 80ch; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 22px; margin: 6px 0; }
+li { margin: 3px 0; }
+a { color: var(--accent); }
+code, .mono { font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; word-break: break-word; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
+pre code { background: none; padding: 0; white-space: pre; word-break: normal; }
+.tw { overflow-x: auto; margin: 10px 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.6; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { color: var(--ink-2); font-weight: 600; white-space: nowrap; background: var(--zone); }
+td.nw { white-space: nowrap; }
+.note { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
+.note.warn { background: var(--warn-bg); border-color: transparent; }
+.note.bad { background: var(--bad-bg); border-color: transparent; }
+.note.info { background: var(--accent-bg); border-color: transparent; }
+.note b.t { display: block; margin-bottom: 2px; }
+.chip { display: inline-block; font-size: 12px; line-height: 1; padding: 4px 7px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.ok { color: var(--ok); background: var(--ok-bg); }
+.warn-c { color: var(--warn); background: var(--warn-bg); }
+.bad-c { color: var(--bad); background: var(--bad-bg); }
+.acc { color: var(--accent-ink); background: var(--accent-bg); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
+.kpi { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 10px 12px; }
+.kpi .v { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .k { color: var(--muted); font-size: 12px; }
+.steps { counter-reset: st; list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 0; }
+.steps > li { counter-increment: st; position: relative; padding: 8px 0 10px 40px; border-left: 2px solid var(--line); margin-left: 12px; max-width: none; }
+.steps > li::before { content: counter(st); position: absolute; left: -13px; top: 7px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.steps > li:last-child { border-left-color: transparent; }
+.steps .who { font-size: 12px; color: var(--muted); margin-left: 6px; }
+.fig { margin: 12px 0 16px; }
+.fig .cv { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 8px; }
+.fig svg { display: block; min-width: 860px; width: 100%; height: auto; }
+.fig figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+svg .zone { fill: var(--zone); stroke: var(--line); stroke-dasharray: 5 4; }
+svg .box { fill: var(--panel); stroke: var(--ink-2); stroke-width: 1.2; }
+svg .box.hl { stroke: var(--accent); stroke-width: 1.6; }
+svg .zt { fill: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+svg .bt { fill: var(--ink); font-size: 13.5px; font-weight: 650; }
+svg .bs { fill: var(--ink-2); font-size: 11.5px; }
+svg .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+svg .ln.a { stroke: var(--accent); }
+svg .lt { fill: var(--accent-ink); font-size: 11px; }
+svg .ah { fill: var(--muted); }
+svg .ah.a { fill: var(--accent); }
+.two { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 860px) { .two { grid-template-columns: 1fr 1fr; } }
+.card { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 12px 14px; }
+.card h4 { margin-top: 0; color: var(--ink); }
+.lvl { display: grid; gap: 8px; margin: 12px 0; }
+.lvl .r { display: grid; grid-template-columns: 116px 1fr; gap: 12px; align-items: start; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 10px 12px; }
+.lvl .r .k { font-weight: 650; }
+.lvl .r .k small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+@media (max-width: 560px) { .lvl .r { grid-template-columns: 1fr; gap: 2px; } }
+footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+section.s { scroll-margin-top: 12px; }
+</style>
+
+<body><div class="page">
+<nav class="toc" aria-label="目录">
+  <p class="h">目录</p>
+  <ol>
+    <li><a href="#status"><span class="n">1</span>项目现状</a></li>
+    <li><a href="#arch"><span class="n">2</span>总体架构</a></li>
+    <li><a href="#repo"><span class="n">3</span>仓库与本地开发</a></li>
+    <li><a href="#concepts"><span class="n">4</span>核心概念</a></li>
+    <li><a href="#collect"><span class="n">5</span>智能采集流程</a></li>
+    <li><a href="#parse"><span class="n">6</span>文件解析流程</a></li>
+    <li><a href="#fill"><span class="n">7</span>智能填写流程</a></li>
+    <li><a href="#qa"><span class="n">8</span>知识库与问答</a></li>
+    <li><a href="#flywheel"><span class="n">9</span>数据积累与配置</a></li>
+    <li><a href="#data"><span class="n">10</span>数据模型与留存</a></li>
+    <li><a href="#security"><span class="n">11</span>安全机制</a></li>
+    <li><a href="#config"><span class="n">12</span>配置参考</a></li>
+    <li><a href="#deploy"><span class="n">13</span>构建与部署</a></li>
+    <li><a href="#tests"><span class="n">14</span>测试与评测</a></li>
+    <li><a href="#risks"><span class="n">15</span>已知问题与接手建议</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="eyebrow">技术交接 · 面向接手开发人员</div>
+  <h1>中化商务智能助手 技术交接文档</h1>
+  <div class="meta"><span>版本 v0.2</span><span>对应代码：main 分支提交 <code>3105385</code> 之后的改动（页面模板按 URL 模式识别与编辑、行政区划三级、结果表可编辑修复）</span><span>整理日期：2026-09-24</span><span>仓库：<code>shadowchenjun/AIBiddingCollector</code>（私有）</span></div>
+  <p class="lead">本文按代码实际实现编写，不照抄规格。规格在 <code>docs/specs/00~05</code>，两者不一致的地方在 <a href="#arch-diff">2.4</a> 列出。文中 <code>文件:行号</code> 相对于仓库根目录；标“代码推断”的结论是读代码得出，没有运行验证。</p>
+</header>
+
+<!-- 1 -->
+<section class="s" id="status">
+<h2><span class="no">1</span>项目现状</h2>
+<p>项目依据《中化商务智能助手建设方案 V3.0》实现，包含两条业务线：</p>
+<ul>
+  <li><b>表单智能填写</b>：从源平台页面“采集”数据，或从招标文件“解析”数据，按标准要素归一后存进本机项目；再把项目数据“填写”到目标平台的表单里。</li>
+  <li><b>智能问答</b>：基于知识库（内部系统操作手册、法规制度、业务知识）做检索问答，回答带引用。</li>
+</ul>
+<p>目标环境是信创：麒麟/统信桌面、KingbaseES、TongWeb、国产浏览器、昇腾推理。为了满足“业务数据不外泄”，采集结果和附件只加密存在客户端本机，服务端只保存配置、知识库和统计数据。</p>
+<div class="kpis">
+  <div class="kpi"><div class="v">81 项</div><div class="k">端到端（托管 + 内嵌两个通道）</div></div>
+  <div class="kpi"><div class="v">19/19</div><div class="k">业务服务单测</div></div>
+  <div class="kpi"><div class="v">44/44</div><div class="k">AI 服务单测</div></div>
+  <div class="kpi"><div class="v">9/9</div><div class="k">客户端单测（SM4、页面识别）</div></div>
+  <div class="kpi"><div class="v">42 / 233</div><div class="k">已入库要素 / 字典草稿要素</div></div>
+</div>
+<div class="note warn"><b class="t">成熟度：PoC 完成、正式版第一版代码完成，但尚未在甲方环境验证</b>以下都没有在真实环境跑过：金仓/TongWeb、昇腾内网模型、Milvus、自托管 OCR、甲方 SSO、麒麟/统信实机、需要登录的真实业务表单。浏览器扩展通道没有自动化测试。完整清单见 <a href="#risks">第 15 节</a>。</div>
+</section>
+
+<!-- 2 -->
+<section class="s" id="arch">
+<h2><span class="no">2</span>总体架构</h2>
+<h3>2.1 组件与调用关系</h3>
+<figure class="fig">
+<div class="cv">
+<svg viewBox="0 0 960 560" role="img" aria-label="系统架构图：终端的客户端与浏览器，内网服务区的反向代理、业务服务、AI 服务与 worker，以及数据与模型层">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah a" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <rect class="zone" x="8" y="8" width="306" height="544" rx="10"/>
+  <text class="zt" x="24" y="30">用户终端</text>
+  <rect class="zone" x="336" y="8" width="384" height="544" rx="10"/>
+  <text class="zt" x="352" y="30">内网服务区</text>
+  <rect class="zone" x="742" y="8" width="210" height="544" rx="10"/>
+  <text class="zt" x="758" y="30">数据与模型</text>
+
+  <rect class="box" x="26" y="44" width="270" height="52" rx="8"/>
+  <text class="bt" x="40" y="66">管理员浏览器</text>
+  <text class="bs" x="40" y="84">admin-web（Vue3 + Element Plus）</text>
+
+  <rect class="box hl" x="26" y="118" width="270" height="200" rx="8"/>
+  <text class="bt" x="40" y="142">桌面客户端（Electron 44）</text>
+  <text class="bs" x="40" y="166">悬浮球 / 工作台（Vue3 渲染进程）</text>
+  <text class="bs" x="40" y="188">Workflows：采集 · 解析 · 填写编排</text>
+  <text class="bs" x="40" y="210">ApiClient：SM2 签名 · SM4 请求体</text>
+  <text class="bs" x="40" y="232">本地保险箱：vault.db + workspace/*.enc</text>
+  <text class="bs" x="40" y="254">BridgeManager：三种浏览器通道</text>
+  <text class="bs" x="40" y="276">PageSession + inject.js 执行器</text>
+  <text class="bs" x="40" y="298">托盘 · 快捷键 · 开机自启</text>
+
+  <path class="ln a" d="M161,318 L161,392" marker-end="url(#ara)"/>
+  <text class="lt" x="170" y="342">CDP 协议</text>
+  <text class="lt" x="170" y="358">托管：pipe / 端口</text>
+  <text class="lt" x="170" y="374">扩展：Native Messaging</text>
+
+  <rect class="box" x="26" y="394" width="270" height="140" rx="8"/>
+  <text class="bt" x="40" y="418">浏览器（招采平台页面）</text>
+  <text class="bs" x="40" y="442">A 源平台：采集 · B 目标平台：填写</text>
+  <text class="bs" x="40" y="464">托管外部浏览器 / 扩展 MV3 / 内嵌</text>
+  <text class="bs" x="40" y="486">注入脚本运行在隔离 world</text>
+  <text class="bs" x="40" y="508">公告正文：pdf.js 内嵌 PDF</text>
+
+  <rect class="box" x="356" y="44" width="346" height="58" rx="8"/>
+  <text class="bt" x="370" y="68">反向代理 :443</text>
+  <text class="bs" x="370" y="88">Nginx / TongHttpServer · admin-web 静态资源</text>
+
+  <path class="ln" d="M296,70 L354,70" marker-end="url(#ar)"/>
+  <path class="ln a" d="M296,150 C326,150 330,96 354,92" marker-end="url(#ara)"/>
+  <text class="lt" x="302" y="176">HTTPS</text>
+
+  <rect class="box hl" x="356" y="138" width="346" height="180" rx="8"/>
+  <text class="bt" x="370" y="162">biz-service :8080（Java 17 · Spring Boot 3.5）</text>
+  <text class="bs" x="370" y="186">鉴权 JWT · SM2 验签防重放 · SM4 解密 · 审计链</text>
+  <text class="bs" x="370" y="208">要素字典 D1 · 映射配置/样本/发布快照 D2</text>
+  <text class="bs" x="370" y="230">数据库任务队列 D3 · 解析文件加密暂存</text>
+  <text class="bs" x="370" y="252">知识库管理 D5 · 问答会话 · SSE 转发</text>
+  <text class="bs" x="370" y="274">AI 转发（normalize / plan / project / extract）</text>
+  <text class="bs" x="370" y="296">系统配置下发 · 运营统计 · 三员分立</text>
+  <path class="ln" d="M529,102 L529,136" marker-end="url(#ar)"/>
+
+  <rect class="box" x="356" y="362" width="166" height="136" rx="8"/>
+  <text class="bt" x="368" y="386">ai-service :8090</text>
+  <text class="bs" x="368" y="408">FastAPI</text>
+  <text class="bs" x="368" y="428">要素引擎（归一/计划/投影）</text>
+  <text class="bs" x="368" y="448">证据抽取 · 反幻觉</text>
+  <text class="bs" x="368" y="468">问答：检索 + 流式生成</text>
+  <text class="bs" x="368" y="488">模型网关（限流/兜底）</text>
+
+  <rect class="box" x="536" y="362" width="166" height="136" rx="8"/>
+  <text class="bt" x="548" y="386">ai-worker@N</text>
+  <text class="bs" x="548" y="408">同一份 Python 代码</text>
+  <text class="bs" x="548" y="428">轮询领取任务</text>
+  <text class="bs" x="548" y="448">parse：文件解析</text>
+  <text class="bs" x="548" y="468">kb_*：切片 · 向量化 · 入库</text>
+
+  <path class="ln" d="M440,318 L440,360" marker-end="url(#ar)"/>
+  <text class="lt" x="446" y="344">X-Service-Token</text>
+  <path class="ln" d="M619,360 L619,320" marker-end="url(#ar)"/>
+  <text class="lt" x="625" y="344">/internal/**</text>
+
+  <rect class="box" x="758" y="138" width="178" height="62" rx="8"/>
+  <text class="bt" x="770" y="162">KingbaseES</text>
+  <text class="bs" x="770" y="182">开发：H2（PG 模式）</text>
+  <rect class="box" x="758" y="216" width="178" height="62" rx="8"/>
+  <text class="bt" x="770" y="240">文件存储</text>
+  <text class="bs" x="770" y="260">kb/ 原文 · parse-tmp/*.enc</text>
+  <path class="ln" d="M702,170 L756,170" marker-end="url(#ar)"/>
+  <path class="ln" d="M702,248 L756,248" marker-end="url(#ar)"/>
+
+  <rect class="box" x="758" y="310" width="178" height="84" rx="8"/>
+  <text class="bt" x="770" y="334">推理服务</text>
+  <text class="bs" x="770" y="354">OpenAI 兼容接口</text>
+  <text class="bs" x="770" y="374">大模型 · 多模态 · 向量 · 重排</text>
+  <rect class="box" x="758" y="408" width="178" height="58" rx="8"/>
+  <text class="bt" x="770" y="432">向量索引</text>
+  <text class="bs" x="770" y="452">本地 numpy+BM25 / Milvus</text>
+  <rect class="box" x="758" y="480" width="178" height="58" rx="8"/>
+  <text class="bt" x="770" y="504">OCR</text>
+  <text class="bs" x="770" y="524">MinerU / Paddle / VL / HTTP</text>
+  <path class="ln" d="M702,400 L756,356" marker-end="url(#ar)"/>
+  <path class="ln" d="M702,440 L756,437" marker-end="url(#ar)"/>
+  <path class="ln" d="M702,480 L756,508" marker-end="url(#ar)"/>
+</svg>
+</div>
+<figcaption>客户端只访问反向代理；AI 服务不对客户端开放，由 biz 转发。ai-worker 直连 biz 的 8080 端口，调用内部接口领取任务。蓝色线是用户业务数据经过的链路。</figcaption>
+</figure>
+
+<h3>2.2 进程、端口与技术栈</h3>
+<div class="tw"><table>
+<tr><th>组件</th><th>技术</th><th>端口 / 进程</th><th>代码</th></tr>
+<tr><td>桌面客户端</td><td>Electron 44 + TypeScript + Vue3 + Element Plus；node:sqlite；纯 TS 实现 SM4；sm-crypto（SM2/SM3）</td><td>终端进程</td><td><code>client/</code></td></tr>
+<tr><td>浏览器扩展</td><td>Chrome MV3，<code>chrome.debugger</code> 转发 CDP</td><td>浏览器内</td><td><code>extension/</code></td></tr>
+<tr><td>业务服务 biz</td><td>Java 17、Spring Boot 3.5.16、MyBatis-Plus 3.5.17、Flyway、BouncyCastle 1.86、java-jwt</td><td>8080（<code>BIZ_PORT</code>）</td><td><code>server/biz/</code></td></tr>
+<tr><td>AI 服务</td><td>Python 3.12、FastAPI/uvicorn、httpx、pdfplumber、python-docx、openpyxl、jieba、numpy</td><td>8090（<code>AI_PORT</code>）</td><td><code>server/ai/</code></td></tr>
+<tr><td>AI worker</td><td>同上，入口 <code>python -m app.worker</code></td><td>无端口；开发时随 API 进程启动</td><td><code>server/ai/app/worker.py</code></td></tr>
+<tr><td>管理后台</td><td>Vue3 + Element Plus，hash 路由</td><td>开发 5174，<code>/api</code> 代理到 8080</td><td><code>admin-web/</code></td></tr>
+<tr><td>数据库</td><td>KingbaseES（生产）/ H2 PG 模式（开发、测试）</td><td>54321</td><td><code>server/biz/src/main/resources/db/migration</code></td></tr>
+<tr><td>可选外部服务</td><td>OpenAI 兼容推理服务、Milvus 2.5+、MinerU、PaddleOCR、LibreOffice</td><td>—</td><td><code>deploy/env/ai.env.example</code></td></tr>
+</table></div>
+
+<h3>2.3 设计原则（决定了大部分实现）</h3>
+<ul>
+  <li><b>以内部招采平台的字段为“标准要素”做中枢映射。</b>任何平台 A 的字段先归一到标准要素，再从标准要素投影到平台 B。新增一个平台只需配置“平台 ↔ 标准要素”的映射，不必做 N×N 两两映射；数据也能双向流转。</li>
+  <li><b>业务数据端侧留存。</b>采集值、附件、填写记录只加密存在客户端本机。服务端处理页面值时只在内存中转发给 AI，不落库、不写日志。服务端能积累的只有<b>不含业务值的映射知识</b>（字段名、选项名与要素的对应关系）和统计数据。</li>
+  <li><b>先规则后模型，模型只做候选内选择。</b>字段匹配、枚举对应、文件抽取都先走确定性规则，规则拿不准时才调大模型，且模型只能在给定候选里选，输出还要校验原文引用。没配大模型时整个系统可以用规则跑通（端到端测试就是这样跑的）。</li>
+  <li><b>执行器绝不提交。</b>填写全程拦截“提交/发布/保存”等按钮的点击，由用户核对后自己提交。</li>
+</ul>
+
+<h3 id="arch-diff">2.4 规格与代码的主要差异</h3>
+<div class="tw"><table>
+<tr><th>规格写法</th><th>代码实际</th></tr>
+<tr><td>独立 gateway、parse-worker 服务（spec 04 §1）</td><td>gateway 能力（鉴权、验签、解密、审计）并入 biz；解析和入库由 ai-worker 执行</td></tr>
+<tr><td>任务领取用 <code>FOR UPDATE SKIP LOCKED</code></td><td>条件 UPDATE 抢占：<code>WHERE id=? AND status='pending'</code>（<code>server/biz/.../task/TaskMappers.java:16-18</code>）</td></tr>
+<tr><td>SM4-GCM</td><td>请求体与字段用 SM4-CBC + PKCS#7；客户端文件用 SM4-CTR</td></tr>
+<tr><td>请求头 <code>X-Client-Id</code>；所有接口带幂等键 <code>X-Request-Id</code></td><td>实际是 <code>X-Device-Id</code>；幂等键未实现</td></tr>
+<tr><td>解析结果“取回后删除”</td><td>解析<b>完成</b>即删暂存文件；解析结果按 TTL（默认 30 分钟）置空，取回不触发删除</td></tr>
+<tr><td>按映射单独发布</td><td>全局发布 <code>POST /admin/mappings/publish</code>；回滚只切换生效版本指针</td></tr>
+<tr><td>审计按月分区、保留 ≥ 6 个月</td><td>无分区，也没有清理任务（永久保留）</td></tr>
+<tr><td>管理后台双因素认证；SSO 支持 CAS/OAuth2/LDAP</td><td>无双因素；SSO 只实现了 CAS 3.0</td></tr>
+<tr><td>扩展用 content script 做 DOM 操作（spec 02 §53）</td><td>没有 content script，全部走 <code>chrome.debugger</code> 转发 CDP</td></tr>
+<tr><td>模板版本管理（V3 方案）</td><td>模板每次保存版本号 +1，整体配置按发布快照管理版本与回滚；单个模板的历史版本内容不单独保存</td></tr>
+<tr><td>要素主数据带版本并随快照发布</td><td>要素字典改完<b>立即生效</b>，不进快照、不能回滚；只有平台映射走发布</td></tr>
+</table></div>
+</section>
+
+<!-- 3 -->
+<section class="s" id="repo">
+<h2><span class="no">3</span>仓库结构与本地开发</h2>
+<div class="tw"><table>
+<tr><th>目录</th><th>内容</th></tr>
+<tr><td><code>client/src/main/</code></td><td>主进程：<code>index.ts</code> 入口、<code>workflows.ts</code> 业务编排、<code>api.ts</code> 服务端调用、<code>bridge/</code> 浏览器通道、<code>vault/</code> 保险箱、<code>float.ts</code> 悬浮球</td></tr>
+<tr><td><code>client/src/shared/features.ts</code></td><td>功能开关。<code>qa: false</code>：智能问答入口（侧栏、悬浮球、托盘）暂时隐藏，代码与服务端接口保留</td></tr>
+<tr><td><code>client/src/inject/inject.js</code></td><td>注入页面的提取与填写执行器（约 820 行，最核心的前端逻辑）</td></tr>
+<tr><td><code>client/src/renderer/src/views/</code></td><td>Collect / Parse / Fill / Qa / History / Settings / Login / Unlock / FloatBall</td></tr>
+<tr><td><code>client/test/fixtures/</code></td><td>端到端测试页，同时作为客户端内置的<b>演示页</b>（打包到 <code>resources/demo</code>，由 <code>src/main/demo.ts</code> 在 <code>127.0.0.1:18088</code> 提供，端口固定以便演示页的模板可复用；采集页、填写页的演示按钮打开后自动采集 / 自动识别）：A 源平台、B 目标平台（跨站 iframe）、layui/级联、公告 + pdf.js、E 平台（按真实“采购端”还原的立项查看页 <code>e-project-view.html</code> 与列表页上的标段详情抽屉 <code>e-bid-drawer.html</code>，个人信息与企业名均为虚构）</td></tr>
+<tr><td><code>extension/</code></td><td>MV3 扩展，扩展 ID 由 manifest key 固定为 <code>aiiipdiefcpjodlhojhpffklinoopbjg</code></td></tr>
+<tr><td><code>server/biz/</code></td><td>业务服务。包：security / auth / device / element / mapping / gateway / parse / task / kb / qa / audit / stats / sysconfig / storage</td></tr>
+<tr><td><code>server/biz/seed/gen_seed.py</code></td><td>生成 V2 种子数据（7 阶段、42 要素、8 枚举集、9 个知识库目录、系统配置），生成物请勿手改</td></tr>
+<tr><td><code>server/ai/app/</code></td><td><code>elements/</code> 要素引擎、<code>parse/</code> 解析与抽取、<code>kb/</code> 知识库、<code>gateway.py</code> 模型网关、<code>worker.py</code></td></tr>
+<tr><td><code>admin-web/src/views/</code></td><td>管理后台 14 个页面</td></tr>
+<tr><td><code>eval/</code></td><td>评测集、<code>run_eval.py</code>、<code>preannotate.py</code></td></tr>
+<tr><td><code>deploy/</code></td><td>systemd、env 样例、Nginx 配置、构建脚本、客户端 defaults.json 样例</td></tr>
+<tr><td><code>docs/</code></td><td>specs 规格、plans 实施计划、reviews 需求评审、elements 要素字典草稿、handbook（本文与使用手册）</td></tr>
+<tr><td><code>poc/electron-client/</code></td><td>早期客户端技术验证（含麒麟/统信实机验证步骤）</td></tr>
+</table></div>
+<h3>本地启动</h3>
+<pre><code># 1. 业务服务：H2 文件库在 server/biz/data/，首次启动自动建表并灌入种子数据
+cd server/biz &amp;&amp; JAVA_HOME=/opt/homebrew/opt/openjdk@17 mvn package -DskipTests
+java -jar target/biz-service-0.1.0.jar              # 默认账号 admin / Admin@123456，首次登录强制改口令
+
+# 2. AI 服务：不配模型时走规则 + 本地哈希向量；worker 随进程启动
+cd server/ai &amp;&amp; uv venv --python 3.12 .venv &amp;&amp; uv pip install --python .venv/bin/python -e ".[dev]"
+.venv/bin/python -m app.main
+#   接入模型示例：AI_LLM_BASE_URL=... AI_LLM_API_KEY=... AI_LLM_MODEL_MAIN=... AI_LLM_JSON_MODE=json_object
+#   OCR 用 MinerU 云 API（仅限测试数据）：AI_OCR_BACKEND=mineru AI_MINERU_TOKEN=...
+
+# 3. 管理后台 http://localhost:5174
+cd admin-web &amp;&amp; npm install &amp;&amp; npm run dev
+
+# 4. 客户端（开发模式；Dock 里显示为 Electron，快捷键 Cmd/Ctrl+Alt+Space 打开工作台）
+cd client &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+<div class="note"><b class="t">本机开发的几个坑</b>
+<ul>
+<li>mvn 默认用 JDK 25，必须显式设 <code>JAVA_HOME</code> 为 JDK 17。国内源：pip 用清华镜像，npm/electron 用 npmmirror（<code>client/.npmrc</code>）。</li>
+<li>客户端会<b>固定服务端公钥指纹</b>（首次连接时记录）。换了一个 biz 数据目录（新的 <code>server-sm2.key</code>）后，老客户端会报 10004“公钥指纹不一致”。开发时可把旧的 <code>data/server-sm2.key</code> 拷过去，或用 <code>--user-data-dir</code> 给客户端换一个数据目录。</li>
+<li>客户端是单实例应用。跑 <code>--e2e</code> 或 <code>--ui-snapshot</code> 前要先退出开发模式的客户端。</li>
+<li>本机没有 LibreOffice，<code>.doc/.wps/.et/.xls</code> 解析会失败（配置了 MinerU 时 doc/wps 会整份交给 MinerU）。</li>
+</ul></div>
+</section>
+
+<!-- 4 -->
+<section class="s" id="concepts">
+<h2><span class="no">4</span>核心概念</h2>
+<div class="tw"><table>
+<tr><th>概念</th><th>含义</th><th>存放</th></tr>
+<tr><td>阶段 stage</td><td>招采业务阶段：立项 PROJECT、公告 NOTICE、文件 DOCUMENT、开标 BID_OPEN、评标 EVALUATION、定标 AWARD、服务费 SERVICE_FEE</td><td><code>elem_stage</code></td></tr>
+<tr><td>标准要素 element</td><td>以内部招采平台字段为准定义的业务字段，编码如 <code>PROJECT_NAME</code>、<code>PROC_METHOD</code>。有 12 种数据类型（text/number/money/date/daterange/enum/multi_enum/tree_enum/person/org/file/richtext）、所属阶段、<b>通用别名</b>、给大模型看的语义说明</td><td><code>elem_element</code></td></tr>
+<tr><td>枚举集 / 枚举项</td><td>要素的标准选项，如采购方式、行业（树形，项带完整路径“信息技术/软件和信息技术服务”）</td><td><code>elem_enum_set</code> / <code>elem_enum_item</code></td></tr>
+<tr><td>平台 platform</td><td>一个招采平台，用域名规则识别（支持 <code>*.x.com</code>、<code>x.com/path*</code>），记录组件库类型；“内部平台”即标准参照平台</td><td><code>map_platform</code></td></tr>
+<tr><td>平台字段别名</td><td>某平台上的字段名 ↔ 标准要素，如 B 平台“招标方式” ↔ 采购方式</td><td><code>map_field_alias</code></td></tr>
+<tr><td>平台枚举别名</td><td>某平台上的选项文字 ↔ 标准枚举项，如“自主招标” ↔ 自行组织</td><td><code>map_enum_alias</code></td></tr>
+<tr><td>URL 模式 / 页面指纹</td><td>页面按“域名 + URL 模式”识别，与页面上有哪些字段无关。URL 模式由客户端规范化：路径中的记录 ID（4 位以上数字、UUID、长串）→ <code>{id}</code>；查询参数按名称排序，形如 <code>action=edit</code> 的单词值保留，其余值 → <code>{v}</code>；时间戳、令牌等参数丢弃；哈希路由（<code>#/…</code>）参与识别，普通锚点不参与。例：<code>ebid.x.com/bid/{id}/edit?action=edit&amp;id={v}</code>。指纹 = <code>SHA1(URL 模式)</code> 前 16 位（<code>client/src/main/bridge/fingerprint.ts</code>、<code>server/biz/.../mapping/PagePattern.java</code>，两端共用测试向量 <code>245525478c91b978</code>）</td><td>客户端计算，服务端可由 URL 模式重算</td></tr>
+<tr><td>页面模板</td><td>某平台某页面（URL 模式）下“字段标签 → 要素编码”的整页映射。（平台, 指纹）唯一；命中时置信度 1.0，不调模型；可由样本生成，也可人工新建和修改</td><td><code>map_page_template</code></td></tr>
+<tr><td>映射快照 release</td><td>发布时把平台、别名、已发布模板打成一份 JSON，AI 按它构建索引</td><td><code>map_release</code></td></tr>
+<tr><td>映射样本 sample</td><td>用户确认/填写成功后上报的“字段名 ↔ 要素”对应，累积到阈值成为候选，供管理员审核（飞轮）</td><td><code>map_sample</code></td></tr>
+<tr><td>项目 / 记录</td><td>客户端本地的数据单元。一个项目下有多条采集、解析、填写记录；填写时按时间顺序合并所有记录的要素值（后覆盖前）</td><td>客户端 <code>vault.db</code></td></tr>
+<tr><td>置信度 conf</td><td>0~1。≥ <code>threshold.auto</code>（0.9）绿色自动填；≥ <code>threshold.highlight</code>（0.7）填写并高亮；更低默认不填</td><td><code>sys_config</code> 下发</td></tr>
+</table></div>
+</section>
+
+<!-- 5 -->
+<section class="s" id="collect">
+<h2><span class="no">5</span>智能采集流程</h2>
+<p>目标：把源平台当前页面上的字段和附件，变成“标准要素 + 值 + 置信度 + 依据”，用户确认后存进本机项目。</p>
+<ol class="steps">
+  <li><b>用户点“采集当前页面”</b><span class="who">渲染进程 CollectView.vue</span><br>IPC <code>collect:run</code> → <code>Workflows.collect()</code>（<code>client/src/main/workflows.ts:65-101</code>）。</li>
+  <li><b>定位当前标签页</b><span class="who">BridgeManager</span><br>托管浏览器按“有焦点 +2、可见 +1”给所有页面打分取最高；扩展取最后聚焦窗口的活动标签页。</li>
+  <li><b>页面提取</b><span class="who">inject.js，每个 frame 一份，含跨进程 iframe</span><br>在隔离 world（<code>__sinochem_assistant</code>）中执行 <code>extract()</code>，产出字段、附件、高风险按钮、未展开分组计数。规则见下方 5.1。</li>
+  <li><b>归一化</b><span class="who">客户端 → biz → AI</span><br><code>POST /api/v1/elements/normalize</code>（SM4 加密请求体），biz 原样转发到 <code>/ai/v1/elements/normalize</code>，不落库。算法见 5.2。</li>
+  <li><b>下载附件并立即加密</b><span class="who">浏览器通道</span><br>逐个触发下载 → 落到保险箱 tmp → 立即 SM4-CTR 加密进 <code>_drafts</code> 区并删除明文。失败的附件可单独重试（<code>collect:retry-attachment</code>）。</li>
+  <li><b>公告正文 PDF 并入</b><span class="who">仅当页面是 pdf.js 内嵌 PDF</span><br>解密 PDF → 上传解析 → 按全部非文件要素抽取 → 与页面结果合并：页面没有的直接加入；页面已有但值不同，<b>以页面值为准</b>，标冲突、置信度封顶 0.6，PDF 值放进候选（<code>workflows.ts:124-151</code>）。</li>
+  <li><b>用户核对</b><span class="who">ElementTable.vue</span><br>可改值（改后 conf=1）、选冲突候选、移除行、给“未对应字段”手工指定要素、选择保存到的项目和阶段。存在未核对的冲突或低置信度字段时弹窗确认。</li>
+  <li><b>确认入库</b><span class="who">confirmCollect，workflows.ts:169-201</span><br>写一条 <code>kind=collect</code> 记录（整条 SM4 加密），附件从 <code>_drafts</code> 移到项目目录并关联记录。</li>
+  <li><b>上报（不含业务值）</b><span class="who">客户端 → biz</span><br><code>POST /api/v1/mapping/samples</code>：字段名、控件类型、要素编码、选项文字 ↔ 枚举项；<code>POST /api/v1/tasks/records</code>：统计数；审计摘要每 5 分钟上报。</li>
+</ol>
+
+<h3>5.1 页面提取规则（<code>client/src/inject/inject.js</code>）</h3>
+<div class="two">
+<div class="card"><h4>可编辑控件</h4>
+<ul>
+<li>先按组件库根节点识别：Element（select / tree-select / cascader / date-editor / radio-group / checkbox-group / upload）、Ant Design（select / picker，<b>只识别不能填</b>）、layui（select / radio / checkbox），再识别原生 input / textarea / select / contenteditable。</li>
+<li>标签识别优先级：<code>.el-form-item__label</code> → antd / layui label → <code>label[for]</code> → aria → 表格型表单左侧单元格 → legend → 包裹 label → 最近前置短文本 → placeholder。带 <code>*</code> / <code>is-required</code> 判为必填。</li>
+<li>同时记录分组标题 section、所在页签 tab、当前值、可读到的选项（el-select 懒渲染，提取时为 null）、disabled、maxLength。</li>
+<li>不可见控件不采集，只按页签计数到 <code>hiddenByTab</code>，界面提示“还有未展开的分组”。页头页脚导航分页整体排除。</li>
+</ul></div>
+<div class="card"><h4>只读字段、附件、PDF</h4>
+<ul>
+<li><b>详情/查看页的“标签：值”</b>：只显示文字的 <code>el-form-item</code> / <code>ant-form-item</code>（结构明确，值可长到 2000 字，如多选的国民经济分类）、el-descriptions、<code>th.label</code>、<code>dt</code>，以及通用“标签：值”文字对（标签 2~16 字，值 ≤ 200 字）。“--”“/”“,”这类只有标点的值视为空。生成 <code>controlType:'readonly'</code> 字段。</li>
+<li><b>抽屉 / 对话框</b>：页面上打开了 el-drawer、el-dialog、ant-modal、layui-layer 或 <code>[role=dialog][aria-modal=true]</code>（宽 ≥ 300、高 ≥ 150）时，只采集最上层那一个里的字段、附件和按钮，背景页的查询条件和列表信息不混进来；结果里 <code>scope</code> 为它的标题，界面提示“只采集了当前打开的弹窗”。</li>
+<li><b>页面标题</b>：字号 &gt; 17px、6~80 字的 h1~h3，作为“页面标题”字段。</li>
+<li><b>附件</b>：带 download 属性或常见扩展名的链接；文字为“下载/下载附件/立即下载”的按钮（文件名从附近文本找）。</li>
+<li><b>内嵌 PDF</b>：frame 里有 <code>#viewerContainer</code> 且 URL 带 <code>?file=</code> 时，该 frame 不提取字段，只生成一个 <code>kind:'embedded-pdf'</code> 附件。</li>
+<li><b>高风险按钮</b>：文字命中黑名单（提交/发布/送审/保存…）的按钮列入 <code>riskyButtons</code>。</li>
+</ul></div>
+</div>
+<p>提取结果 <code>ExtractResult</code>（<code>client/src/shared/types.ts:3-33</code>）：</p>
+<pre><code>{ "url": "...", "title": "...", "routePattern": "ebid.x.com/bid/{id}/edit?action=edit", "fingerprint": "16位hex",
+  "frames": [{ "frameKey": "F1", "url": "...", "oopif": false, "fieldCount": 12 }],
+  "fields": [{ "fid": "F2#5", "label": "招标方式", "labelSource": "element-form-item",
+               "controlType": "select", "uiLib": "element", "value": "邀请招标", "options": null,
+               "required": true, "disabled": false, "section": "项目信息", "tab": "基本信息" }],
+  "attachments": [{ "aid": "F1@1", "name": "招标文件.pdf", "kind": "link|button|embedded-pdf" }],
+  "riskyButtons": ["提交审核"], "hiddenByTab": { "采购需求": 2 } }</code></pre>
+
+<h3>5.2 归一算法（<code>server/ai/app/elements/engine.py</code>）</h3>
+<p><b>字段 → 要素</b>（<code>match_fields</code>，92-175 行）按优先级逐级尝试，命中即停：</p>
+<div class="tw"><table>
+<tr><th>级别</th><th>方式</th><th>基础置信度</th><th>说明</th></tr>
+<tr><td class="nw">1</td><td>页面模板 template</td><td>1.0</td><td>(平台, 页面指纹) 对应模板里有该标签</td></tr>
+<tr><td class="nw">2</td><td>平台字段别名 platform-alias</td><td>0.95</td><td>已发布快照中该平台的别名</td></tr>
+<tr><td class="nw">3</td><td>标准名称 name / 通用别名 alias</td><td>0.95 / 0.93</td><td>标签规范化（去空白、星号、冒号、括号，全角转半角）后精确相等</td></tr>
+<tr><td class="nw">4</td><td>候选召回 + 大模型裁决 llm</td><td>0.6~0.92</td><td>对所有要素算 <code>max(包含相似度, 向量余弦×0.9)</code>，加控件类型修正（上传只配文件要素、日期偏好日期要素等），取 Top-5。最高分 &lt; 0.6 时补入全部类型相容要素（≤ 40）。待定字段<b>每 12 个一批</b>并发交给大模型，某批输出不合法 JSON 时重试一次；模型返回候选之外的编码一律视为“无对应”</td></tr>
+<tr><td class="nw">5</td><td>相似匹配 similar</td><td>≤ 0.86 / ≤ 0.7</td><td>最高候选分 ≥ 0.55 时采用，<code>0.5 + 0.4×分数</code>；没配模型时上限 0.86，模型漏答或调用失败的字段上限 0.7（落到需核对区间）</td></tr>
+</table></div>
+<p><b>值归一</b>：</p>
+<ul>
+<li><b>枚举</b>：多选按“、，”拆开，逐个找标准项：当前平台枚举别名 (1.0) → 标准项名称/路径 (1.0) → <b>树形</b>：换了分隔符或连写的完整路径“福建省福州市鼓楼区” (1.0)、省略上级的“福州市鼓楼区” (0.98)、省略“省/市/区/县”后缀的“福建福州鼓楼” (0.9) → 其他平台别名 (0.9) → 相似度 ≥ 0.8 (0.85) → 大模型在标准选项里选（选项超过 200 个时只给最相近的 120 个）(≤ 0.85) → 都不行则保留原值、置信度封顶 0.6。<b>重名节点</b>（福州、南京、徐州、开封都有“鼓楼区”）只凭名称不能确定时，不再用相似度随便挑，交给人工确认。</li>
+<li><b>日期</b>统一为 <code>YYYY-MM-DD[ HH:mm]</code>；<b>金额</b>识别“元/万元/亿元”并换算到要素单位；<b>电话</b>少于 7 位数字降权。格式无法识别 ×0.5。</li>
+<li><b>最终置信度</b> = 匹配置信度 × 值系数。</li>
+<li><b>冲突</b>：同一要素出现不同值时，等枚举兜底全部完成后，取<b>置信度最高</b>的作主值（同分取先出现的），标 <code>conflict</code>、封顶 0.6，其余进 <code>alternatives</code>。常见来源：抽屉里同时有项目级和标段级字段，而字典还没有标段级要素。</li>
+<li><b>取值形态检查</b>：取值是邮箱或电话号码时不对应到单位、人名类要素（“采购人邮箱”字面含“采购人”也不会被当成招标人）；电话、邮箱类要素也不接收人名。</li>
+<li><b>附件 → 文件要素</b>：附件名包含要素名或别名即匹配（0.9）。</li>
+<li><b>阶段推断</b>：模板带阶段时直接用；否则各要素按 <code>conf / 所属阶段数</code> 投票。</li>
+</ul>
+<p>返回结构：</p>
+<pre><code>{ "platform": {"id": "...", "name": "..."}, "templateHit": false, "stage": {"code": "PROJECT", "name": "立项", "conf": 0.9},
+  "elements": [{ "code": "PROC_METHOD", "name": "采购方式", "type": "enum", "value": "邀请招标", "itemCodes": ["..."],
+                 "conf": 0.95, "conflict": false, "alternatives": [],
+                 "evidence": { "fid": "F1#4", "label": "采购方式", "hit": "name", "reason": "...", "valueNote": "..." } }],
+  "unmatched": [{ "fid": "...", "label": "审批人", "value": "李明", "reason": "...", "candidates": [{"code": "...", "score": 0.4}] }],
+  "attachments": [{ "aid": "F1@1", "name": "招标文件.pdf", "code": "BID_DOC", "elementName": "招标文件" }],
+  "llmUsed": false, "promptVersion": "2026-09-22.1", "dictionaryDigest": "...", "mappingVersion": 3, "ms": 120 }</code></pre>
+</section>
+
+<!-- 6 -->
+<section class="s" id="parse">
+<h2><span class="no">6</span>文件解析流程</h2>
+<ol class="steps">
+  <li><b>选择文件并上传</b><span class="who">ParseView → parseFiles，workflows.ts:338-354</span><br>单文件 ≤ 100MB，一次 ≤ 20 个。multipart 上传到 <code>POST /api/v1/parse/tasks</code>。<b>文件内容不做 SM4 加密，签名也不覆盖文件内容</b>，依赖 TLS。</li>
+  <li><b>服务端加密暂存并入队</b><span class="who">biz ParseService</span><br>每个文件用单独随机密钥 SM4 加密存到 <code>parse-tmp/*.enc</code>，建一个批次父任务 + 每文件一个 <code>parse</code> 任务（优先级 3）。</li>
+  <li><b>worker 领取并解析</b><span class="who">ai-worker</span><br><code>claim</code> → 下载解密后的文件 → <code>parse_bytes</code> → 结果回写 <code>complete</code>。任务结束（成功或最终失败）时 biz 立即删除暂存文件和密钥。</li>
+  <li><b>客户端轮询</b><br>每 1.5 秒查询批次状态，15 分钟超时。</li>
+  <li><b>按需抽取</b><span class="who">客户端 → biz → AI /ai/v1/parse/extract</span><br>两种目标：“当前浏览器页面需要的字段”（读取页面字段标签）或“按阶段”（该阶段的全部要素）。</li>
+  <li><b>用户核对并保存</b><br>写 <code>kind=parse</code> 记录；可选把原文件加密存进项目（注意：当前这些附件 <code>code=null</code>，填写时不会自动回填，见第 15 节）。随后自动跳到“智能填写”并预选该项目。</li>
+</ol>
+
+<h3>6.1 解析器（<code>server/ai/app/parse/parsers.py</code>）</h3>
+<p>统一输出 blocks：<code>{id, type: heading|paragraph|table|image, level, page, bbox, text, table.rows, extractMethod: native|ocr|vl|layout, ocrConf, pages}</code>。</p>
+<div class="tw"><table>
+<tr><th>格式</th><th>处理</th></tr>
+<tr><td>PDF</td><td>pdfplumber，最多 500 页。按字号中位数判断标题，键值行（“2.1 项目名称：xxx”）不当标题；标题折行合并；段落按行距合并。统一康熙部首/部首补充区字符。<b>扫描页判断</b>：无文字层，或文字 &lt; 40 且图片覆盖 &gt; 50%。扫描页交 OCR（MinerU 时只抽出扫描页组成新 PDF 上传，每 150 页一块）。<b>跨页表格合并</b>：中间只隔页眉页脚页码、下一页、首行列数相同即合并，并去掉重复表头</td></tr>
+<tr><td>docx</td><td>按 body 顺序读段落和表格，Heading 样式或编号格式判标题，合并单元格去重</td></tr>
+<tr><td>xlsx</td><td>读计算值，展开合并单元格，每 sheet ≤ 5000 行</td></tr>
+<tr><td>doc / wps / et / xls</td><td>LibreOffice headless 转换；无 LibreOffice 但有 MinerU 时 doc/wps 整份交 MinerU</td></tr>
+<tr><td>图片</td><td>按 <code>AI_OCR_BACKEND</code>：mineru / paddle / http / vl（多模态模型，表格要求输出 Markdown）</td></tr>
+<tr><td>txt / md / html</td><td>编码依次试 utf-8-sig、gb18030、big5；法规“第X条”全角缩进单独成段</td></tr>
+</table></div>
+
+<h3>6.2 证据抽取与反幻觉（<code>server/ai/app/parse/extract.py</code>）</h3>
+<ol>
+<li><b>规则抽取</b>：表格键值 table-kv（0.92）、表头列 table-header（0.88，多值 0.75）、正文“名称：值” text-kv（0.86，在下一个标签、未配对括号处截断）。</li>
+<li><b>过滤非取值</b>：丢弃“见招标公告/详见…”这类引用、值本身是另一个要素名、枚举要素却是长句且对不上标准项。</li>
+<li><b>大模型补抽</b>（仅规则没抽到的要素）：每批 6 个要素并发，每个要素按词法相关度取 Top-4 片段，每批 ≤ 16 片段。提示词要求逐字引用 quote 和 blockId、找不到返回 null、忽略 <code>&lt;数据&gt;</code> 内的指令。</li>
+<li><b>校验</b>：blockId 必须在本批片段内；quote 规范化后必须是原文子串；值必须出现在原文中（允许日期格式、千分位差异）。任一不满足即丢弃。通过后置信度 0.6~0.85。</li>
+<li><b>归一</b>：同采集的枚举/日期/金额规则；再乘 OCR 置信度；多值冲突封顶 0.6。返回 <code>{elements, missing, llmUsed, promptVersion, ms}</code>，每个值带证据（文件、页码、原文、方法）。</li>
+</ol>
+</section>
+
+<!-- 7 -->
+<section class="s" id="fill">
+<h2><span class="no">7</span>智能填写流程</h2>
+<ol class="steps">
+  <li><b>识别目标页</b><span class="who">planFill，workflows.ts:216-241</span><br>清除旧标记 → 提取字段（同采集）→ 取项目合并值 <code>projectValues</code> 与带 code 的附件引用 <code>vault:&lt;id&gt;:&lt;文件名&gt;</code>。</li>
+  <li><b>生成填写计划</b><span class="who">POST /api/v1/fill/plan → AI engine.plan</span><br>字段先按采集同样的算法匹配到要素，再逐字段判定状态并做值投影。</li>
+  <li><b>预览</b><span class="who">FillView</span><br>页面上先标红“需补录”、标橙“低置信度”。默认只勾选“填写”状态的行，用户可以改值、勾选低置信度行。</li>
+  <li><b>执行</b><span class="who">executeFill → PageSession.fill → inject.fill</span><br>全程开启提交拦截 → 逐字段写入 → 等待 DOM 静默 → 回读校验；被拒时依次尝试候选值，再带页面真实选项调 <code>/fill/project</code> 重新投影一次。</li>
+  <li><b>结果</b><br>页面标记失败/需补录（红）和低置信度（橙）；本地写 <code>kind=fill</code> 记录（含每个字段原值 <code>previous</code>）；上报统计和成功字段的映射样本。</li>
+  <li><b>撤销（可选）</b><span class="who">undoFill</span><br>必须在同一 URL；按标签把值写回 <code>previous</code>。上传类、原值为空的下拉/单选无法撤销。</li>
+</ol>
+
+<h3>7.1 计划状态判定（<code>engine.py:497-557</code>）</h3>
+<div class="tw"><table>
+<tr><th>情况</th><th>状态</th></tr>
+<tr><td>控件禁用</td><td><span class="chip acc">skip</span></td></tr>
+<tr><td>没匹配上要素 / 项目里没有该要素的值 / 没有对应附件 / 目标选项里找不到对应值</td><td>必填 → <span class="chip bad-c">need-input</span>，否则 <span class="chip acc">skip</span></td></tr>
+<tr><td>页面已有值且设置为“不覆盖”</td><td><span class="chip acc">skip</span></td></tr>
+<tr><td>conf ≥ 0.7</td><td><span class="chip ok">fill</span>（conf &lt; 0.9 时额外高亮）</td></tr>
+<tr><td>conf &lt; 0.7</td><td><span class="chip warn-c">low-conf</span>，默认不勾选</td></tr>
+</table></div>
+<p>置信度 = <code>min(匹配置信度, 采集值置信度) × 投影系数</code>。取较小值而非相乘，是因为两者不独立，相乘过于悲观。</p>
+
+<h3>7.2 值投影（<code>project_value</code>，<code>engine.py:437-494</code>）</h3>
+<ul>
+<li><b>选择类</b>：为标准值生成候选显示文字（目标平台枚举别名 → 标准名称 → 完整路径 → 叶子名 → 其他平台别名 → 原值）。选项已知时精确匹配或相似度 ≥ 0.75；仍对不上调大模型在目标选项里选。选项懒加载时给出首选值 + 候选列表，由执行器逐个尝试。</li>
+<li><b>树形（行政区划、行业）</b>：先精确匹配，再<b>退到上级</b>（目标只有省份下拉时选“福建省”，系数 0.9，并提示“只能选到这一级”），最后才用相似度。选项懒加载时，候选末尾依次附上上级路径和名称（“福建省/福州市”“福建省”），目标级联只有两级时执行器会退到市；重名节点的单独名称不进候选，避免级联按名称搜索选错。</li>
+<li><b>日期</b>按目标控件 placeholder 的格式输出；<b>金额</b>按目标字段名/placeholder 的单位换算；<b>超长文本</b>有模型时压缩改写（×0.8），否则截断（×0.6）。</li>
+</ul>
+<div class="note info"><b class="t">例子：为什么映射配置很重要</b>源平台“组织形式=自行组织”，目标平台只有“自主招标/委托招标”。没有枚举别名时计划显示“需补录：目标选项中没有「自行组织」”；管理员配置（或审核通过样本得到）B 平台枚举别名“自主招标 ↔ 自行组织”并发布后，这一项直接投影为“自主招标”。端到端用例 M-01/F02 就是验证这条链路。</div>
+
+<h3>7.3 执行器写入方式（<code>client/src/inject/inject.js</code>）</h3>
+<div class="tw"><table>
+<tr><th>控件</th><th>写法</th></tr>
+<tr><td>文本 / 多行 / 原生日期</td><td>focus → 用原生 value setter 赋值（绕过 Vue/React 包装）→ 触发 input、change、blur</td></tr>
+<tr><td>富文本</td><td>清空后 <code>execCommand('insertText')</code></td></tr>
+<tr><td>原生 select / radio / checkbox</td><td>按选项文字匹配后设置；复选按目标集合增删</td></tr>
+<tr><td>Element select</td><td>点开触发器，只认点击后新出现的弹层；按文字点选项；禁用项拒绝；Esc 关闭</td></tr>
+<tr><td>Element tree-select / 级联</td><td>给完整路径逐层展开点击；只给叶子名则深度优先搜索（≤ 4 层，级联 ≤ 80 次点击）</td></tr>
+<tr><td>Element 日期</td><td>直接赋值 + input/change/Enter/blur，再 Esc 关面板</td></tr>
+<tr><td>layui 下拉 / 单选 / 复选</td><td>点标题展开后按 <code>dd[lay-value]</code> 文字点；单选复选每点一项等状态类生效（layui 会重绘）</td></tr>
+<tr><td>上传（el-upload / file）</td><td>附件从保险箱解密到 tmp，用 CDP <code>DOM.setFileInputFiles</code> 设置，300ms 后回读文件列表；结束后删除明文</td></tr>
+<tr><td>Ant Design select / picker</td><td><span class="chip bad-c">未实现</span> 返回 UNSUPPORTED</td></tr>
+</table></div>
+<ul>
+<li><b>静默等待</b>：MutationObserver 等 DOM 静默，文本类 120ms、选择类 250ms、上限 2500ms，服务端配置 <code>fill.quietMs</code> 可覆盖。用于等待联动字段出现（如选了“邀请招标”才出现“邀请供应商名单”）。</li>
+<li><b>回读校验</b>：写入 60ms 后读值，规范化后比较（数组按集合、树形比叶子、级联比路径），不一致返回 <code>VALUE_REJECTED</code>。</li>
+<li><b>提交拦截</b>：在 window 捕获阶段拦截 click/mousedown/pointerdown/submit，文字命中黑名单 <code>fill.buttonBlacklist</code> 的按钮一律阻止（下拉弹层、日期面板内除外），被拦次数记为 <code>blockedClicks</code>。</li>
+<li><b>错误码</b>：<code>LOCATOR_MISS</code> 找不到控件、<code>DISABLED</code>、<code>VALUE_REJECTED</code> 页面拒绝该值、<code>UNSUPPORTED</code>、<code>TIMEOUT</code>。</li>
+</ul>
+
+<h3>7.4 三种浏览器通道</h3>
+<div class="tw"><table>
+<tr><th>通道</th><th>连接方式</th><th>适用</th><th>限制</th></tr>
+<tr><td>托管外部浏览器（默认）</td><td>客户端启动浏览器，<code>--remote-debugging-pipe</code>（默认，无端口）或端口模式；独立配置目录 <code>&lt;userData&gt;/browser-profile</code>。自动查找奇安信、360、红莲花、Chromium、Chrome、Edge</td><td>绝大多数平台</td><td>独立配置目录下 CA 证书/U 盾通常不可用；首次调用会先启动浏览器并提示打开页面</td></tr>
+<tr><td>浏览器扩展</td><td>扩展 ⇄ Native Host（<code>client/resources/native-host.js</code>）⇄ 本地 Hub（Unix socket / 命名管道 + 随机令牌）⇄ 客户端。客户端每次启动自动注册 Native Host 清单</td><td>需要 CA 证书/U 盾登录的平台（用用户自己的浏览器）</td><td>浏览器显示“正在调试此浏览器”提示条；下载会先落到浏览器默认下载目录；<b>无自动化测试</b></td></tr>
+<tr><td>内嵌浏览器</td><td>Electron BrowserWindow + <code>webContents.debugger</code>，session 分区 <code>persist:embedded-platform</code></td><td>兜底</td><td>没有国产浏览器的证书插件生态</td></tr>
+</table></div>
+<p>三种通道最后都生成同一个 <code>PageSession</code>（<code>bridge/page-session.ts</code>），执行器逻辑完全相同。跨进程 iframe 用 <code>Target.setAutoAttach flatten</code> 接入；字段 ID 形如 <code>F2#5</code>（frame 编号 + 序号）。</p>
+</section>
+
+<!-- 8 -->
+<section class="s" id="qa">
+<h2><span class="no">8</span>知识库与问答</h2>
+<h3>8.1 入库</h3>
+<ol>
+<li>管理员在后台上传文档（pdf/doc/docx/wps/xls/xlsx/txt/md/html），biz 存原文到 <code>kb/</code>（<b>明文</b>），sha256 相同的有效文档拒绝重复上传，入队 <code>kb_ingest</code>。</li>
+<li>worker：解析 → 切片 → 向量化 → 写索引 → 切片回写 biz（<code>kb_chunk</code>）→ 更新文档状态。</li>
+<li>切片规则（<code>kb/chunker.py</code>）：目标 300~800 字；法规按“第X条”切；FAQ 一问一答一片；带章节路径 <code>《标题》 一 &gt; 二</code> 前缀；表格按行分组且每组带表头；只在正常长度溢出时带上一句（≤ 120 字）做重叠。</li>
+<li>权限：文档 ACL = 所在目录及所有上级目录的 <code>acl_tags</code> 之和，空表示全员可见；用户 ACL 由安全管理员分配，经 <code>X-User-Acl</code> 传给 AI。</li>
+</ol>
+<h3>8.2 检索与生成（<code>kb/qa.py</code>）</h3>
+<ol>
+<li><b>意图</b>：寒暄正则直接回答；有模型时用 fast 模型判分区（系统操作 sys / 业务知识 biz / both / 超范围）、系统（招采 zc、财务 cw、请假 qj、邮件 yj）和改写问题；否则关键词规则。</li>
+<li><b>检索</b>：稠密 + BM25 各 30 条，RRF 融合，再 rerank（无 rerank 模型时用词法打分）取 Top-6。单分区结果不足时放宽到全部分区再查一次。</li>
+<li><b>拒答</b>：分数 ≥ 0.2 的结果为空时回答“知识库中没有找到相关依据…”，附最接近的 3 条。</li>
+<li><b>生成</b>：参考资料放进 <code>&lt;参考资料&gt;</code>，要求 <code>[n]</code> 引用；无模型时返回抽取式答案（最相关原文）。最终只保留答案中出现的引用。</li>
+</ol>
+<p><b>SSE 事件</b>（biz 转发并追加 session / messageId）：<code>session</code> → <code>intent</code> → <code>citations</code> → 多个 <code>delta</code> → <code>done {answer, citations, noAnswer, ms}</code>；出错时 <code>error</code>。反向代理必须关闭缓冲（<code>proxy_buffering off</code>）。</p>
+<p><b>向量后端</b>：默认 LocalIndex（<code>data/kb-index/</code>，numpy 矩阵 + BM25，适合十万级切片，每次写入全量重建 BM25；只在进程启动时加载，<b>只适合单进程</b>，见 15.1）；生产和百万级用 Milvus（HNSW + 内置 BM25 稀疏向量）。<b>更换向量模型后必须在后台执行“重建索引”</b>，启动时发现向量空间不一致会拒绝加载旧索引。</p>
+</section>
+
+<!-- 9 -->
+<section class="s" id="flywheel">
+<h2><span class="no">9</span>数据积累与配置</h2>
+<p>系统“越用越准”依赖下面几层可积累的数据。它们都<b>不含业务值</b>，存放在服务端，由管理后台维护：</p>
+<div class="lvl">
+  <div class="r"><div class="k">要素字典<small>配置管理员 · 立即生效</small></div><div>标准要素、枚举集、<b>通用别名</b>（所有平台共用）、给大模型的语义说明。保存后 biz 通知 AI 清缓存，不经发布、不能回滚。要素只能停用不能删。当前 42 个，业务评审中的草稿 233 个（<code>docs/elements/</code>）。</div></div>
+  <div class="r"><div class="k">平台映射<small>配置管理员 · 发布后生效</small></div><div>平台（域名规则）、<b>平台字段别名</b>、<b>平台枚举别名</b>。“映射配置”页保存是<b>整体替换</b>、状态为草稿，需到“发布与回滚”页发布。</div></div>
+  <div class="r"><div class="k">页面模板<small>由样本生成 · 启用并发布后生效</small></div><div>整页“标签 → 要素”映射。命中后置信度 1.0、不调模型，是最快最稳的路径。</div></div>
+  <div class="r"><div class="k">映射样本<small>客户端自动上报</small></div><div>采集确认、手工指定要素、填写成功时上报“字段名 ↔ 要素（↔ 选项）”。累积到阈值成为候选，等待审核。</div></div>
+  <div class="r"><div class="k">知识库<small>知识库管理员</small></div><div>目录（分区 + 系统编码 + 权限标签）、文档版本、切片修正。</div></div>
+  <div class="r"><div class="k">问答反馈<small>用户</small></div><div>👍/👎 + 备注，后台“问答反馈”页查看，用于补充知识库。</div></div>
+  <div class="r"><div class="k">系统配置<small>配置 / 系统管理员</small></div><div>阈值、按钮黑名单、静默时长、保留天数等，见 9.3。</div></div>
+  <div class="r"><div class="k">评测集<small>开发 + 业务复核</small></div><div>预标注后由业务复核，衡量每次改动是否变好，见第 14 节。</div></div>
+</div>
+
+<h3>9.1 样本飞轮</h3>
+<ol class="steps">
+  <li><b>上报</b><span class="who">client workflows.ts:187-196、300-302</span><br>采集确认：命中方式不是 template 的要素 + 手工指定的映射，带选项对；填写成功：所有成功项（选项对为空）。一次 ≤ 300 条。</li>
+  <li><b>累积</b><span class="who">MappingService.reportSamples</span><br>以 <code>(host, 字段名, 要素编码)</code> 为键 upsert，<code>confirm_count+1</code>（不区分用户），选项对按选项名合并；<code>pages</code> 记录它出现过的每个页面（指纹 + URL 模式，最多 50 个），因为同一字段名常出现在多个页面上。同 host 同字段名出现别的要素编码时双方 <code>conflict_count+1</code>，已是候选的退回“累计中”。</li>
+  <li><b>成为候选</b><br><code>confirm_count ≥ mapping.candidateMinConfirm</code>（默认 3）且无冲突 → <code>candidate</code>。发生过冲突的不会自动升级，但管理员可以手动通过。</li>
+  <li><b>审核</b><span class="who">后台“模板候选”页</span><br>通过：生成平台字段别名 + 枚举别名（草稿）；平台不存在时按 host 自动创建。驳回：只改状态。</li>
+  <li><b>生成 / 合并模板</b><br>在“已通过”里按页面（域名 + URL 模式）生成页面模板。该页面已有模板时<b>合并</b>：只补充模板里还没有的字段，人工改过的字段不变；同一字段名有多个要素时取确认次数多的。</li>
+  <li><b>人工修改</b><span class="who">admin-web Templates.vue → PUT /admin/templates/{id}</span><br>可改名称、阶段、URL 模式（服务端据此重算指纹）、逐行增删改“页面字段 → 控件 → 标准要素”，也可手工新建。每次保存版本号 +1；同一平台同一 URL 模式已有模板时拒绝新建（409），字段名重复拒绝保存。</li>
+  <li><b>启用并发布</b><span class="who">“页面模板”页启用 → “发布与回滚”页发布</span><br>生成新快照版本，通知 AI 清缓存，下次采集/填写即生效。模板的修改、启用、停用都要发布后才生效。</li>
+</ol>
+
+<h3>9.2 发布与回滚的实际语义</h3>
+<ul>
+<li>快照内容：启用的平台 + <b>全部</b>字段别名和枚举别名（不按状态过滤，草稿也会进快照）+ 状态为 published 的模板。发布后把别名表里的草稿批量改为 published。</li>
+<li>回滚<b>只切换生效版本指针</b>，别名表和模板表不恢复。回滚后如果再发布一次，发出去的是表里的当前内容（代码推断）。</li>
+<li>AI 按 <code>(字典 digest, 快照 version)</code> 缓存索引；biz 读数据另有 60 秒缓存，清缓存通知失败时最多延迟 60 秒生效。</li>
+</ul>
+
+<h3>9.3 系统配置 <code>sys_config</code></h3>
+<div class="tw"><table>
+<tr><th>键</th><th>默认</th><th>作用</th></tr>
+<tr><td><code>threshold.auto</code></td><td>0.9</td><td>≥ 此值绿色，自动填写不高亮</td></tr>
+<tr><td><code>threshold.highlight</code></td><td>0.7</td><td>≥ 此值填写并高亮；低于此值默认不填</td></tr>
+<tr><td><code>fill.buttonBlacklist</code></td><td>提交、发布、送审、审核、确认、确定、保存、签章、报名、上报、完成</td><td>执行器拦截的按钮文字</td></tr>
+<tr><td><code>fill.quietMs</code></td><td><code>{"text":120,"choice":250,"max":2500}</code></td><td>填写后等待 DOM 静默的时长</td></tr>
+<tr><td><code>draft.retainDays</code></td><td>90</td><td>客户端本地记录保留天数（每日清理）</td></tr>
+<tr><td><code>ui.theme</code></td><td>主色、副色、悬浮球文字“助手”</td><td>客户端外观</td></tr>
+<tr><td><code>client.latestVersion</code></td><td>0.1.0</td><td>客户端版本提示</td></tr>
+<tr><td><code>mapping.candidateMinConfirm</code></td><td>3</td><td>样本成为候选需要的确认次数</td></tr>
+<tr><td><code>qa.retainDays</code></td><td>180</td><td>问答会话保留天数（每天 03:30 清理）</td></tr>
+<tr><td><code>parse.resultTtlMinutes</code></td><td>30</td><td>解析结果在服务端保留分钟数</td></tr>
+</table></div>
+<p>前 6 项经 <code>GET /api/v1/client/config</code> 下发，客户端登录时和每 30 分钟刷新一次。</p>
+
+<h3>9.4 客户端本地积累</h3>
+<p>客户端按“项目”积累数据：同一项目可以多次采集（如先采立项页、再采公告页）、多次解析文件，填写时把所有记录的要素值按时间顺序合并，后面的覆盖前面的，空值跳过（<code>vault/store.ts:149-160</code>）。项目附件带要素编码时可被上传类字段自动回填。</p>
+</section>
+
+<!-- 10 -->
+<section class="s" id="data">
+<h2><span class="no">10</span>数据模型与数据留存</h2>
+<h3>10.1 服务端表（Flyway V1~V3）</h3>
+<div class="tw"><table>
+<tr><th>域</th><th>表</th><th>要点</th></tr>
+<tr><td>系统</td><td><code>sys_user</code>、<code>sys_client_device</code>、<code>sys_config</code></td><td>用户 roles 逗号分隔、acl_tags；设备存 SM2 公钥，可停用</td></tr>
+<tr><td>D1 要素</td><td><code>elem_stage</code>、<code>elem_enum_set</code>、<code>elem_enum_item</code>、<code>elem_element</code></td><td>要素 aliases 为 JSON 数组；枚举项 path 为完整路径；每次修改 version+1</td></tr>
+<tr><td>D2 映射</td><td><code>map_platform</code>、<code>map_field_alias</code>、<code>map_enum_alias</code>、<code>map_page_template</code>、<code>map_release</code>、<code>map_sample</code></td><td>模板 field_map 为 JSON，唯一索引 <code>uk_tpl_page(platform_id, page_fingerprint)</code>（V4）；快照整份 JSON；样本唯一键 (host, 字段名, 要素编码)，<code>pages</code> 记录出现过的页面（V4）</td></tr>
+<tr><td>D3 任务</td><td><code>task_queue</code>、<code>task_record</code></td><td>队列：pending → running → done / failed，最多 3 次，退避 10s×2^n，5 分钟无心跳回收；record 只有统计数</td></tr>
+<tr><td>D5 知识库</td><td><code>kb_directory</code>、<code>kb_document</code>、<code>kb_chunk</code>、<code>kb_release</code></td><td>kb_release 只是文档清单记录，不影响检索、不能回滚</td></tr>
+<tr><td>问答</td><td><code>qa_session</code>、<code>qa_message</code></td><td>带意图、引用、反馈；180 天清理</td></tr>
+<tr><td>D6 审计</td><td><code>audit_event</code></td><td><code>hash = SM3(prev_hash|ts|user_id|action|target|result|detail_masked)</code>，detail 已脱敏</td></tr>
+</table></div>
+<p>主键为应用生成的雪花 ID；JSON 一律存 TEXT，保证金仓/PostgreSQL/H2（以及备选达梦）可移植。迁移：V1 建表、V2 种子数据（<code>seed/gen_seed.py</code>）、V3 静默时长配置、V4 页面模板按 URL 模式去重、V5 行政区域改为省/市/区县三级（<code>seed/gen_region.py</code> 由 <code>seed/region/pca-code.json</code> 生成，国家统计局 2023 数据，新增市、区县 3389 项，原 34 个省级项编码不变）。</p>
+
+<h3>10.2 客户端保险箱（<code>client/src/main/vault/</code>）</h3>
+<ul>
+<li>位置：<code>&lt;userData&gt;/vault.db</code>（macOS 为 <code>~/Library/Application Support/SinochemAssistant/</code>），附件在 <code>workspace/&lt;项目&gt;/&lt;附件&gt;.enc</code>，临时文件在 <code>tmp/</code>。</li>
+<li>表：project、record、attachment、audit、kv。明文只留 ID、时间、类型、阶段、平台域名等筛选列，业务数据在 data 列加密。</li>
+<li>密钥：16 字节数据密钥 DK。系统凭据库可用时用 <code>safeStorage</code> 包裹（Keychain / DPAPI / libsecret），免 PIN；不可用时（部分麒麟/统信）用 PIN（≥ 6 位，PBKDF2-HMAC-SM3 20000 轮）包裹。<b>PIN 忘记数据无法恢复，没有重置功能。</b></li>
+<li>格式：字段 <code>iv || SM4-CBC</code>；文件 <code>"SMA1" || nonce || SM4-CTR</code>，1MB 分块流式。</li>
+<li>删除即擦除：<code>secure_delete=ON</code> + VACUUM；附件先 0 覆写再删除。每日按 <code>draftRetainDays</code> 清理过期记录。</li>
+</ul>
+
+<h3>10.3 数据留存一览</h3>
+<div class="tw"><table>
+<tr><th>数据</th><th>位置</th><th>生命周期</th></tr>
+<tr><td>页面字段值、填写计划的值</td><td>biz 与 AI 之间内存转发</td><td>不落库、不写日志</td></tr>
+<tr><td>采集结果、解析确认结果、填写记录、附件</td><td>客户端保险箱（加密）</td><td>用户删除或 90 天过期清理</td></tr>
+<tr><td>待解析文件</td><td>服务端 <code>parse-tmp/*.enc</code></td><td>任务结束即删；超过 24 小时未结束强制清理</td></tr>
+<tr><td>解析结果全文</td><td><code>task_queue.result</code></td><td>30 分钟后置空（任务行本身永久保留，含文件名与 sha256）</td></tr>
+<tr><td>知识库原文 / 切片</td><td>服务端 <code>kb/</code>（明文）/ <code>kb_chunk</code></td><td>随文档替换删除</td></tr>
+<tr><td>问答问题与回答</td><td><code>qa_message</code></td><td>180 天；用户可删除会话</td></tr>
+<tr><td>映射样本、统计、审计</td><td>服务端</td><td>永久保留（审计无清理任务）</td></tr>
+</table></div>
+</section>
+
+<!-- 11 -->
+<section class="s" id="security">
+<h2><span class="no">11</span>安全机制</h2>
+<div class="tw"><table>
+<tr><th>机制</th><th>实现</th></tr>
+<tr><td>服务端身份</td><td>服务端 SM2 公钥的 SM3 指纹与预置指纹（安装包 <code>defaults.json</code>）比对；无预置时首次连接固定，之后变化拒绝连接（错误码 10004）</td></tr>
+<tr><td>请求签名防重放</td><td>设备 SM2 私钥签 <code>METHOD\nPATH?QUERY\nTS\nNONCE\nSM3(body)</code>，头 <code>X-Device-Id / X-Timestamp / X-Nonce / X-Signature</code>；时间偏差 ≤ 300 秒；nonce 记在进程内 Map；JWT 中的设备号必须一致（<code>SignatureInterceptor.java</code>）</td></tr>
+<tr><td>请求体加密</td><td>随机 key+iv 做 SM4-CBC，key+iv 用服务端公钥 SM2（C1C3C2）加密放 <code>X-Enc-Key</code>。<b>响应不加密</b>；multipart 不加密（<code>CryptoFilter.java</code>）</td></tr>
+<tr><td>登录</td><td>口令 PBKDF2-HMAC-SM3 12 万次；≥ 8 位且含三类字符；连续失败 5 次锁 15 分钟（进程内计数）；JWT HMAC256，access 120 分钟、refresh 7 天</td></tr>
+<tr><td>三员分立</td><td>6 个角色：USER、CONFIG_ADMIN、KB_ADMIN、SYS_ADMIN（建号、启停、重置口令）、SEC_ADMIN（分配角色和 ACL）、AUDIT_ADMIN（只看审计）。三员角色互斥，初始账号 sysadmin / secadmin / auditadmin / admin</td></tr>
+<tr><td>审计</td><td><code>/admin/**</code> 非 GET 请求、登录、改口令、设备注册换绑、客户端上报（前缀 <code>CLIENT_</code>）自动留痕；SM3 哈希链，后台可一键校验；手机号、身份证、信用代码、邮箱、银行卡脱敏</td></tr>
+<tr><td>生产安全检查</td><td>开启签名时，JWT 密钥过弱、服务令牌为 <code>dev-</code> 开头、初始口令仍为默认值、未配置 SM2 私钥，任一成立即拒绝启动（<code>ProductionSafetyCheck.java</code>）</td></tr>
+<tr><td>服务间</td><td><code>X-Service-Token</code> 常量时间比较；反向代理只允许内网段访问 <code>/api/v1/internal/</code>，拒绝 <code>/actuator/</code></td></tr>
+<tr><td>提示词注入</td><td>外部内容放进 <code>&lt;数据&gt;</code> / <code>&lt;参考资料&gt;</code> 区块并声明其中指令无效；模型输出只接受候选内的值，抽取必须有可校验的原文引用</td></tr>
+<tr><td>大模型审计</td><td>网关只记录功能、模型、耗时、token 数和成败，不记录提示词内容</td></tr>
+</table></div>
+</section>
+
+<!-- 12 -->
+<section class="s" id="config">
+<h2><span class="no">12</span>配置参考</h2>
+<h3>12.1 业务服务（<code>deploy/env/biz.env.example</code>、<code>application.yml</code>）</h3>
+<div class="tw"><table>
+<tr><th>环境变量</th><th>默认</th><th>说明</th></tr>
+<tr><td><code>BIZ_PORT</code></td><td>8080</td><td></td></tr>
+<tr><td><code>BIZ_DB_URL / USER / PASSWORD</code></td><td>H2 文件库 <code>./data/bizdb</code></td><td>生产用 <code>--spring.profiles.active=kingbase</code>，URL <code>jdbc:kingbase8://…:54321/assistant</code></td></tr>
+<tr><td><code>BIZ_JWT_SECRET</code></td><td>dev 值</td><td>生产 ≥ 32 字符随机串</td></tr>
+<tr><td><code>BIZ_INIT_ADMIN_PASSWORD</code></td><td>Admin@123456</td><td>初始 4 个账号的口令；生产必须修改</td></tr>
+<tr><td><code>BIZ_SM2_PRIVATE_KEY</code></td><td>空（开发自动生成 <code>data/server-sm2.key</code>）</td><td>用 <code>java -jar biz.jar --gen-sm2-key</code> 生成，<code>--fingerprint &lt;私钥&gt;</code> 输出客户端要预置的指纹</td></tr>
+<tr><td><code>BIZ_SIGNATURE_REQUIRED / BIZ_ENCRYPTION_REQUIRED</code></td><td>false</td><td>生产 true（kingbase profile 强制开启）</td></tr>
+<tr><td><code>SERVICE_TOKEN</code></td><td>dev-service-token</td><td>必须与 AI 的 <code>AI_SERVICE_TOKEN</code> 相同</td></tr>
+<tr><td><code>AI_BASE_URL</code></td><td>http://127.0.0.1:8090</td><td></td></tr>
+<tr><td><code>BIZ_STORAGE_ROOT</code></td><td>./data/files</td><td>知识库原文与解析暂存</td></tr>
+<tr><td><code>BIZ_AUTH_MODE / BIZ_SSO_LOGIN_URL / BIZ_SSO_VALIDATE_URL</code></td><td>local</td><td>cas 模式用于甲方 SSO（未联调）</td></tr>
+</table></div>
+<h3>12.2 AI 服务（前缀 <code>AI_</code>，<code>server/ai/app/config.py</code>）</h3>
+<div class="tw"><table>
+<tr><th>变量</th><th>默认</th><th>说明</th></tr>
+<tr><td><code>AI_SERVICE_TOKEN / AI_BIZ_BASE_URL / AI_DATA_DIR</code></td><td>dev-service-token / :8080 / ./data</td><td></td></tr>
+<tr><td><code>AI_LLM_BASE_URL / API_KEY / MODEL_MAIN / MODEL_FAST</code></td><td>空 / EMPTY / qwen3-32b / 同 main</td><td>BASE_URL 为空即“无大模型”，全部走规则兜底</td></tr>
+<tr><td><code>AI_LLM_JSON_MODE</code></td><td>json_schema</td><td>推理服务不支持严格 schema 时用 <code>json_object</code>（MiniMax 测试用的就是它）或 <code>none</code></td></tr>
+<tr><td><code>AI_LLM_MAX_CONCURRENCY / TIMEOUT_S</code></td><td>16 / 60</td><td>优先级：问答 &gt; 填写 &gt; 采集/抽取 &gt; 解析 &gt; 入库</td></tr>
+<tr><td><code>AI_VL_BASE_URL / AI_VL_MODEL</code></td><td>空 / qwen2.5-vl-7b</td><td>多模态 OCR</td></tr>
+<tr><td><code>AI_EMBED_BASE_URL / MODEL / API_KEY</code></td><td>空 / bge-m3</td><td>空时用本地哈希向量（只保证字面召回）</td></tr>
+<tr><td><code>AI_RERANK_BASE_URL / MODEL</code></td><td>空 / bge-reranker-v2-m3</td><td>复用 EMBED_API_KEY</td></tr>
+<tr><td><code>AI_VECTOR_BACKEND / AI_MILVUS_URI</code></td><td>local</td><td></td></tr>
+<tr><td><code>AI_OCR_BACKEND</code></td><td>none</td><td>none / paddle / vl / http / mineru</td></tr>
+<tr><td><code>AI_MINERU_BASE_URL / TOKEN / MODEL_VERSION</code></td><td>云服务 / 空 / vlm</td><td><b>默认云服务，文件出内网，只能用测试数据</b></td></tr>
+<tr><td><code>AI_WORKER_ENABLED / ID / POLL_S / CONCURRENCY</code></td><td>true / ai-worker-1 / 2.0 / 2</td><td>生产 API 进程设 false，worker 单独起</td></tr>
+<tr><td><code>AI_QA_TOP_K / AI_QA_MIN_SCORE</code></td><td>6 / 0.2</td><td>换 rerank 模型后需重新标定拒答阈值</td></tr>
+<tr><td><code>AI_LLM_EXTRA_BODY</code>、<code>AI_EMBED_DIM</code></td><td>—</td><td><b>直接读 os.environ，写在 .env 里不生效</b>，必须作为真实环境变量注入</td></tr>
+</table></div>
+<h3>12.3 客户端</h3>
+<p>优先级：代码默认值 &lt; 安装包 <code>resources/defaults.json</code>（甲方预置服务端地址和公钥指纹）&lt; 用户保存的 <code>settings.json</code>。设置项：<code>serverUrl</code>、<code>serverKeyFingerprint</code>、<code>adapter</code>（managed/extension/embedded）、<code>browserPath</code>、<code>cdpMode</code>（pipe/port）、<code>floatEnabled</code>、<code>floatMode</code>（transparent/opaque，重启生效）、<code>autoStart</code>、<code>overwriteExisting</code>。环境变量：<code>ASSISTANT_SERVER_URL</code>、<code>ASSISTANT_SERVER_KEY_FP</code>、<code>ASSISTANT_BROWSER</code>、<code>ASSISTANT_USER_DATA</code>、<code>ASSISTANT_FLOAT_MODE</code>、<code>ASSISTANT_DISABLE_GPU</code>。</p>
+</section>
+
+<!-- 13 -->
+<section class="s" id="deploy">
+<h2><span class="no">13</span>构建与部署</h2>
+<ul>
+<li><b>一键构建</b> <code>deploy/build-all.sh</code> → <code>dist/</code>：biz jar（<code>MVN_PROFILE</code>）、AI 离线依赖包（默认 aarch64）、admin-web、客户端 Linux tar.gz/deb（x64 + arm64）、扩展 zip、systemd/env/proxy。</li>
+<li><b>systemd</b>：<code>biz-service.service</code>（<code>-Xms1g -Xmx4g</code>，kingbase profile）、<code>ai-service.service</code>（uvicorn 4 workers，<code>AI_WORKER_ENABLED=false</code>）、<code>ai-worker@N.service</code>（可起多个）。</li>
+<li><b>反向代理</b>：443 SSL；静态 admin-web SPA 回退；<code>/api/</code> 读超时 300 秒、<b>关闭缓冲</b>；<code>client_max_body_size 520m</code>；<code>/api/v1/internal/</code> 限内网段；<code>/actuator/</code> 拒绝。TongHttpServer 语法兼容。</li>
+<li><b>安装顺序</b>（<code>deploy/README.md</code>）：金仓建库 → 生成 SM2 私钥、JWT 密钥、服务令牌 → biz（<code>mvn -P tongweb -Dtongweb.version=… -Dkingbase.version=… package</code>，驱动与 starter 需先装到私服）→ AI（离线 pip；需要 LibreOffice）→ admin-web + 代理 → 客户端安装包预置 <code>defaults.json</code> → 扩展（开发者模式加载或企业策略下发）。</li>
+<li><b>备份</b>：业务库每日全量 + 归档日志；知识库原文每日增量；索引不备份（用“重建索引”恢复）；客户端数据服务端不备份。</li>
+<li><b>多实例</b>：nonce 缓存、登录锁定计数、审计链写锁都在进程内，biz 多实例前需要改成共享存储/数据库行锁。</li>
+</ul>
+</section>
+
+<!-- 14 -->
+<section class="s" id="tests">
+<h2><span class="no">14</span>测试与评测</h2>
+<div class="tw"><table>
+<tr><th>范围</th><th>命令</th><th>覆盖</th></tr>
+<tr><td>业务服务</td><td><code>cd server/biz &amp;&amp; mvn test</code></td><td>国密、登录锁定、签名防重放、请求体加密、映射发布/回滚/飞轮、模板生成合并/人工修改/重复拒绝/指纹向量、任务队列、解析文件即删、知识库、审计链与三员分立</td></tr>
+<tr><td>AI 服务</td><td><code>cd server/ai &amp;&amp; .venv/bin/python -m pytest</code></td><td>归一、冲突取最高置信度、取值形态、字段匹配分批重试、模板/别名、计划与投影、行政区划路径写法/占位层级/重名/退到上级、模型只选候选、各格式解析、跨页表格、MinerU 转换、反幻觉、切片、检索、ACL、拒答</td></tr>
+<tr><td>客户端</td><td><code>cd client &amp;&amp; npm test</code></td><td>SM4 标准向量与性能；URL 模式规范化与指纹向量</td></tr>
+<tr><td>端到端</td><td><code>cd client &amp;&amp; ASSISTANT_TEST_PIN=123456 npm run e2e</code>（先启动 biz 与 ai）</td><td>81 项（问答用例依赖 AI 服务里已有知识库资料，空知识库时 Q-02 不通过）：登录签名、复杂查看页与抽屉（E01–E05）、发布生效、采集、公告 PDF 并入与冲突、附件加密与重试、填写回读、layui/级联、不触发提交、撤销、删除即擦除、文件解析、流式问答、审计上报。<code>ASSISTANT_E2E_ADAPTERS</code> 选通道</td></tr>
+<tr><td>界面截图</td><td><code>electron . --ui-snapshot=&lt;dir&gt;</code></td><td>采集、填写、目标页、问答、工作台、设置、悬浮球 11 张图（使用手册配图即由此生成）</td></tr>
+<tr><td>评测</td><td><code>python eval/run_eval.py [--suite base|llm|local]</code></td><td>门槛：字段匹配 0.97、无对应召回 0.9、枚举 0.98、抽取精确率 0.95 / 召回 0.85、问答命中 0.85、拒答 0.9</td></tr>
+</table></div>
+<p><b>评测集建设流程</b>：<code>eval/preannotate.py &lt;真实文件&gt;</code> 用规则 + 模型预标注，生成 <code>eval/local/extract_review.csv</code> → 业务在“复核结果”列填 <code>正确 / 改为：xxx / 文件中没有</code> → <code>--apply-review</code> 写回 → <code>run_eval.py --suite local</code>。当前 6 份真实文件、272 行<b>全部待复核</b>。<code>eval/local/</code> 与真实素材不入库。</p>
+<p><b>未被测试覆盖</b>：worker 与 biz_client、AI 路由与令牌校验、Milvus、网关真实 HTTP 行为（JSON 模式降级、流式 think 过滤）、paddle/http/vl OCR、LibreOffice、扫描页检测、扩展通道。</p>
+</section>
+
+<!-- 15 -->
+<section class="s" id="risks">
+<h2><span class="no">15</span>已知问题与接手建议</h2>
+<h3>15.1 读代码发现的问题（按影响排序，均未运行验证）</h3>
+<div class="tw"><table>
+<tr><th>级别</th><th>问题</th><th>位置</th></tr>
+<tr><td><span class="chip ok">已修复</span></td><td>生产模式下 admin-web 改口令会失败（<code>/auth/password</code> 要求设备签名，而后台是浏览器不签名）。已将改口令与 <code>/admin/**</code> 一样排除在签名校验外，仍需登录令牌和原口令；已在签名 + 加密强制的生产式配置下验证登录 → 强制改口令 → 重新登录 → 后台接口，客户端业务接口仍强制签名</td><td><code>WebConfig.java</code>、<code>ApiFlowTest.adminWebCanChangePasswordWhenSignatureRequired</code></td></tr>
+<tr><td><span class="chip bad-c">高</span></td><td>Milvus 的 ACL 过滤用 <code>acl like "%tag%"</code> 子串匹配，标签 A 会命中 AB，有越权风险；表达式字符串拼接无转义</td><td><code>server/ai/app/kb/index.py:209-217</code></td></tr>
+<tr><td><span class="chip bad-c">高</span></td><td>本地向量索引与生产部署方式不兼容：LocalIndex 在每个进程启动时从磁盘加载一次，之后不再重读（<code>get_index</code> 为进程内单例）。生产 systemd 让入库在独立的 ai-worker 进程中进行、问答在 4 个 uvicorn 进程中进行，所以问答进程看不到新入库的内容，直到重启；多个 ai-worker 还会互相覆盖索引文件。<b>生产必须用 Milvus</b>，本地索引只适合开发时单进程运行（API 进程内置 worker）</td><td><code>kb/index.py:44-75、271-282</code>、<code>deploy/systemd/</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>映射回滚不恢复配置表，快照还包含草稿别名；回滚后再发布会把表里当前内容发出去</td><td><code>MappingService.java:243-347</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>“映射配置”页保存只提交要素编码和字段名，会清空审核样本生成的别名上的控件类型和模板关联</td><td><code>admin-web/src/views/Mappings.vue</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>审计哈希链可能误报断裂：客户端上报事件带客户端时间戳，写入时“上一条”按 ts 取</td><td><code>AuditController.java:38</code>、<code>AuditService.java</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>文件解析时保留的原文件 <code>code=null</code>，填写时不会自动回填上传字段</td><td><code>client/src/main/workflows.ts:223、382</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>Ant Design select / picker 能识别不能填（返回 UNSUPPORTED）</td><td><code>client/src/inject/inject.js:748</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>样本确认次数不区分用户、不去重，可被刷高；页面指纹被最近一次上报覆盖</td><td><code>MappingService.reportSamples</code></td></tr>
+<tr><td><span class="chip warn-c">中</span></td><td>multipart 上传的签名不覆盖文件内容，文件内容也不做 SM4 加密（依赖 TLS）</td><td><code>client/src/main/api.ts</code> upload</td></tr>
+<tr><td><span class="chip acc">低</span></td><td>客户端草稿附件在崩溃时可能残留在 <code>workspace/_drafts/</code>；删除项目不删本地审计；问答打开的原文缓存在系统临时目录不清理</td><td><code>vault/store.ts</code>、<code>index.ts:162</code></td></tr>
+<tr><td><span class="chip acc">低</span></td><td><code>AI_LLM_EXTRA_BODY</code>、<code>AI_EMBED_DIM</code> 写在 .env 不生效；rerank/VL 复用其他密钥；<code>qa_min_score</code> 对真实 rerank 与词法打分共用</td><td><code>config.py</code>、<code>gateway.py</code></td></tr>
+<tr><td><span class="chip acc">低</span></td><td>actuator 暴露 prometheus 但缺 registry 依赖；Flyway 对 <code>jdbc:kingbase8:</code> 的识别未验证；解析任务行与审计永久保留</td><td><code>pom.xml</code>、<code>application.yml</code></td></tr>
+<tr><td><span class="chip acc">低</span></td><td>停用设备接口没有后台入口；托盘菜单缺“智能填写/设置”；设置页快捷键文案在 macOS 上应为 Cmd+Alt+空格</td><td><code>ClientController.java</code>、<code>index.ts:214</code></td></tr>
+<tr><td><span class="chip acc">低</span></td><td>行政区划只对应一个级联/下拉字段；目标平台用“省”“市”“区”三个独立下拉时，目前只能对应其中一个（需要拆成三个要素或支持联动下拉）。V4 之前生成的模板是旧版指纹，列表中标“请补 URL 模式”，补上后才能再次命中</td><td><code>engine.py</code>、<code>Templates.vue</code></td></tr>
+</table></div>
+
+<h3>15.2 尚未验证（需要甲方环境）</h3>
+<ul>
+<li>KingbaseES / TongWeb：只写了 profile，没连真实环境。</li>
+<li>昇腾内网推理服务；Milvus；向量模型（在另一台机器，待接入）；自托管 MinerU 或 PaddleOCR；LibreOffice。</li>
+<li>需要登录的真实业务表单（只实测过 ebid 公开查询页和公告详情）；甲方 CAS SSO。</li>
+<li>麒麟/统信实机（PoC 安装包在 <code>poc/electron-client/dist/</code>，按其 README 验证后带回 <code>env-*.txt</code> 与报告 JSON）；Windows 安装包；扩展通道。</li>
+</ul>
+
+<h3>15.3 建议的接手顺序</h3>
+<ol>
+<li><b>跑通本地环境与测试</b>：按第 3 节启动，跑 <code>mvn test</code>、<code>pytest</code>、<code>npm run e2e</code>，确认 71/71。</li>
+<li><b>智能问答开放前先修两个高优先级问题</b>：Milvus ACL 精确匹配、生产部署改用 Milvus（或让本地索引检测文件变化后重新加载）。后台改口令签名问题已修复。</li>
+<li><b>要素字典评审落地</b>：补充标段级要素（标段/包名称、编号、分类、概算价、评审办法、资格要求、联合体要求等，真实平台的标段详情抽屉里都有，现在只能对应到项目级要素并产生冲突）；业务评审 <code>docs/elements/要素字典草稿-v0.csv</code>；同时设计“每个投标人一条”的多值结构（当前 <code>elem_element</code> 没有粒度字段，投标人信息表、分项报价只能抽到极少数要素）。</li>
+<li><b>评测集</b>：推动业务复核 272 行预标注，建立正式基线，之后每次改动都跑 <code>run_eval.py</code>。</li>
+<li><b>甲方环境联调</b>：金仓/TongWeb → 内网模型与向量模型 → OCR 自托管 → SSO → 麒麟/统信实机 → 真实平台登录后表单。</li>
+<li><b>拿到真实平台页面后</b>：执行器插件化（按平台/组件库拆分），补 Ant Design 支持；公告正文 PDF 解析加进度显示（公网模型约 60 秒/份）。</li>
+<li><b>待甲方决策</b>：服务端强制改口令、后台双因素、规格 05 中的待确认事项 Q1–Q11、平台适配计价。</li>
+</ol>
+</section>
+
+<footer>依据代码与 <code>docs/specs</code>、<code>docs/plans/implementation-plan.md</code>、<code>deploy/README.md</code> 整理。配套文档：《智能助手使用手册》。</footer>
+</main>
+</div>
+
+</body></html>

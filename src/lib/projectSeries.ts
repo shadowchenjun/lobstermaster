@@ -24,8 +24,14 @@ export const projectSeries: ProjectSeries[] = [
   {
     slug: 'sinochem-assistant',
     title: '中化智能助手',
-    description: '中化商务智能助手的项目专栏。',
-    documents: [],
+    description: '中化商务智能助手的使用手册、技术交接、需求评审与大模型选型记录。',
+    supportingFiles: ['img/10-float.png', 'img/01-collect-demo.jpg', 'img/02-collect-result.jpg', 'img/03-collect-bottom.jpg', 'img/04-fill-plan.jpg', 'img/05-fill-result.jpg', 'img/06-target-page.jpg', 'img/08-history.jpg', 'img/09-settings.jpg'],
+    documents: [
+      { file: 'user-manual.html', title: '智能助手使用手册', description: '智能采集、文件解析、智能填写、历史记录和管理配置，含操作截图。' },
+      { file: 'technical-handover.html', title: '智能助手技术交接文档', description: '总体架构、核心流程、数据留存、安全机制、部署与验证边界；2026-09-24 文档快照。' },
+      { file: 'requirements-review.html', title: '需求匹配度评审（2026-09-23）', description: '对照 V3 建设方案记录需求匹配、实现差异、已落地优化和待决策事项。' },
+      { file: 'model-selection.html', title: '大模型选型对比（2026-09-28）', description: 'GLM 与 MiniMax 在要素抽取任务中的准确性、填写错误、耗时与评测记录。' },
+    ],
   },
   {
     slug: 'funeng',

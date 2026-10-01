@@ -7,7 +7,10 @@ The AIcoding page lists dy-cut and four project columns. The new columns use
 ## Content
 
 - `perfectoken`: payment architecture, gateway comparison, integration and PoC.
-- `sinochem-assistant`: reserved; the project's HTML source still needs confirmation.
+- `sinochem-assistant`: four HTML documents from `松澜集/docs`: user manual,
+  technical handover, dated requirements review and model comparison, plus nine
+  protected handbook screenshots. These are documentation snapshots, not a
+  production acceptance claim for the underlying assistant.
 - `funeng`: industry dashboard V2 and market dashboard V1.
 - `mediaflow`: system overview and architecture, with five linked Markdown references.
 
@@ -27,6 +30,11 @@ The sync validates all source files and relative dependencies before replacing
 snapshots. It imports selected documentation, not application entry points,
 test pages or build outputs. The two funeng dashboards are prototype snapshots;
 hosting them does not connect them to the production database.
+
+To avoid updating other project snapshots, use
+`python3 scripts/sync-project-documents.py --project sinochem-assistant`.
+Referenced PNG/JPEG images are served as binary files behind the same whitelist
+as HTML documents and are never copied into `public`.
 
 ## Access
 
