@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM 缓存机制学习汇报 — Explicit Caching vs Implicit Caching</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d7d6c'/%3E%3Ctext x='32' y='44' font-size='32' text-anchor='middle' fill='white' font-family='monospace' font-weight='bold'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --text: #1a2332;
+    --text-secondary: #5a6577;
+    --text-muted: #8a94a6;
+    --border: #e5e8ee;
+    --accent: #0d7d6c;
+    --accent-light: #e6f4f1;
+    --accent-blue: #1d4ed8;
+    --accent-blue-light: #eff4ff;
+    --warn: #b45309;
+    --warn-light: #fef3c7;
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+    --code-key: #93c5fd;
+    --code-str: #86efac;
+    --code-com: #64748b;
+    --code-num: #fca5a5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15.5px;
+  }
+  code, pre { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; }
+
+  /* ===== 顶部导航 ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .topbar-inner {
+    max-width: 920px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .topbar-title {
+    font-weight: 600; font-size: 14px; color: var(--text);
+  }
+  .topbar-title span { color: var(--accent); }
+  .topbar-nav {
+    display: flex; gap: 20px; font-size: 13px;
+  }
+  .topbar-nav a {
+    color: var(--text-secondary); text-decoration: none;
+    transition: color .2s;
+  }
+  .topbar-nav a:hover { color: var(--accent); }
+
+  /* ===== Hero ===== */
+  .hero {
+    background: linear-gradient(135deg, #0d3b35 0%, #0d7d6c 100%);
+    color: #fff;
+    padding: 64px 24px 56px;
+  }
+  .hero-inner {
+    max-width: 920px; margin: 0 auto;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 12px; border-radius: 20px;
+    margin-bottom: 20px; letter-spacing: 0.5px;
+  }
+  .hero h1 {
+    font-size: 34px; font-weight: 700;
+    line-height: 1.35; margin-bottom: 16px;
+  }
+  .hero p {
+    font-size: 16px; opacity: 0.88;
+    max-width: 640px; line-height: 1.8;
+  }
+  .hero-meta {
+    margin-top: 28px; display: flex; gap: 28px;
+    font-size: 13px; opacity: 0.75;
+  }
+
+  /* ===== 正文容器 ===== */
+  .container {
+    max-width: 920px; margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ===== 章节 ===== */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 40px;
+    margin-bottom: 28px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .section h2 {
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .section h3 {
+    font-size: 17px; font-weight: 600;
+    margin: 28px 0 12px;
+    color: var(--text);
+  }
+  .section p {
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+  .section ul, .section ol {
+    margin: 12px 0 16px 24px;
+  }
+  .section li {
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .section strong { color: var(--text); font-weight: 600; }
+
+  /* ===== 要点卡片 ===== */
+  .key-takeaway {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-size: 15px;
+  }
+  .key-takeaway strong { color: var(--accent); }
+
+  .warn-box {
+    background: var(--warn-light);
+    border-left: 4px solid var(--warn);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-size: 14.5px;
+  }
+  .warn-box strong { color: var(--warn); }
+
+  /* ===== 对比表 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead {
+    background: #f1f4f8;
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  td:first-child { font-weight: 500; color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ===== 代码块 ===== */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 10px;
+    margin: 18px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.25);
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .code-dots { display: flex; gap: 6px; }
+  .code-dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .code-dots span:nth-child(1) { background: #f87171; }
+  .code-dots span:nth-child(2) { background: #fbbf24; }
+  .code-dots span:nth-child(3) { background: #34d399; }
+  pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--code-text);
+  }
+  .tk-key { color: var(--code-key); }
+  .tk-str { color: var(--code-str); }
+  .tk-com { color: var(--code-com); font-style: italic; }
+  .tk-num { color: var(--code-num); }
+  .tk-bool { color: #c4b5fd; }
+
+  /* ===== 流程示意 ===== */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 24px 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    flex: 1;
+    min-width: 140px;
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    padding: 16px;
+    text-align: center;
+    font-size: 13.5px;
+    position: relative;
+  }
+  .flow-step:first-child { border-radius: 8px 0 0 8px; }
+  .flow-step:last-child { border-radius: 0 8px 8px 0; }
+  .flow-step strong {
+    display: block;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .flow-arrow {
+    display: flex; align-items: center;
+    padding: 0 4px;
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  /* ===== 双色卡片 ===== */
+  .duo-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .duo-card {
+    border-radius: 10px;
+    padding: 20px 22px;
+    border: 1px solid var(--border);
+  }
+  .duo-card.explicit {
+    background: var(--accent-blue-light);
+    border-color: #bfdbfe;
+  }
+  .duo-card.implicit {
+    background: var(--accent-light);
+    border-color: #a7d7cd;
+  }
+  .duo-card h4 {
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .duo-card.explicit h4 { color: var(--accent-blue); }
+  .duo-card.implicit h4 { color: var(--accent); }
+  .duo-card p, .duo-card li {
+    font-size: 13.5px; color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .duo-card ul { margin-left: 18px; }
+
+  /* ===== 页脚 ===== */
+  .footer {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 26px; }
+    .section { padding: 24px 20px; }
+    .duo-cards { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; align-items: stretch; gap: 0; }
+    .flow-step { border-radius: 8px !important; margin-bottom: 0; }
+    .flow-arrow {
+      justify-content: center;
+      padding: 8px 0;
+      height: 36px;
+      font-size: 20px;
+    }
+    .topbar-nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 顶部导航 ===== -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-title">LLM 缓存机制 <span>/ 学习汇报</span></div>
+    <nav class="topbar-nav">
+      <a href="#sec1">核心概念</a>
+      <a href="#sec2">Cache Key</a>
+      <a href="#sec3">KV vs 结果缓存</a>
+      <a href="#sec4">RAG 实例</a>
+      <a href="#sec5">最佳实践</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ===== Hero ===== -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">LLM Engineering · 成本优化 · RAG</div>
+    <h1>Explicit Caching 与 Implicit Caching<br>学习汇报</h1>
+    <p>厘清大模型上下文缓存的两种范式：缓存的究竟是什么、Cache Key 从哪来、为什么还要调用 LLM、以及在 RAG 场景下如何组合使用以同时降低 Token 成本并保持回答质量。</p>
+    <div class="hero-meta">
+      <div>汇报日期：2026-10-02</div>
+      <div>主题：LLM 推理优化</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 正文 ===== -->
+<div class="container">
+
+  <!-- ===== 1. 核心概念 ===== -->
+  <div class="section" id="sec1">
+    <div class="section-num">01 / 核心概念</div>
+    <h2>一句话区分两种缓存</h2>
+
+    <div class="key-takeaway">
+      <strong>Explicit Caching（显式缓存）</strong>：由调用方主动指定 Cache Key，把固定长上下文的 KV 向量预存起来，跨请求复用。<br>
+      <strong>Implicit Caching（隐式缓存）</strong>：由平台自动比对完整请求内容，发现完全相同的请求时自动复用结果，调用方零感知。
+    </div>
+
+    <div class="duo-cards">
+      <div class="duo-card explicit">
+        <h4>Explicit Caching 显式缓存</h4>
+        <ul>
+          <li><strong>控制方</strong>：调用方（业务代码）</li>
+          <li><strong>缓存对象</strong>：固定长上下文的 KV 注意力张量</li>
+          <li><strong>触发方式</strong>：手动传入 cache_key</li>
+          <li><strong>典型场景</strong>：长 System Prompt、固定知识库文档</li>
+          <li><strong>优点</strong>：精准可控，可跨会话复用</li>
+          <li><strong>缺点</strong>：需要业务层维护 Key 和版本</li>
+        </ul>
+      </div>
+      <div class="duo-card implicit">
+        <h4>Implicit Caching 隐式缓存</h4>
+        <ul>
+          <li><strong>控制方</strong>：LLM 平台自动处理</li>
+          <li><strong>缓存对象</strong>：完整请求的推理结果</li>
+          <li><strong>触发方式</strong>：自动识别重复请求，无需 Key</li>
+          <li><strong>典型场景</strong>：测试脚本重复调用、用户重复提问</li>
+          <li><strong>优点</strong>：零代码改造，开箱即用</li>
+          <li><strong>缺点</strong>：匹配严格（差一个字符就失效），无法主动管理</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>通俗类比</h3>
+    <p><strong>显式缓存</strong>：你把一本厚厚的说明书起名叫 <code>book_001</code> 交给平台存好。之后每次提问，带上名字 <code>book_001</code>，平台直接复用这份文档，不用每次重新上传整本。</p>
+    <p><strong>隐式缓存</strong>：你每次完整复制粘贴一整段提问，平台看到一模一样的文字，悄悄记住答案；你再次粘贴完全相同内容，直接返回上次答案。只要改一个字，就失效。</p>
+  </div>
+
+  <!-- ===== 2. Cache Key 从哪来 ===== -->
+  <div class="section" id="sec2">
+    <div class="section-num">02 / Cache Key 机制</div>
+    <h2>调用方如何知道 Cache Key？</h2>
+
+    <p><strong>核心结论</strong>：Explicit Caching 的 Cache Key 是<strong>调用方自己定义、自己保管</strong>的，不是平台自动返回的。少数平台（如 Gemini）由平台创建缓存后返回资源 ID，但调用方同样必须把这个 ID 持久化保存。</p>
+
+    <h3>两种主流 API 范式</h3>
+
+    <p><strong>范式一：调用方自定义字符串 Key</strong>（OpenAI / AWS Bedrock / Azure）</p>
+    <ul>
+      <li>开发者自行命名，如 <code>system_prompt_v2</code>、<code>kb_contract_2026</code>，保证业务内唯一即可</li>
+      <li>首次请求带上 Key + 完整长上下文，平台将该上下文绑定到 Key 上，创建缓存</li>
+      <li>后续请求复用同一个 Key，平台自动加载预存的 KV</li>
+      <li>调用方需在本地数据库 / Redis / 配置中维护「Key → 缓存内容版本」映射</li>
+    </ul>
+
+    <p><strong>范式二：平台生成资源 ID</strong>（Gemini / 部分 Anthropic 风格接口）</p>
+    <ul>
+      <li>发起 <code>create cache</code> 接口提交待缓存内容</li>
+      <li>平台创建成功后返回一个 cache 资源 ID（即 Cache Key）</li>
+      <li>调用方必须将返回的 ID 保存到数据库或 Redis</li>
+      <li>后续推理请求传入该 ID 以复用缓存</li>
+    </ul>
+
+    <div class="warn-box">
+      <strong>踩坑提醒</strong>：平台不会帮你记住你创建过哪些 Cache Key。如果调用方代码丢失了这个 Key 字符串，缓存条目将无法再访问，只能重建。此外，Key 只是路由标记，不是加密凭证。
+    </div>
+
+    <h3>如何确认缓存命中？</h3>
+    <p>不是靠返回 Key，而是看 response 中的 <code>usage</code> 字段：</p>
+    <ul>
+      <li><code>cached_tokens &gt; 0</code> 或 <code>cache_read_input_tokens &gt; 0</code>：缓存命中</li>
+      <li><code>cache_creation_input_tokens &gt; 0</code>：刚刚新建缓存</li>
+    </ul>
+
+    <div class="key-takeaway">
+      <strong>Key 命名建议</strong>：带上版本号，如 <code>kb:product-manual-v3</code>。一旦缓存内容更新（系统提示词改版、知识库文档更新），必须更换全新 Key，否则会读到旧缓存。
+    </div>
+  </div>
+
+  <!-- ===== 3. KV 缓存 vs 结果缓存 ===== -->
+  <div class="section" id="sec3">
+    <div class="section-num">03 / 核心原理</div>
+    <h2>缓存了输入，为什么还要调用 LLM？</h2>
+
+    <p>这是最容易混淆的一点。<strong>Explicit Caching 缓存的不是最终回答，而是输入上下文的 KV（Key-Value）注意力张量</strong>。它跳过的是「重复编码长上下文」这一步，但「基于上下文生成新答案」这一步仍然要走模型。</p>
+
+    <h3>被缓存 vs 仍需执行的部分</h3>
+
+    <div class="duo-cards">
+      <div class="duo-card explicit">
+        <h4>被缓存、跳过的部分</h4>
+        <ul>
+          <li>超长 System Prompt</li>
+          <li>前置参考文档 / 知识库片段</li>
+          <li>这一大段固定文本的 Token 编码和 Attention 计算</li>
+          <li>对应 KV 向量预存，后续直接加载</li>
+        </ul>
+      </div>
+      <div class="duo-card implicit">
+        <h4>每次仍需执行的部分</h4>
+        <ul>
+          <li>用户本次新 Query（动态输入，需编码）</li>
+          <li>自回归生成输出 Token（模型实时推理）</li>
+          <li>采样（temperature、top_p）带来的随机性</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>KV 缓存 vs 上游业务结果缓存</h3>
+    <table>
+      <colgroup>
+        <col style="width:22%">
+        <col style="width:39%">
+        <col style="width:39%">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>LLM Explicit KV Cache</th>
+          <th>上游业务缓存（Redis 问答缓存）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>缓存内容</td>
+          <td>输入上下文的 KV 注意力张量</td>
+          <td>完整输入 → 完整输出问答对</td>
+        </tr>
+        <tr>
+          <td>命中时是否跑模型</td>
+          <td>仍然跑（只省了上下文编码）</td>
+          <td>完全不跑，直接返回旧答案</td>
+        </tr>
+        <tr>
+          <td>用户 Query 可变吗</td>
+          <td>可以，每次不同 Query 都能复用 KV</td>
+          <td>不行，Query 必须完全一致才命中</td>
+        </tr>
+        <tr>
+          <td>输出是否固定</td>
+          <td>不固定，每次实时生成（有随机性）</td>
+          <td>固定，原样返回上次结果</td>
+        </tr>
+        <tr>
+          <td>谁维护</td>
+          <td>LLM 平台</td>
+          <td>业务代码</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>输出随机性问题</h3>
+    <p>KV 缓存只优化输入侧，<strong>不约束生成侧的输出随机性</strong>。只要 <code>temperature &gt; 0</code>，即使完全相同的缓存上下文 + 完全相同的用户 Query，多次调用返回的输出文本也可能有差异。</p>
+
+    <p>如果业务强要求相同输入得到相同输出，必须：</p>
+    <ul>
+      <li>设置 <code>temperature = 0</code> 并固定 <code>seed</code> 参数（大幅降低随机，但非 100% 保证）</li>
+      <li><strong>或</strong>在业务层叠加 Redis 结果缓存（命中时直接返回，完全不走模型）</li>
+    </ul>
+
+    <div class="warn-box">
+      <strong>认知误区</strong>：开了 Explicit Caching 不等于相同请求返回相同回答。它解决的是「长上下文重复编码的成本」，不是「多次调用输出稳定」。
+    </div>
+  </div>
+
+  <!-- ===== 4. RAG 场景实例 ===== -->
+  <div class="section" id="sec4">
+    <div class="section-num">04 / 实战实例</div>
+    <h2>RAG 场景：Explicit Caching + 动态 Query</h2>
+
+    <p>这正是 Explicit Caching 最核心的使用场景：<strong>固定的知识库文档只编码一次，后续不同用户提问复用这份 KV，同时模型基于缓存上下文 + 当前 Query 实时生成答案</strong>。</p>
+
+    <h3>场景设定</h3>
+    <ul>
+      <li>静态固定内容：一份产品手册（约 80k tokens，长期不变），绑定 <code>cache_key = "kb:product_manual_v1"</code></li>
+      <li>动态输入：用户每次不同提问（保修期多久？怎么退换货？支持哪些支付方式？）</li>
+      <li>目标：产品手册只编码一次，后续所有不同提问复用 KV，节省大量输入 Token 费用</li>
+    </ul>
+
+    <h3>步骤一：首次调用 — 创建缓存</h3>
+    <p>第一次请求完整传入长文档，平台构建 KV 缓存：</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span>POST /v1/messages — 首次创建缓存</span>
+      </div>
+<pre><span class="tk-com">// 请求体</span>
+{
+  <span class="tk-key">"model"</span>: <span class="tk-str">"claude-3-5-sonnet"</span>,
+  <span class="tk-key">"cache_control"</span>: {
+    <span class="tk-key">"type"</span>: <span class="tk-str">"ephemeral"</span>,
+    <span class="tk-key">"cache_key"</span>: <span class="tk-str">"kb:product_manual_v1"</span>
+  },
+  <span class="tk-key">"messages"</span>: [
+    {
+      <span class="tk-key">"role"</span>: <span class="tk-str">"system"</span>,
+      <span class="tk-key">"content"</span>: <span class="tk-str">"你是产品客服，只能基于下面【产品手册】回答用户问题。
+【产品手册】：{这里放80k token完整产品文档文本}"</span>
+    },
+    {
+      <span class="tk-key">"role"</span>: <span class="tk-str">"user"</span>,
+      <span class="tk-key">"content"</span>: <span class="tk-str">"保修期多久？"</span>
+    }
+  ],
+  <span class="tk-key">"max_tokens"</span>: <span class="tk-num">1024</span>
+}
+
+<span class="tk-com">// 返回 usage（cache_creation_input_tokens > 0 表示缓存创建成功）</span>
+{
+  <span class="tk-key">"usage"</span>: {
+    <span class="tk-key">"cache_creation_input_tokens"</span>: <span class="tk-num">80000</span>,
+    <span class="tk-key">"cache_read_input_tokens"</span>: <span class="tk-num">0</span>,
+    <span class="tk-key">"input_tokens"</span>: <span class="tk-num">8010</span>,
+    <span class="tk-key">"output_tokens"</span>: <span class="tk-num">156</span>
+  }
+}</pre>
+    </div>
+
+    <h3>步骤二：后续调用 — 同 Key 不同 Query</h3>
+    <p>不再重复上传 80k 产品手册，只传当前用户问题，带上同一个 Cache Key：</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span>POST /v1/messages — 复用缓存，换 Query</span>
+      </div>
+<pre>{
+  <span class="tk-key">"model"</span>: <span class="tk-str">"claude-3-5-sonnet"</span>,
+  <span class="tk-key">"cache_control"</span>: {
+    <span class="tk-key">"type"</span>: <span class="tk-str">"ephemeral"</span>,
+    <span class="tk-key">"cache_key"</span>: <span class="tk-str">"kb:product_manual_v1"</span>  <span class="tk-com">// 同一个 Key</span>
+  },
+  <span class="tk-key">"messages"</span>: [
+    {
+      <span class="tk-key">"role"</span>: <span class="tk-str">"system"</span>,
+      <span class="tk-key">"content"</span>: <span class="tk-str">"你是产品客服，只能基于手册回答。"</span>,
+      <span class="tk-key">"cache_control"</span>: {<span class="tk-key">"type"</span>: <span class="tk-str">"cached"</span>}  <span class="tk-com">// 标记走缓存</span>
+    },
+    {
+      <span class="tk-key">"role"</span>: <span class="tk-str">"user"</span>,
+      <span class="tk-key">"content"</span>: <span class="tk-str">"怎么申请退换货？"</span>  <span class="tk-com">// 每次换新 Query</span>
+    }
+  ],
+  <span class="tk-key">"max_tokens"</span>: <span class="tk-num">1024</span>
+}
+
+<span class="tk-com">// 返回 usage（cache_read_input_tokens > 0 表示命中缓存）</span>
+{
+  <span class="tk-key">"usage"</span>: {
+    <span class="tk-key">"cache_creation_input_tokens"</span>: <span class="tk-num">0</span>,
+    <span class="tk-key">"cache_read_input_tokens"</span>: <span class="tk-num">80000</span>,  <span class="tk-com">// 读取缓存，低价计费</span>
+    <span class="tk-key">"input_tokens"</span>: <span class="tk-num">42</span>,               <span class="tk-com">// 只有本次 Query</span>
+    <span class="tk-key">"output_tokens"</span>: <span class="tk-num">210</span>
+  }
+}</pre>
+    </div>
+
+    <h3>请求流程图</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <strong>用户 Query</strong>
+        每次不同的问题
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <strong>带上 cache_key</strong>
+        kb:product_manual_v1
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <strong>LLM 加载 KV</strong>
+        复用 80k 手册向量
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <strong>编码 + 生成</strong>
+        结合 Query 实时生成答案
+      </div>
+    </div>
+
+    <h3>Python 伪代码</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span>rag_with_explicit_cache.py</span>
+      </div>
+<pre><span class="tk-key">import</span> requests
+
+CACHE_KEY = <span class="tk-str">"kb:product_manual_v1"</span>
+LONG_KNOWLEDGE_DOC = <span class="tk-key">open</span>(<span class="tk-str">"product_manual.txt"</span>, <span class="tk-str">"r"</span>).read()
+
+<span class="tk-key">def</span> llm_rag_query(user_question, create_cache=<span class="tk-bool">False</span>):
+    messages = []
+    <span class="tk-key">if</span> create_cache:
+        <span class="tk-com"># 首次：传入完整文档，创建缓存</span>
+        messages.append({<span class="tk-str">"role"</span>: <span class="tk-str">"system"</span>,
+            <span class="tk-str">"content"</span>: <span class="tk-str">f"基于手册回答：\n{LONG_KNOWLEDGE_DOC}"</span>})
+    <span class="tk-key">else</span>:
+        <span class="tk-com"># 复用缓存：system 段标记为 cached，不再传全文</span>
+        messages.append({<span class="tk-str">"role"</span>: <span class="tk-str">"system"</span>,
+            <span class="tk-str">"content"</span>: <span class="tk-str">"基于手册回答问题"</span>,
+            <span class="tk-str">"cache_control"</span>: {<span class="tk-str">"type"</span>: <span class="tk-str">"cached"</span>}})
+    messages.append({<span class="tk-str">"role"</span>: <span class="tk-str">"user"</span>, <span class="tk-str">"content"</span>: user_question})
+
+    <span class="tk-key">return</span> requests.post(<span class="tk-str">"https://api.anthropic.com/v1/messages"</span>,
+        json={<span class="tk-str">"model"</span>: <span class="tk-str">"claude-3-5-sonnet"</span>,
+              <span class="tk-str">"cache_control"</span>: {<span class="tk-str">"type"</span>: <span class="tk-str">"ephemeral"</span>,
+                                 <span class="tk-str">"cache_key"</span>: CACHE_KEY},
+              <span class="tk-str">"messages"</span>: messages, <span class="tk-str">"max_tokens"</span>: <span class="tk-num">1024</span>}).json()
+
+<span class="tk-com"># 1. 首次调用，创建缓存</span>
+llm_rag_query(<span class="tk-str">"保修期多久？"</span>, create_cache=<span class="tk-bool">True</span>)
+<span class="tk-com"># 2. 后续调用，不同 Query，复用缓存</span>
+llm_rag_query(<span class="tk-str">"怎么申请退换货？"</span>)
+llm_rag_query(<span class="tk-str">"支持哪些支付方式？"</span>)</pre>
+    </div>
+
+    <div class="warn-box">
+      <strong>注意</strong>：Explicit Caching 适合「参考文档固定不变」的 RAG（整本手册、长合同）。如果是分片 RAG —— 每次检索出来不同 chunk —— 上下文一直在变，无法命中 KV 缓存，不适合此方案。
+    </div>
+  </div>
+
+  <!-- ===== 5. 最佳实践 ===== -->
+  <div class="section" id="sec5">
+    <div class="section-num">05 / 工程实践</div>
+    <h2>组合策略与最佳实践</h2>
+
+    <h3>三层缓存组合架构</h3>
+    <p>生产环境中最常用的方案是把三种缓存叠加使用，兼顾成本、延迟和输出一致性：</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <strong>第一层：Redis 结果缓存</strong>
+        完全相同 Query 直接返回，不调用 LLM
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <strong>第二层：Explicit KV Cache</strong>
+        固定长上下文复用，省 Token 编码费
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <strong>第三层：模型实时生成</strong>
+        结合缓存 KV + 当前 Query 生成答案
+      </div>
+    </div>
+
+    <h3>选型决策表</h3>
+    <table>
+      <colgroup>
+        <col style="width:30%">
+        <col style="width:35%">
+        <col style="width:35%">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>业务场景</th>
+          <th>推荐方案</th>
+          <th>原因</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>长固定 System Prompt / 知识库</td>
+          <td>Explicit Caching</td>
+          <td>固定上下文只编码一次，大幅省 Token</td>
+        </tr>
+        <tr>
+          <td>FAQ 固定问答，要求答案一字不差</td>
+          <td>Redis 结果缓存 + Explicit KV</td>
+          <td>命中结果缓存直接返回；未命中时 KV 省成本</td>
+        </tr>
+        <tr>
+          <td>测试脚本 / 批量重复调用</td>
+          <td>Implicit Caching</td>
+          <td>零代码改造，平台自动复用</td>
+        </tr>
+        <tr>
+          <td>RAG 分片检索（每次 chunk 不同）</td>
+          <td>不适合 Explicit，可加 Redis 结果缓存</td>
+          <td>上下文前缀一直在变，无法命中 KV</td>
+        </tr>
+        <tr>
+          <td>需要可复现的评测结果</td>
+          <td>temp=0 + 固定 seed + 结果缓存</td>
+          <td>单靠 KV 缓存不能保证输出一致</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>踩坑清单</h3>
+    <ul>
+      <li><strong>Key 版本管理</strong>：缓存内容更新后必须换新 Key，否则读到旧数据</li>
+      <li><strong>TTL 过期</strong>：显式缓存通常有 5~60 分钟的存活时间，超时后自动失效，下次请求会重建</li>
+      <li><strong>内容不可变</strong>：同一个 Key 绑定的内容不能变，内容变了即使 Key 不变也会缓存失效</li>
+      <li><strong>输出不稳定性</strong>：KV 缓存不锁死输出，temp &gt; 0 时同 Query 也会有措辞差异</li>
+      <li><strong>匹配严格度</strong>：Implicit Caching 要求完整请求完全一致，差一个字符就 miss</li>
+      <li><strong>Key 持久化</strong>：平台不会帮你记 Key，业务侧必须自行存储 Key 与内容版本的映射</li>
+    </ul>
+
+    <div class="key-takeaway">
+      <strong>总结</strong>：Explicit Caching 优化的是「长上下文重复编码」的成本，Implicit Caching 优化的是「完全重复请求」的成本，而业务层 Redis 结果缓存解决的是「输出一致性」的问题。三者定位不同，生产环境中通常组合使用。
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== 页脚 ===== -->
+<div class="footer">
+  LLM Caching 学习汇报 · 基于实际对话整理 · 2026-10-02
+</div>
+
+</body>
+</html>
