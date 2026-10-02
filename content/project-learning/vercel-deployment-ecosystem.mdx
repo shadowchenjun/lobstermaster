@@ -125,6 +125,8 @@ Workflows 可以保存多步骤业务流程的状态，处理等待、恢复和�
 
 <h2 id="git-flow">四、GitHub 到生产环境的发布流程</h2>
 
+持续集成、上线前测试与后续发布约定详见 [Vercel 持续集成与发布流程：测试通过后再上线](/project-learning/vercel-ci-release-workflow)。
+
 推荐流程：
 
 ```text
@@ -136,12 +138,14 @@ Workflows 可以保存多步骤业务流程的状态，处理等待、恢复和�
     ↓
 合并到配置的生产分支
     ↓
-Production 构建与发布
+Production 配置构建暂存版本
+    ↓
+独立部署 URL 验收通过后 Promote
     ↓
 正式域名验收
 ```
 
-生产分支经常叫 `main`，也可以是其他分支。**推送到 GitHub 是否更新官网，取决于 Vercel 的分支和环境配置。** Preview 构建成功并不表示正式域名已更新。
+生产分支经常叫 `main`，也可以是其他分支。**推送到 GitHub 是否更新官网，取决于 Vercel 的分支和环境配置。** Preview 构建成功并不表示正式域名已更新。要让生产构建先暂存，需要关闭自动分配正式域名或接入受控发布门禁；默认 Git 部署不能视为已具备这些检查。
 
 一个仓库可以对应多个 Vercel 项目。例如同一仓库的 `frontend/`、`backend/`、`admin/`，分别设置根目录、构建方式和环境变量。
 
@@ -149,7 +153,7 @@ Production 构建与发布
 
 Development、Preview、Production 可以使用不同环境变量。测试环境宜使用测试数据库；数据库密码、Storage 服务端密钥、签名密钥只能留在服务端，不能打包进浏览器代码。
 
-修改 Vercel 环境变量后，需要新的部署才能让新值用于相应部署。将已有 Preview 提升到生产不会重新构建；涉及环境差异时，应使用生产配置重新构建并验证。
+修改 Vercel 环境变量后，需要新的部署才能让新值用于相应部署。当前控制台将 Preview 提升到生产会使用生产配置重新构建；推广已经使用 Production 配置构建的暂存生产部署则不需要重建。后续流程先验收该生产暂存版本，再推广同一版本。
 
 参考：[环境变量](https://vercel.com/docs/environment-variables)、[Preview 提升到生产](https://vercel.com/docs/deployments/promote-preview-to-production)。
 
