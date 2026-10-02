@@ -1,0 +1,362 @@
+---
+title: "Vercel 部署学习笔记：能力、项目选型与云服务协作"
+date: "2026-10-02"
+category: "project-learning"
+coverEmoji: "▲"
+tags: ["Vercel", "GitHub", "Cloudflare", "域名与DNS", "Supabase", "云架构"]
+summary: "从官网与农业赋能平台实践出发，梳理 Vercel 的部署、后端、定时任务与存储能力，理解 GitHub、Cloudflare、域名、Supabase 和云厂商之间的分工，以及生产发布、成本和扩容边界。"
+---
+
+> **一句话理解：Vercel 把代码构建、网站发布、内容分发和应用运行整合为托管服务；GitHub 保存代码，数据库保存业务数据，域名与 DNS 帮用户找到应用。**
+
+本文适合第一次接触云部署的产品负责人、开发者和运维协作者。内容依据 2026 年 10 月 2 日查阅的官方文档整理；套餐额度、价格和 Beta 功能可能变化，实施前应再次核对。
+
+## 阅读导航
+
+1. [部署生态中的角色](#roles)
+2. [Vercel 的核心能力](#capabilities)
+3. [适合与需要拆分的项目](#selection)
+4. [GitHub 到生产环境的发布流程](#git-flow)
+5. [域名、DNS 与 HTTPS](#domains)
+6. [Cloudflare 的三种协作方式](#cloudflare)
+7. [Supabase 与其他云厂商](#external-cloud)
+8. [官网和农业赋能平台架构示例](#examples)
+9. [套餐与完整成本](#cost)
+10. [发布验收与常见误区](#acceptance)
+11. [学习自测与术语速查](#review)
+
+<h2 id="roles">一、部署生态中的角色</h2>
+
+| 角色 | 负责的事情 | 常见服务 |
+| --- | --- | --- |
+| 代码仓库 | 源码、分支、历史、代码审查 | GitHub、GitLab |
+| 应用托管 | 构建、部署、运行网站和接口 | Vercel |
+| 域名注册 | 注册、续费、维护域名归属 | 域名注册商 |
+| DNS | 将域名解析到对应服务 | Cloudflare DNS、Vercel DNS |
+| 数据与文件 | 数据库、图片、导出文件 | Supabase、对象存储 |
+| 云计算资源 | 服务器、容器、网络、GPU | 阿里云、腾讯云、AWS |
+
+**域名注册商、DNS 服务商和应用托管商可以是三家公司。** 在一家注册域名，不要求网站也部署在这家；使用 Cloudflare DNS，也不要求使用 Cloudflare 的应用托管。
+
+两条链路应分别理解：
+
+```text
+发布链路：开发者 → GitHub → Vercel 构建 → 部署版本
+
+访问链路：用户查询 DNS → 访问网站 → 调用 API → 读取数据库
+```
+
+正常的网站访问不需要从 GitHub 实时拉取源码。
+
+<h2 id="capabilities">二、Vercel 的核心能力</h2>
+
+### 网站和前端托管
+
+Vercel 支持静态 HTML、Vue / React / Vite 前端，以及 Next.js、Nuxt 等框架。静态资源通过 CDN 分发，动态页面可由服务端生成；框架集成还提供缓存、图片优化和路由能力。
+
+官网、文章站、管理后台和产业大屏都属于常见用途。参考：[平台文档](https://vercel.com/docs)。
+
+### 构建、预览与正式发布
+
+连接 Git 仓库后，提交可以触发构建和部署。开发分支生成 Preview，配置的生产分支生成 Production。每次部署有独立记录，便于验收和定位版本。
+
+参考：[Git 部署机制](https://vercel.com/docs/git)。
+
+### 后端 API 与 Fluid Compute
+
+Vercel Functions 可以运行服务端代码，支持 Node.js、Python 等运行时及 FastAPI 等框架。它适合登录鉴权、数据库查询、产品管理、回调处理和模型调用。Fluid Compute 支持实例复用和并发请求处理。
+
+**托管函数仍有执行时长、内存和请求限制。** FastAPI 应用部署后，需要把持久化状态放到外部服务，不能依赖单个实例一直运行。
+
+参考：[Functions](https://vercel.com/docs/functions)、[Fluid Compute](https://vercel.com/docs/fluid-compute)。
+
+### Cron 定时任务
+
+Cron 按计划调用后端接口，适合触发数据同步、价格采集和指标汇总。
+
+```text
+Cron → 采集接口 → 外部数据源 → 整理与去重 → 数据库
+```
+
+当前 Hobby 的每个任务最多每天执行一次，且可能在计划对应的小时内触发；Pro / Enterprise 支持分钟级调度。Cron 执行仍消耗函数资源。
+
+任务代码应记录成功与失败，避免重复入库，并设计重试和补采机制。参考：[Cron 额度与调度精度](https://vercel.com/docs/cron-jobs/usage-and-pricing)。
+
+### 数据、文件和外部集成
+
+Vercel 可以连接外部 PostgreSQL、Redis 和其他 API，也提供 Blob 文件存储及 Marketplace 集成。数据库并不要求购买在 Vercel 内。
+
+图片、导出文件和业务数据应使用数据库或对象存储持久化。参考：[Storage](https://vercel.com/docs/storage)。
+
+### 安全、监控与 AI 能力
+
+平台提供防火墙、部署访问保护、日志和性能分析等能力；应用中的账号权限、接口授权和数据库规则仍需要业务实现。AI SDK 和 AI Gateway 可用于模型接入、聊天与流式输出。
+
+参考：[安全能力](https://vercel.com/docs/security)、[可观测性](https://vercel.com/docs/observability)、[AI Gateway](https://vercel.com/docs/ai-gateway)。
+
+### 工作流与 WebSocket
+
+Workflows 可以保存多步骤业务流程的状态，处理等待、恢复和重试。一个流程可跨较长时间，但每个计算步骤仍受运行环境约束。
+
+当前 WebSocket 已有 Beta 支持。连接到达函数时长上限后会关闭，客户端应重连；房间、在线状态和跨实例消息需要外部状态或消息服务。
+
+参考：[Workflows](https://vercel.com/docs/workflows)、[WebSocket](https://vercel.com/docs/functions/websockets)。
+
+<h2 id="selection">三、适合与需要拆分的项目</h2>
+
+下面是依据平台运行方式给出的选型建议。
+
+| 项目 | 适合程度 | 实施建议 |
+| --- | --- | --- |
+| 官网、博客、文档站 | 很适合 | 静态内容或框架页面 |
+| Vue / React 前端 | 很适合 | API 可部署在其他服务 |
+| 数据大屏、管理后台 | 很适合 | 数据先入库，页面通过接口读取 |
+| Next.js 全栈应用 | 很适合 | 利用框架与平台集成 |
+| FastAPI 业务接口 | 适合 | 使用外部数据库与文件存储 |
+| AI 聊天、知识库 | 适合 | 控制请求时间与模型费用 |
+| 每日小规模采集 | 适合 | 分批、幂等、记录结果 |
+| 持续采集、大规模爬虫 | 建议独立 Worker | 使用任务队列和常驻执行进程 |
+| 视频转码、模型训练 | 建议外部计算 | Vercel 接收任务并展示结果 |
+| 复杂内网或系统服务 | 专项评估 | 依据网络、依赖和隔离要求选型 |
+
+当前函数时长的常规上限：Hobby 为 300 秒；启用 Fluid Compute 的 Pro / Enterprise 为 800 秒。部分配置支持 1800 秒的扩展时限 Beta，应核对运行时和网络配置条件。
+
+**长业务流程可以拆分，长时间高强度计算需要选择合适的执行资源。** 参考：[函数限制](https://vercel.com/docs/functions/limitations)。
+
+<h2 id="git-flow">四、GitHub 到生产环境的发布流程</h2>
+
+推荐流程：
+
+```text
+开发分支提交
+    ↓
+自动测试与 Preview 部署
+    ↓
+检查页面、接口和业务行为
+    ↓
+合并到配置的生产分支
+    ↓
+Production 构建与发布
+    ↓
+正式域名验收
+```
+
+生产分支经常叫 `main`，也可以是其他分支。**推送到 GitHub 是否更新官网，取决于 Vercel 的分支和环境配置。** Preview 构建成功并不表示正式域名已更新。
+
+一个仓库可以对应多个 Vercel 项目。例如同一仓库的 `frontend/`、`backend/`、`admin/`，分别设置根目录、构建方式和环境变量。
+
+### 环境变量与发布版本
+
+Development、Preview、Production 可以使用不同环境变量。测试环境宜使用测试数据库；数据库密码、Storage 服务端密钥、签名密钥只能留在服务端，不能打包进浏览器代码。
+
+修改 Vercel 环境变量后，需要新的部署才能让新值用于相应部署。将已有 Preview 提升到生产不会重新构建；涉及环境差异时，应使用生产配置重新构建并验证。
+
+参考：[环境变量](https://vercel.com/docs/environment-variables)、[Preview 提升到生产](https://vercel.com/docs/deployments/promote-preview-to-production)。
+
+### 回滚的边界
+
+应用回滚切换代码和部署版本，**不会自动撤销数据库迁移、恢复被删除的数据或回退第三方服务状态**。数据库变更应独立准备备份、兼容方案和恢复步骤。
+
+<h2 id="domains">五、域名、DNS 与 HTTPS</h2>
+
+以 `www.example.com` 为例，接入 Vercel 需要完成两项配置：
+
+1. 在 Vercel 项目中绑定域名。
+2. 在权威 DNS 服务商处，按照该项目给出的值设置解析记录。
+
+DNS 让浏览器找到服务；项目绑定让 Vercel 知道这个域名属于哪个网站。满足域名验证和相关条件后，平台可以管理 HTTPS 证书。
+
+| 名称 | 含义 |
+| --- | --- |
+| `example.com` | 根域名 |
+| `www.example.com` | 子域名，可指向官网 |
+| `api.example.com` | 子域名，可指向外部后端 |
+| `/project-learning` | 网站路径，由应用路由处理 |
+| A / AAAA | 将名称解析为 IP 地址 |
+| CNAME | 将名称指向另一个域名 |
+| TXT | 常用于所有权验证等 |
+
+域名无须转入 Vercel，DNS 也可以保留在第三方。**记录值以当前项目 Domains 页面为准，不要照抄其他项目或旧教程的地址。**
+
+参考：[域名管理](https://vercel.com/docs/domains/working-with-domains)、[自定义域名设置](https://vercel.com/docs/domains/set-up-custom-domain)。
+
+<h2 id="cloudflare">六、Cloudflare 的三种协作方式</h2>
+
+### 灰色云：DNS only
+
+```text
+DNS 查询：浏览器 → Cloudflare DNS → 获得解析结果
+网页访问：浏览器 → Vercel
+```
+
+Cloudflare 只管理 DNS，不代理网页流量。Vercel 负责网站内容分发与应用运行。
+
+### 橙色云：代理网页流量
+
+```text
+浏览器 → Cloudflare CDN / 防护 → Vercel CDN / 应用
+```
+
+Cloudflare 参与流量代理、缓存与防护。这样会形成两层代理，需要处理缓存一致性、流量识别和访问验证等问题。
+
+对于 Vercel 网站，通常采用 DNS only 更直接。Vercel 官方不推荐在其前面叠加外部反向代理。
+
+参考：[Cloudflare 代理状态](https://developers.cloudflare.com/dns/proxy-status/)、[Vercel 与 Cloudflare 配合](https://vercel.com/kb/guide/cloudflare-with-vercel)。
+
+### Tunnel：连接自己的电脑或服务器
+
+```text
+浏览器 → Cloudflare → Tunnel → 电脑 / 云服务器中的应用
+```
+
+服务器上运行的 `cloudflared` 主动建立连接。应用仍然运行在自己的设备或服务器上，设备关机、应用停止、隧道断开都可能造成无法访问。
+
+Tunnel 适合开发演示和特定访问场景；正式使用需要可靠的运行设备、进程管理和监控。参考：[Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/)。
+
+Cloudflare 另有 Pages、Workers 等托管能力。选择它的 DNS、代理或应用托管，是三个可以分别考虑的决定。
+
+<h2 id="external-cloud">七、Supabase 与其他云厂商</h2>
+
+### Vercel 与 Supabase
+
+```text
+Vercel 前端 → 后端 API → Supabase PostgreSQL
+                    ↘ Supabase Storage
+```
+
+Vercel 负责应用，Supabase 保存数据和文件。`DATABASE_URL` 是后端连接数据库的配置；它不负责创建前端登录账号。业务账号、密码校验和权限机制需要按应用设计实现。
+
+数据库所在区域应尽量靠近后端执行区域。静态资源的全球 CDN，并不意味着每次数据库查询都在用户附近完成。参考：[数据库与存储集成](https://vercel.com/docs/storage)。
+
+### Vercel 与阿里云、腾讯云、AWS
+
+传统云厂商提供云服务器、容器、数据库、网络和 GPU 等资源。Vercel 提供更完整的 Web 应用发布与托管流程，两者可以组合：
+
+| 部分 | 典型位置 |
+| --- | --- |
+| 官网、大屏、前端 | Vercel |
+| 请求型业务 API | Vercel 或云厂商 |
+| 长时间采集 Worker | 云服务器或容器 |
+| 视频、GPU 和批处理 | 专门计算服务 |
+| 持久化数据 | Supabase 或云数据库 |
+| 文件 | Supabase Storage、OSS、COS、S3 等 |
+
+前端可以直接调用外部 API，也可以通过 Vercel 的 `/api/*` 路由转发。转发可以统一浏览器访问入口，API 的鉴权、超时和后端权限仍需实现。参考：[路由与转发](https://vercel.com/docs/routing)。
+
+国内用户体验需要按实际地区、运营商和接口链路测试；跨区域的数据库查询和外部数据源访问都可能影响速度。
+
+<h2 id="examples">八、官网和农业赋能平台架构示例</h2>
+
+以下用项目实践说明分工，属于架构学习示例，不是持续更新的线上环境状态报告。
+
+### 官网：内容发布主路径
+
+```text
+文章与页面源码 → GitHub → Vercel 构建与发布
+                                ↓
+                          官网域名访问
+```
+
+LobsterMaster 官网的文章、栏目入口和页面应一起进入仓库。发布后既要检查文章直链，也要检查用户能否从栏目中找到文章。
+
+### 农业赋能平台：业务与产业数据
+
+```text
+用户 → Vue 前端 / 产业大屏 → FastAPI → Supabase 数据库与文件
+
+定时调度 → 采集任务 → 外部农业数据源 → 清洗、去重 → Supabase
+```
+
+大屏展示需要区分：采集时间、数据所属日期、数据来源和更新频率。主粮面积、果园面积、养殖指标、金融指标与市场价格的更新节奏不同，不宜用同一个“实时”标签描述。
+
+### 采集扩大后的演进
+
+```text
+Vercel：页面、查询接口、任务提交
+                 ↓
+         队列 / 任务状态记录
+                 ↓
+云服务器或容器：分批采集、重试、历史补采
+                 ↓
+       Supabase：持久化数据
+```
+
+这种拆分让全国市场采集的长任务独立扩展，官网和大屏可以继续保留原来的发布方式。
+
+<h2 id="cost">九、套餐与完整成本</h2>
+
+| 套餐 | 定位 |
+| --- | --- |
+| Hobby | 免费；官方限定个人非商业用途 |
+| Pro | 商业与团队项目；当前基础价格每月 20 美元起 |
+| Enterprise | 企业要求与定制报价 |
+
+实际账单还受到开发者席位、包含额度和各产品用量影响。商业项目应按运营性质和真实资源需求选择套餐。
+
+参考：[Hobby 使用范围](https://vercel.com/docs/plans/hobby)、[当前价格](https://vercel.com/pricing)。
+
+完整预算应考虑：
+
+```text
+应用托管 + 数据库 + 文件存储 + 域名续费
++ 外部云计算 + 模型调用 + 其他服务
+```
+
+Vercel 的费用不代表 Supabase、外部云和模型提供商的所有费用都已包含。采集规模增加时，还应估算执行时长、数据库增长、网络传输和重试成本。
+
+<h2 id="acceptance">十、发布验收与常见误区</h2>
+
+### 一次发布应检查什么？
+
+1. **版本**：正式部署对应哪个 Git 提交，是否包含目标变更。
+2. **环境**：是否使用 Production 配置，数据库与文件存储是否正确。
+3. **访问**：正式域名、HTTPS、页面路由是否正常。
+4. **业务**：登录、查询、写入等关键路径是否真正成功。
+5. **后台任务**：手工试跑是否完成，自动调度是否留下运行记录。
+6. **恢复**：代码回滚与数据库恢复分别如何处理。
+
+### 常见误区
+
+| 看到的现象 | 应进一步确认 |
+| --- | --- |
+| 已推送 GitHub | 是否发布到了 Production |
+| 部署显示 READY | 关键 API 和业务行为是否成功 |
+| 页面打开了 | 后端、数据库与文件是否可用 |
+| 页面暂时为空 | 是否仍在加载、请求失败、权限不符或无数据 |
+| Cron 配置存在 | 自动执行是否有结果，失败是否补采 |
+| 应用已经回滚 | 数据库变更是否仍然存在 |
+
+<h2 id="review">十一、学习自测与术语速查</h2>
+
+### 五个问题
+
+1. 域名在一家注册、DNS 在另一家、网站放 Vercel，可以吗？
+2. 为什么开发分支推送成功后，官网可能仍是旧内容？
+3. Cloudflare 灰色云和橙色云的访问链路有什么区别？
+4. 为什么数据和图片需要独立持久化？
+5. 为什么代码回滚不能代替数据库恢复？
+
+### 参考答案
+
+1. 可以，域名归属、解析和应用托管是不同职责。
+2. 该分支可能只生成 Preview，正式域名使用的是 Production。
+3. 灰色云只提供 DNS；橙色云还代理网页流量。
+4. 托管实例可能被替换或扩缩容，业务状态需要独立保存。
+5. 数据库是独立系统，已经提交的数据变化不会随代码版本切换撤销。
+
+### 术语速查
+
+| 术语 | 简明解释 |
+| --- | --- |
+| Deployment | 一次构建并发布形成的部署版本 |
+| Preview | 用于验收的预览环境 |
+| Production | 用户正式使用的环境 |
+| CDN | 缓存并分发内容的网络 |
+| Function | 平台托管的服务端执行单元 |
+| Cron | 按时间触发任务的调度机制 |
+| Worker | 执行后台任务的进程或服务 |
+| 幂等 | 重复执行不会产生不期望的重复结果 |
+| DNS | 将域名解析到服务地址的系统 |
+| 对象存储 | 持久保存图片、文档等文件的服务 |
+
+**记住这套分工：GitHub 管代码，Vercel 管网站和请求型应用，数据库管业务状态，DNS 管域名解析，外部云承担需要独立计算资源的任务。**
